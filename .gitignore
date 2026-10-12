@@ -1,0 +1,16 @@
+# OS
+.DS_Store
+
+# Secrets: never commit env files, keys or keystores
+.env*
+!.env.example
+*.pem
+*.key
+keystore/
+
+# Node
+node_modules/
+
+# Foundry (contracts/)
+contracts/out/
+contracts/cache/
