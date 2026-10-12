@@ -830,7 +830,8 @@ body {
   .explore-hero.page-center-high { padding-top: 22px; }
   .explore-hero .hero-title { font-size: clamp(38px, min(6vw, 6svh), 76px); margin-bottom: 10px; }
   .explore-hero .hero-sub { margin-bottom: 12px; }
-  .explore-hero .srch-box { height: 40px; }
+  .explore-hero .srch-box { height: 48px; }
+  .explore-hero .srch-input { font-size: 23px; }
   .explore-hero .md-lanes { gap: 4px; }
   .explore-hero .md-lane { padding: 6px 0 12px; }
   .explore-hero .md-card { gap: 6px; }
@@ -2539,8 +2540,29 @@ body {
   .collection-head { flex-direction: column; }
 }
 
+/* Explore lanes: compact cards (user request 2026-10-12). Whole-pixel sizes only, so the pixel
+   frames stay crisp (no zoom/scale). Other pages keep the full-size card. Measured: the four
+   buttons still fit one row, "✓ Added" included. */
+.md-lanes { --card-w: 272px; }
+.md-lanes .md-card { gap: 7px; padding: 10px 12px 9px; }
+.md-lanes .md-file { font-size: 15px; }
+.md-lanes .md-badge { font-size: 12px; }
+.md-lanes .md-version { font-size: 13px; }
+.md-lanes .md-title { font-size: 20px; }
+.md-lanes .md-summary { font-size: 16px; }
+.md-lanes .md-card-foot { font-size: 13px; }
+.md-lanes .md-card-actions { gap: 15px; } /* two 3px frames + 9px clear */
+.md-lanes .md-collect,
+.md-lanes .md-view,
+.md-lanes .md-like,
+.md-lanes .md-tip { height: 27px; }
+.md-lanes .md-view { width: 31px; font-size: 14px; }
+.md-lanes .md-like { min-width: 46px; padding: 0 6px 1px; font-size: 15px; }
+.md-lanes .md-tip { padding: 0 7px 1px; font-size: 15px; }
+.md-lanes .md-card-actions .md-collect { gap: 6px; padding: 0 6px 1px; font-size: 17px; }
+
 @media (max-width: 639px) {
-  .md-lanes { --card-w: 288px; }
+  .md-lanes { --card-w: 264px; }
 }
 
 /* ── Connect your agent: key → prompt → manual setup → try it (ARCHITECTURE §8.1) ── */
@@ -3227,7 +3249,7 @@ body {
 .srch {
   position: relative;
   z-index: 30; /* the dropdown covers the lanes */
-  width: min(720px, calc(100% - 40px));
+  width: min(800px, calc(100% - 40px));
   margin: 0 auto 4px;
 }
 /* Lifted with the hero text (see .page-center-high) */
@@ -3239,9 +3261,9 @@ body {
   --frame: rgba(255, 203, 5, 0.38);
   display: flex;
   align-items: center;
-  gap: 12px;
-  height: 46px;
-  padding: 0 12px 0 14px;
+  gap: 14px;
+  height: 54px;
+  padding: 0 14px 0 18px;
   color: var(--y1);
   background:
     repeating-linear-gradient(0deg, rgba(255, 203, 5, 0.03) 0 1px, transparent 1px 3px),
@@ -3280,7 +3302,7 @@ body {
   outline: none;
   background: transparent;
   font-family: var(--font-vt323);
-  font-size: 22px;
+  font-size: 25px;
   color: var(--t0);
 }
 .srch-input::placeholder {
@@ -3295,10 +3317,10 @@ body {
   flex: none;
   display: grid;
   place-items: center;
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   font-family: var(--font-vt323);
-  font-size: 17px;
+  font-size: 19px;
   color: var(--t2);
   box-shadow:
     0 -2px 0 0 rgba(255, 248, 231, 0.2),
@@ -3311,8 +3333,8 @@ body {
   flex: none;
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   color: var(--t1);
   background: rgba(255, 248, 231, 0.05);
   cursor: pointer;
@@ -3561,7 +3583,8 @@ body {
 
 @media (max-width: 639px) {
   .srch { width: calc(100% - 32px); }
-  .srch-input { font-size: 19px; }
+  .srch-input { font-size: 20px; }
+  .srch-box { height: 48px; }
   .srch-key,
   .srch-keys-hint { display: none; } /* keyboard hints mean nothing on a phone */
   .srch-panel { max-height: 70svh; padding: 12px; }

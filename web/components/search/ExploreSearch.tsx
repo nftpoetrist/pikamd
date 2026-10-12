@@ -49,7 +49,7 @@ export function SearchBoxShell() {
 
 function SearchIcon() {
   return (
-    <svg className="srch-icon" width="18" height="18" viewBox="0 0 9 9" fill="currentColor" shapeRendering="crispEdges" aria-hidden="true">
+    <svg className="srch-icon" width="27" height="27" viewBox="0 0 9 9" fill="currentColor" shapeRendering="crispEdges" aria-hidden="true">
       <path d="M2 0h3v1H2zM1 1h1v1H1zM5 1h1v1H5zM0 2h1v3H0zM6 2h1v3H6zM1 5h1v1H1zM5 5h1v1H5zM2 6h3v1H2zM6 6h1v1H6zM7 7h1v1H7zM8 8h1v1H8z" />
     </svg>
   );
@@ -221,7 +221,7 @@ export default function ExploreSearch({ topTags }: { topTags: string[] }) {
               inputRef.current?.focus();
             }}
           >
-            <svg width="10" height="10" viewBox="0 0 7 7" fill="currentColor" shapeRendering="crispEdges" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 7 7" fill="currentColor" shapeRendering="crispEdges" aria-hidden="true">
               <path d="M0 0h1v1H0zM6 0h1v1H6zM1 1h1v1H1zM5 1h1v1H5zM2 2h3v3H2zM1 5h1v1H1zM5 5h1v1H5zM0 6h1v1H0zM6 6h1v1H6z" />
             </svg>
           </button>
