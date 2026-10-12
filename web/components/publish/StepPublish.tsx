@@ -19,7 +19,7 @@ type Props = {
 export const PHASES = ["Checking your file again", "Uploading to IPFS", "Waiting for your wallet", "Writing to Arc"];
 const PHASE_MS = 900;
 
-// Step 4: last look, permanence consent, then publish (demo until wallets land, roadmap step 5).
+// Step 4: last look, permanence note, then publish (demo until the registry contract lands, roadmap step 7).
 export default function StepPublish({ draft, scan, onReset, phase, setPhase }: Props) {
   useEffect(() => {
     if (phase < 0 || phase >= PHASES.length) return;
@@ -44,8 +44,8 @@ export default function StepPublish({ draft, scan, onReset, phase, setPhase }: P
       <div className="pub-done" role="status">
         <p className="pub-done-title">Demo complete</p>
         <p className="pub-done-text">
-          This is what publishing will look like. Nothing was uploaded or written to Arc yet: wallet connection and
-          on-chain publishing arrive in a later release. Your draft is still saved in this browser.
+          This is what publishing will look like. Nothing was uploaded or written to Arc yet: on-chain publishing
+          arrives in a later release. Your draft is still saved in this browser.
         </p>
         <div className="pub-done-actions">
           <Link href="/explore" className="btn-ghost">
@@ -64,8 +64,8 @@ export default function StepPublish({ draft, scan, onReset, phase, setPhase }: P
   return (
     <div className="pub-final">
       <p className="pub-demo" role="note">
-        <strong>Demo mode.</strong> Wallets aren&apos;t connected yet, so this step shows the flow without uploading or
-        sending anything.
+        <strong>Demo mode.</strong> Publishing isn&apos;t linked to your wallet and Arc yet, so this step shows the flow
+        without uploading or sending anything.
       </p>
 
       <dl className="pub-summary">

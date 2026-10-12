@@ -98,8 +98,8 @@ export default function ConnectPanel() {
     <section className="connect-panel pixel-panel" aria-label="Connect your agent">
       {MOCK_SERVER ? (
         <p className="pub-demo">
-          <strong>Local preview.</strong> The MCP server runs on this computer with sample guidelines. Wallet sign-in
-          isn&apos;t live yet, so there&apos;s one key and one collection, stored for this computer only
+          <strong>Local preview.</strong> The MCP server runs on this computer with sample guidelines. Keys and
+          collections aren&apos;t linked to wallets yet, so there&apos;s one key and one collection, stored for this computer only
         </p>
       ) : (
         <p className="pub-demo">

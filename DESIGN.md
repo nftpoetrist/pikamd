@@ -110,7 +110,7 @@
 - **4 kare** (siyahımsı → koyu altın degrade + silik 16px piksel dama deseni, koyu altın çerçeve, hover'da altın çerçeve ve 3px yükselme `steps(2)`): **01 Share · 02 Collect · 03 Connect · 04 Stay safe** (güvenlik karesi, kullanıcı isteği: "Ask" yerine; kalkan ikonu). Masaüstünde 4 sütun ve en az kare (`min-height` container query ile, `aspect-ratio` değil: stretch ile birlikte genişliği büyütüp kareleri birbirine değdiriyordu); tablet 2×2 ve mobil tek sütunda kare zorunluluğu yok. Aralık 22px (iki çerçeve + 16px).
 - Altta **"For example, in your agent"** terminal kutusu: ürünün kalbindeki cümle (koleksiyondaki Secure Solidity ile CLAUDE.md'yi tamamla) + 3 yeşil ✓ adım (`my_collection`, `get_guideline secure-solidity@v3`). Yanıp sönen imleç.
 - En altta güven şeridi: No account needed to read · Authors recorded on Arc · Works with any MCP agent · 0% platform fee.
-- ⚠ MCP, sabitlenmiş sürüm ve Arc kaydı henüz yok (Adım 7–8); panel vizyonu anlatıyor. Yayına açılmadan önce bu özellikler hazır olmalı ya da metin "coming soon" demeli (§7).
+- ⚠ MCP sadece yerel önizlemede çalışıyor; sabitlenmiş sürüm ve Arc kaydı henüz yok (Adım 7–8); panel vizyonu anlatıyor. Yayına açılmadan önce bu özellikler hazır olmalı ya da metin "coming soon" demeli (§7).
 
 ---
 
@@ -126,7 +126,7 @@
 
 ### 3.3 Connect your agent (`/connect`, `components/connect/ConnectPanel.tsx`, 2026-10-12)
 - Öncelik bilgisayarda geliştirme yapanlar (K11). Panel `min(980px, 100% - 40px)`, `pixel-panel`; adımlar kesik altın çizgiyle ayrılır, numaralar **01–04** (Jersey, sarı; Roma rakamı Jersey'de çubuk gibi okunuyordu).
-- Üstte turuncu bant: geliştirmede **"Local preview"** (MCP sunucusu bu bilgisayarda örnek yönergelerle çalışıyor; cüzdan yok, tek key + tek koleksiyon bu bilgisayarda), production'da **"Demo mode"** (sunucu henüz yok).
+- Üstte turuncu bant: geliştirmede **"Local preview"** (MCP sunucusu bu bilgisayarda örnek yönergelerle çalışıyor; key ve koleksiyon henüz cüzdana bağlı değil, tek key + tek koleksiyon bu bilgisayarda; metin 2026-10-12'de cüzdan girişi gelince düzeltildi), production'da **"Demo mode"** (MCP sunucusu ve cüzdan girişi orada henüz yok).
 - `Create key` / `Revoke` sunucuyla konuşur (sadece hash gider, ARCHITECTURE §8.0); beklerken buton "Working…" ve kilitli, sunucu kaydedemezse kod **gösterilmez**, dürüst hata çıkar.
 - **01 Create your key:** `Create key` → `pmd_` + 40 hex (`crypto.getRandomValues`) **bir kez** gösterilir + `Copy key` / `Revoke`. Tarayıcıya **sadece maskeli iz** (`pmd_3f9a…c21e`) ve tarih yazılır (`pikamd:mcp-key`, `lib/mcp/key-store.ts`); tam kod hiçbir yerde saklanmaz (gerçek tasarımdaki hash mantığı). Yenilemede iz + `Create a new key` (eskisini geçersiz kılar) + `Revoke`.
 - **02 Paste this into your agent:** tek prompt (`agentPrompt`), ajan kendi uygulamasına göre kurar; yapamazsa adımları gösterir. Kod yokken `Copy prompt` kilitli, prompt `<YOUR_PIKAMD_KEY>` gösterir. Kutu 300px, içinde kayar (odaklanabilir). Dürüstlük notu: kod prompt içinde olduğu için ajanın sohbet geçmişinde kalır → elle kurulum önerilir.
@@ -135,9 +135,10 @@
 - Ortak parça: `components/CopyButton.tsx` (Publish'teki "✓ Copied" geri bildirimiyle aynı). Saf mantık `lib/mcp/connect.ts` + 10 test (`lib/mcp/connect.test.mjs`; ör. üretilen kod yayın tarayıcısının `pikamd-key` kuralına takılıyor).
 - MCP adresi sayfanın kendi origin'i + `/mcp` (domain kararı gelince otomatik doğru olur). Ölçüldü: 1440 ve 390 genişlikte taşma yok; tüm akış (üret → prompt dolar → sekmeler → yenile → iptal) CDP ile test edildi.
 
-## 4. Veri katmanı (mock)
+## 4. Veri katmanı
 - Tipler: `web/lib/types.ts` (`Guideline`, `GuidelineKind` = rules | skill | prompt | agent | guide — K20).
-- Okuma tek giriş noktasından: `web/lib/data/guidelines.ts` → `listGuidelines()`. Şu an `mock-guidelines.ts`'teki 18 İngilizce örneği döner; Supabase + IPFS gelince **sadece bu dosya** değişir.
+- Okuma tek giriş noktasından: `web/lib/data/guidelines.ts` → `listGuidelines()`, `getGuideline(slug)`, `searchIndex(query)`. Şu an `mock-guidelines.ts`'teki 18 İngilizce örnek; Supabase + IPFS gelince **sadece bu dosya** değişir.
+- Sunucu verisi (beğeniler, giriş nonce'ları): `web/lib/server/store.ts` → `AppStore` arayüzü; şimdi yerel dosya `web/.data/pikamd-dev.json` (ARCHITECTURE §9.3).
 
 ---
 
@@ -158,7 +159,8 @@
 - Tailwind **PostCSS** üzerinden (`postcss.config.mjs`, `@tailwindcss/postcss`). Eski `@tailwindcss/turbopack` loader'ı CSS değişikliklerini izlemeyi bırakıyordu → kaldırıldı. `turbopackFileSystemCacheForDev: false`.
 - Sunucuyu yeniden başlatırken **sadece** 3001'i dinleyen ve cwd'si `PikaMd/web` olan süreci durdur. `pkill -f "next dev"` kullanma (kullanıcının diğer uygulamasını kapattı).
 - Bu Next sürümü eğitim verisinden farklı: kod yazmadan önce `web/node_modules/next/dist/docs/` içindeki ilgili rehbere bak (`web/AGENTS.md`). Örn. `next/image`'da `priority` yerine `preload`.
-- Testler: `cd web && npm test` (45 birim testi) · dev sunucu açıkken `npm run mcp:smoke` ve `npm run auth:smoke`. Cüzdan akışı headless Chrome'da EIP-6963 test cüzdanı enjekte edilerek denendi (imzayı CDP binding'iyle Node atar).
+- Testler: `cd web && npm test` (64 birim testi: tarama, MCP, SIWE/oturum, beğeni, arama) · dev sunucu açıkken `npm run mcp:smoke` ve `npm run auth:smoke`. Cüzdan akışı headless Chrome'da EIP-6963 test cüzdanı enjekte edilerek denendi (imzayı CDP binding'iyle Node atar); arama da tarayıcıda uçtan uca denendi (masaüstü + 390px).
+- **Git:** repo kökte (`PikaMd/`). Her iş kendi dalında (`feat/…`), main'e birleştirme kullanıcı onayıyla. Gizli dosyalar (`.env*`, `web/.data/`) git dışında; şablon `web/.env.example`.
 - Doğrulama alışkanlığı: CSS değişikliği sonrası sunulan CSS chunk'ında yeni kuralı ara; görseli headless Chrome ile kontrol et (pencere en az ~500px genişlik açar; mobil için CDP `Emulation.setDeviceMetricsOverride`).
 
 ---
@@ -170,5 +172,5 @@
 - **Bağış (K21) henüz yok:** yönerge kartlarındaki ★ Tip butonu "Coming soon" diyor; ana sayfadaki 003 kartı ve Publish başlığındaki "Earn tips" için de yayın öncesi ya özellik hazır olmalı ya da "coming soon" denmeli.
 - **PikaGold (K22, 2026-10-12):** yönergelerine verilen her beğeni yazara 1 PikaGold (zincir dışı itibar puanı). Beğeni sadece cüzdan + SIWE oturumuyla, cüzdan başına yönerge başına 1, kalıcı, yazar kendine de verebilir. Kartlardaki ♥ artık K22'ye göre çalışıyor (yerel depo, ARCHITECTURE §9.3). PikaGold'un ne işe yarayacağı (rozet, sıralama…) henüz açık.
 - **Lisans:** yazar seçmiyor; tek lisans şimdilik CC BY 4.0 (öneri, onay bekliyor; CC0 tek satırlık değişiklik).
-- Sıradaki öneriler: yönerge detay sayfası `/g/[slug]` (en önemli sayfa); MCP'nin yerel önizlemesi çalışıyor (ARCHITECTURE §8.0), gerçek backend gelince `/connect`'e canlı bağlantı durumu ("✓ connected · last used…") eklenir.
+- Sıradaki öneriler: yönerge detay sayfası `/g/[slug]` (en önemli sayfa); kontrat (Adım 7, deploy cüzdanı + faucet USDC kullanıcıdan); Supabase + IPFS (Adım 6); MCP key ve koleksiyonun cüzdana bağlanması; gerçek backend gelince `/connect`'e canlı bağlantı durumu ("✓ connected · last used…").
 - **Connect sayfası açık noktalar:** domain yok (adres şimdilik sayfanın origin'i); VS Code / Cursor tek tık kurulum linkleri resmi dokümanda tam doğrulanamadı → eklenmedi; claude.ai / Desktop / mobil OAuth fazında gelir (ARCHITECTURE §8.1).

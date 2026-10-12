@@ -30,3 +30,4 @@ Piksel tasarım sistemi, bileşenler, sayfaların güncel hali, geliştirme orta
 - Bu Next.js sürümü eğitim verisinden farklı: kod yazmadan önce `web/node_modules/next/dist/docs/` rehberine bak.
 - Her UI değişikliğinden sonra sonucu kendin doğrula (tip kontrolü, lint, sunulan CSS'te yeni kural, headless Chrome ekran görüntüsü / CDP ölçümü) ve kullanıcıya ne gördüğünü söyle.
 - UI'da yapılan önemli değişiklikleri ve yeni kararları DESIGN.md / ARCHITECTURE.md'ye işle.
+- **Git:** repo `PikaMd/` kökünde. Her iş kendi dalında (`feat/…`); main'e birleştirme ve push kullanıcı onayıyla. `.env*` ve `web/.data/` asla commit edilmez (şablon: `web/.env.example`).
