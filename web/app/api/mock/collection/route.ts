@@ -1,4 +1,5 @@
-import { cleanSlugs, mockGuard, readJson } from "@/lib/mcp/mock-api";
+import { cleanSlugs, mockGuard } from "@/lib/mcp/mock-api";
+import { readJson } from "@/lib/server/guard";
 import { setCollection } from "@/lib/mcp/mock-store";
 
 // Local preview: mirrors the browser's collection (localStorage) to the store my_collection reads.

@@ -1,6 +1,6 @@
 # PikaMd — Mimari Tasarım Dokümanı
 
-> Durum: **Geliştirme sürüyor — arayüz önce, mock veriyle.** `web/` (Next.js) çalışıyor: ana sayfa, Explore şeritleri (kartlarda OPEN önizleme, ♥ beğeni, ★ Tip, + Add), My Collection (mock), Publish (4 adım + kişisel veri / sır tarayıcısı, demo yayın), navbar, piksel tasarım sistemi. Kontrat/backend/cüzdan henüz yok. Tasarım sistemi ve güncel ekranlar: **DESIGN.md**. (Son güncelleme: 2026-10-10)
+> Durum: **Geliştirme sürüyor — arayüz önce, mock veriyle.** `web/` (Next.js) çalışıyor: ana sayfa, Explore şeritleri (kartlarda OPEN önizleme, ♥ beğeni, ★ Tip, + Add), My Collection (mock), Publish (4 adım + kişisel veri / sır tarayıcısı, demo yayın), navbar, piksel tasarım sistemi. **Cüzdan + SIWE girişi ve beğeni/PikaGold (K22) çalışıyor** (wagmi 3, Arc testnet; veriler yerel geliştirme deposunda, §9.3). Kontrat ve gerçek backend (Supabase/IPFS) henüz yok. Tasarım sistemi ve güncel ekranlar: **DESIGN.md**. (Son güncelleme: 2026-10-12)
 > Bu doküman, önceki tasarım konuşmasında alınan kararların tamamını içerir.
 > Yeni bir oturum buradan devam edebilmeli. "Kararlar" bölümündeki maddeler
 > kullanıcıyla netleştirildi — yeniden tartışmaya açmadan uygula.
@@ -316,6 +316,17 @@ Tarama raporu `guideline_versions.scan_report` (jsonb) olarak saklanır ve detay
 - **Security headers / CSP**: eski projedeki `middleware.ts` taşınır.
 - **Raw endpoint** (`/raw/...`): `text/markdown; charset=utf-8`, JS gerektirmez, bot koruması AI fetcher'larını engellememeli.
 
+### 9.3 Uygulama: cüzdan, SIWE oturumu, beğeni ve PikaGold (2026-10-12, K22)
+- **Cüzdan:** wagmi **3.7.7** + viem **2.57.4** + TanStack Query. Tarayıcı cüzdanları EIP-6963 ile bulunur (wagmi'de varsayılan), eski cüzdanlar için `injected()` yedek. **RainbowKit kullanılmıyor:** son sürümü (2.2.11) sadece wagmi 2'yi destekliyor, wagmi 2 Kasım 2025'ten beri güncellenmiyor; ConnectKit React 19'u desteklemiyor (npm, 2026-10-12). Yerine piksel tarzı kendi seçicimiz (`components/wallet/WalletModal.tsx`, native `<dialog>`). Bağlanma 30 sn'de zaman aşımına uğrar (ARC.md §11 #10). WalletConnect (mobil/QR) Reown proje kimliği gelince eklenir. Zincir: `lib/chain.ts` (viem `arcTestnet` + resmi `rpc.testnet.arc.io` / `explorer.testnet.arc.io`; `NEXT_PUBLIC_ARC_NETWORK=mainnet` → `arc`).
+- **Akış:** Connect Wallet → navbar'da PikaGold + kısa adres (imza yok, profil herkese açık veri: `GET /api/profile/[address]`) → ilk beğenide **tek SIWE imzası** (gas yok, işlem yok, ağ değiştirme istenmez: `personal_sign` ağdan bağımsız, chainId'yi sunucu kontrol eder) → 7 gün HttpOnly oturum, sonraki beğeniler tek tık. Cüzdan bağlı değilken kalbe basılırsa seçici açılır ve bağlanınca beğeni kendiliğinden devam eder.
+- **Uçlar:** `POST /api/auth/nonce` (nonce + **sunucu zamanı**: cihaz saati yanlış olsa da giriş bozulmaz) · `POST /api/auth/verify` · `GET /api/auth/me` · `POST /api/auth/logout` (`{address}` verilirse sadece o cüzdanın oturumunu kapatır: hesap değiştirmede geç kalan çağrı yeni oturumu silemez) · `GET /api/likes` (sayılar + benim beğenilerim) · `PUT /api/likes/[slug]` (gövde yok, cüzdan sadece oturumdan; idempotent; **DELETE yok**) · `GET /api/profile/[address]`. Yazma uçlarında Origin kontrolü (CSRF) + SameSite=Strict cookie.
+- **SIWE doğrulaması (`lib/auth/siwe.ts`):** viem'in `verifySiweMessage`'ı chainId, uri, version, statement ve issuedAt'i **kontrol etmiyor** (viem 2.57.4 kaynağı okundu) → hepsi bizde. Mesaj, alanlarından birebir yeniden üretilip karşılaştırılır (ayrıştırıcı tanımadığı ekleri yok sayıyor). Nonce `crypto.getRandomValues` ile (viem'in `generateSiweNonce`'u `Math.random` kullanıyor), tek kullanımlık, 5 dk. Önce alanlar, sonra nonce harcanır, sonra imza (akıllı cüzdanlar ERC-6492/1271 için Arc RPC, normal cüzdanlar yerelde).
+- **Oturum (`lib/auth/session.ts`):** HMAC-SHA256 imzalı `{v, a, iat, exp}`, cookie `pikamd_session` (HttpOnly, SameSite=Strict, production'da Secure, 7 gün). Gizli anahtar `PIKAMD_SESSION_SECRET` (≥32 karakter, `web/.env.local`, şablon `web/.env.example`); değiştirilirse herkesin oturumu kapanır. Durumsuz token: tek tek iptal yok (çıkış cookie'yi siler). Cüzdan bağlantısı kesilince veya hesap değişince istemci oturumu kapatır.
+- **Depo (`lib/server/store.ts`):** `AppStore` arayüzü (nonce kaydet/harca, beğeni ekle, beğenilerim, sayılar). Şimdi tek uygulama yerel dosya `web/.data/pikamd-dev.json` (sırayla + atomik yazım, `lib/server/json-file.ts`; mock örneklerin `stars` değeri tohum sayılır). **Production'da depo yok → uçlar 503**, kalp butonu "coming soon" der. Supabase (Adım 6) bu arayüzün yerine geçer: `stars` PK'si tek-beğeni kuralını korur, PikaGold bir view.
+- **Testler:** `npm test` (45 birim testi; SIWE + oturum + beğeni kuralları dahil) · `npm run auth:smoke` (dev sunucu açıkken, iki test cüzdanıyla 27 kontrol: tekrar oynatma, sahte imza, başka ağ/site, uydurma nonce, CSRF, sahte cookie, imzasız/çift beğeni, DELETE yok, PikaGold +1/beğeni, hesap değiştirme yarışı). Tarayıcıda EIP-6963 test cüzdanıyla uçtan uca denendi (bağlan → imza → beğeni → kalıcı not → hesap değiştir → çıkış; 30 sn zaman aşımı; mobil menü).
+- **Arc Studio incelemesi (2026-10-12, doğrulanmamış ajan çıktısı):** mimariyi Arc'a uygun buldu, engelleyici sorun yok. Uygulanan: bağlanma zaman aşımı, sunucu zamanı, checksum'lı adres. Sonraya: ilk **işlem** özelliğinden (yayınlama/bahşiş) önce `wallet_addEthereumChain` / ağ değiştirme yolu (USDC 18 ondalık, ARC.md §6.2); production'da anahtarlı `ARC_RPC_URL`; WalletConnect eklenirken Arc'ın WalletConnect kaydını kontrol et.
+- **Henüz yok:** rate limit (Upstash), WalletConnect, Supabase deposu.
+
 ---
 
 ## 10. Veritabanı Şeması (Supabase, taslak)
@@ -391,7 +402,7 @@ Kullanıcı 3. kez kopyaladığında: *"Tired of copy-pasting? Connect your agen
 | Web | **Next.js 16.4** (App Router, Turbopack, `cacheComponents`), **React 19.3**, TypeScript — kurulu (`web/`) |
 | Stil | Tailwind CSS v4 (**PostCSS** eklentisiyle) + piksel tasarım sistemi (DESIGN.md). Animasyonlar CSS + React `<ViewTransition>`; Framer Motion şu an kullanılmıyor. **Dinamik değerler için inline `style={{}}`** (bkz. CLAUDE.md) |
 | Yazı tipleri | Jersey 10 (başlık/logo) + VT323 (arayüz/metin), `next/font/google` |
-| Cüzdan | wagmi + viem + RainbowKit (veya ConnectKit), SIWE |
+| Cüzdan | wagmi 3 + viem + kendi piksel cüzdan seçicimiz (EIP-6963), SIWE (§9.3). RainbowKit/ConnectKit mevcut yığınla uyumsuz |
 | Kontrat | Solidity + Foundry, OpenZeppelin AccessControl |
 | Depolama | IPFS pinning servisi (Pinata veya Filebase) |
 | DB | Supabase Postgres (service key yalnızca sunucuda) |
@@ -482,7 +493,7 @@ Arayüz mock veriyle önce geliştirilir; veri tipleri baştan gerçek şemaya u
 | 3 | Ana sayfa (vizyon + koleksiyon kartları 001–003 + "How PikaMd works" paneli), Explore şeritleri, My Collection (mock), kart önizlemesi (OPEN), **Connect your agent** (`/connect`, demo: kod üretimi + ajan prompt'u + 4 ajan için elle kurulum, DESIGN §3.3) | ✅ · sırada: yönerge detay sayfası `/g/[slug]` |
 | 3b | Kartlarda beğeni (♥, veride `stars`) ve bağış (★ Tip) butonları — beğeni mock (localStorage), bağış "coming soon" notu (K21, Faz 6) | ✅ UI |
 | 4 | Yayınlama ekranları (`/new` editör, temizlik adımı §9.1.1, tüm işlem durumları) — mock işlem | ✅ UI (demo yayın; tarayıcı `lib/scan.ts` + 15 test) |
-| 5 | Cüzdan bağlantısı (wagmi + RainbowKit, Arc testnet) | ⏳ |
+| 5 | Cüzdan bağlantısı + SIWE oturumu + beğeni/PikaGold (K22, §9.3) | ✅ Arc testnet, yerel depo; WalletConnect ve Supabase sonra |
 | 6 | Okuma backend'i: Supabase + IPFS + `/raw` (mock kalkar) | ⏳ |
 | 7 | Kontrat + yayınlama (Arc Studio yazar/denetler, biz deploy ederiz — K17) | ⏳ |
 | 8 | MCP + koleksiyon ⭐ | 🟡 yerel önizleme çalışıyor (mock veri, tek demo kullanıcı, §8.0); gerçek key/koleksiyon backend'i Adım 6 sonrası |
@@ -509,7 +520,7 @@ Faz 0 notu: Arc ağ bilgileri doğrulandı (ARC.md), Arc Studio ile testnet'e de
 **Doğrulanacak (resmi kaynaktan, tahmin etme):**
 - [x] Arc mainnet canlı mı? Chain ID, RPC URL, explorer URL → ✅ ARC.md §1–2 (mainnet 5042, testnet 5042002)
 - [x] Native USDC gas ondalığı → ✅ native 18, ERC-20 6 (ARC.md §3)
-- [x] wagmi/viem Arc'ı hazır içeriyor mu → ✅ `arc`, `arcTestnet` viem'de var (ARC.md §6.1); RainbowKit ikonu kurulumda kontrol edilecek
+- [x] wagmi/viem Arc'ı hazır içeriyor mu → ✅ `arc`, `arcTestnet` viem'de var (ARC.md §6.1); RainbowKit kullanılmıyor (§9.3)
 - [ ] Safe (multisig) Arc'ta var mı → ⚠ resmi listede yok (ARC.md §9), mainnet öncesi tekrar bak
 - [x] Gas sponsorluğu → Gas Station listede yok; ERC-4337 paymaster sağlayıcıları var (ARC.md §9)
 - [x] MCP SDK + Next.js handler'ın güncel API'si → ✅ SDK v2 `@modelcontextprotocol/server` 2.3.1, `createMcpHandler` Next route handler'da doğrudan (`handler.fetch(request)`), §8.0

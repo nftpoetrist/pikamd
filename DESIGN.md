@@ -1,6 +1,6 @@
 # PikaMd — Tasarım Sistemi ve Güncel Durum
 
-> Son güncelleme: 2026-10-10. Arayüz geliştirmesi sürüyor (yol haritası: ARCHITECTURE.md §15).
+> Son güncelleme: 2026-10-12. Arayüz geliştirmesi sürüyor (yol haritası: ARCHITECTURE.md §15).
 > Bu dosya **piksel tasarım dilinin kurallarını** ve **sitenin şu anki halini** tutar.
 > Yeni bir UI işi yaparken önce burayı oku; buradaki kararlar kullanıcıyla tek tek onaylandı.
 
@@ -62,7 +62,10 @@
 | `CollectButton.tsx` | Koleksiyon düğmesi (`aria-pressed`): kartta kısa etiket **"+ Add"** → altın **"✓ Added"**, büyük önizlemede (`long`) **"+ Add to collection"** → **"✓ In collection"**; tekrar basınca çıkar. Durum `web/lib/collection/store.ts`'te (**mock:** tarayıcının localStorage'ı, anahtar `pikamd:collection`, en yeni başta; `useSyncExternalStore` ile tüm kartlar ve sekmeler senkron). Adım 8'de gerçek koleksiyon API'sine (Supabase + SIWE) geçer; sadece bu dosya değişir. |
 | `CollectionPanel.tsx` | My Collection rafı: başlık satırı (**"Saved guidelines"** + altın sayaç rozeti, sağda "Connect your agent" butonu, altında kesik altın çizgi) + kaydedilen kartlar. Kartlar ortalanmış satırlarda (flex-wrap, yarım kalan son satır da ortada → simetrik), aralık 22px (iki çerçeve + 16px). Panel genişliği tam 4 kart + eşit iç boşluk (28px). Boşken: "Your library is empty." + "Explore guidelines" butonu. Hidrasyondan önce içerik boş (sunucu localStorage'ı göremez). |
 | `MdLanes.tsx` | Explore'daki sonsuz akan şeritler. Kartlar iki kopya render edilir, `-50%` kaydırılır (kesintisiz döngü). Saf CSS animasyon, hover'da durur. İkinci kopya `aria-hidden` + butonları `tabIndex=-1`. **`inert` kullanma:** fare etkileşimini de kapatır, o kartlarda hover ışığı yanmaz ve butona basılamaz (2026-10-09'da yaşandı). |
-| `LikeButton.tsx` / `TipButton.tsx` | ♥ beğeni (kalp + sayı, mock `pikamd:likes`) ve ★ Tip (bağış K21 henüz yok → "Coming soon" balonu). Ayrıntı `MdCard` satırında. |
+| `LikeButton.tsx` / `TipButton.tsx` | ♥ beğeni (K22, **gerçek**: sunucu + cüzdan oturumu) ve ★ Tip (bağış K21 henüz yok → "Coming soon" balonu). Kalp: bağlı değilken cüzdan seçicisini açar, bağlanınca beğeni kendiliğinden devam eder; ilk beğenide tek ücretsiz imza; beğenilince altın ve kilitli, tekrar basınca "You liked this. Likes are permanent" balonu (`md-note-start`: kalp kartın solunda olduğu için balon sağa açılır, panelin içinde kalır). Sayı önce ekranda artar, sonra sunucunun sayısını alır. Hata/iptal mesajları aynı balonda. |
+| `wallet/WalletButton.tsx` | Navbar'daki cüzdan: bağlı değilken "Connect Wallet" (ghost buton), bağlıyken **PikaGold sikkesi + sayı + kısa adres** (`0x3C44…93BC`). Basınca opak panel: "Connected wallet", adres + Copy address, **N PikaGold** (Jersey, altın) + "You earn 1 PikaGold for every like on guidelines you share", Disconnect. Esc / dışarı tıklama kapatır. Mobil menüde panel akış içinde açılır. Hidrasyondan önce hep "Connect Wallet" (sunucu cüzdanı göremez). |
+| `wallet/WalletModal.tsx` | Cüzdan seçici: native `<dialog>` (odak içeride, Esc kapatır), karartılmış zemine tıklama kapatır. Önizlemeyle aynı opak panel + altın çerçeve, başlık "Connect a wallet", EIP-6963 cüzdanları ikon + adla; beklerken "Check your wallet…", 30 sn sonra "Your wallet didn't answer…". Cüzdan yoksa MetaMask / Rabby linkleri. Altta dürüstlük notu: bağlanmak ücretsiz ve sadece adresi paylaşır, ilk beğeni tek ücretsiz imza ister. |
+| `wallet/WalletProvider.tsx` | wagmi + TanStack Query sağlayıcısı (layout'ta), tek cüzdan seçici ve oturum senkronu (bağlantı kesilince / hesap değişince oturumu kapatır). |
 | `TradingCard.tsx` | **Koleksiyon kartı** (Pokémon TCG düzeni, logo/isim kullanılmadan): etiket · isim · büyük değer · enerji ikonu → resim penceresi → altın şerit → koyu metin panelinde 2 "hamle" → kart numarası. Tema sınıfıyla renklenir. `footer` ve `flavor` opsiyonel. |
 | `VisionCards.tsx` | Ana sayfadaki kart dizisi (aşağıda §3.1). |
 | `VisionPanel.tsx` | Ana sayfada 3 kartın hemen altındaki büyük piksel panel **"How PikaMd works"** (§3.2a). |
@@ -154,7 +157,7 @@
 - Tailwind **PostCSS** üzerinden (`postcss.config.mjs`, `@tailwindcss/postcss`). Eski `@tailwindcss/turbopack` loader'ı CSS değişikliklerini izlemeyi bırakıyordu → kaldırıldı. `turbopackFileSystemCacheForDev: false`.
 - Sunucuyu yeniden başlatırken **sadece** 3001'i dinleyen ve cwd'si `PikaMd/web` olan süreci durdur. `pkill -f "next dev"` kullanma (kullanıcının diğer uygulamasını kapattı).
 - Bu Next sürümü eğitim verisinden farklı: kod yazmadan önce `web/node_modules/next/dist/docs/` içindeki ilgili rehbere bak (`web/AGENTS.md`). Örn. `next/image`'da `priority` yerine `preload`.
-- Tarayıcı testleri: `cd web && npm test` (`node --experimental-strip-types --test lib/scan.test.mjs`).
+- Testler: `cd web && npm test` (45 birim testi) · dev sunucu açıkken `npm run mcp:smoke` ve `npm run auth:smoke`. Cüzdan akışı headless Chrome'da EIP-6963 test cüzdanı enjekte edilerek denendi (imzayı CDP binding'iyle Node atar).
 - Doğrulama alışkanlığı: CSS değişikliği sonrası sunulan CSS chunk'ında yeni kuralı ara; görseli headless Chrome ile kontrol et (pencere en az ~500px genişlik açar; mobil için CDP `Emulation.setDeviceMetricsOverride`).
 
 ---
@@ -164,7 +167,7 @@
 - **Telif / marka:** Pikachu (logo, PikaStake arka planı, X görselleri) ve AI şirket logoları (X kapağı) yerelde sorun değil; **site herkese açılmadan önce** değerlendirilmeli. Arc'ın yayımlanmış marka kılavuzu bulunamadı; logoyu pikselleştirdik → yayın öncesi Arc/Circle kuralına bak.
 - **Dokümanların dili:** ARCHITECTURE.md / ARC.md / CLAUDE.md / DESIGN.md şu an Türkçe (kullanıcı okuyor). İngilizceye çevrilsin mi sorusu cevap bekliyor. `design/logo/*.mjs` yorumları Türkçe → K18 gereği İngilizceye çevrilecek.
 - **Bağış (K21) henüz yok:** yönerge kartlarındaki ★ Tip butonu "Coming soon" diyor; ana sayfadaki 003 kartı ve Publish başlığındaki "Earn tips" için de yayın öncesi ya özellik hazır olmalı ya da "coming soon" denmeli.
-- **PikaGold (K22, 2026-10-12):** yönergelerine verilen her beğeni yazara 1 PikaGold (zincir dışı itibar puanı). Beğeni sadece cüzdan + SIWE oturumuyla, cüzdan başına yönerge başına 1, kalıcı, yazar kendine de verebilir. Kartlardaki ♥ şu an hâlâ mock (localStorage, geri alınabiliyor) → cüzdan adımında K22'ye göre değişecek.
+- **PikaGold (K22, 2026-10-12):** yönergelerine verilen her beğeni yazara 1 PikaGold (zincir dışı itibar puanı). Beğeni sadece cüzdan + SIWE oturumuyla, cüzdan başına yönerge başına 1, kalıcı, yazar kendine de verebilir. Kartlardaki ♥ artık K22'ye göre çalışıyor (yerel depo, ARCHITECTURE §9.3). PikaGold'un ne işe yarayacağı (rozet, sıralama…) henüz açık.
 - **Lisans:** yazar seçmiyor; tek lisans şimdilik CC BY 4.0 (öneri, onay bekliyor; CC0 tek satırlık değişiklik).
-- Sıradaki öneriler: yönerge detay sayfası `/g/[slug]` (en önemli sayfa); cüzdan bağlantısı (wagmi + RainbowKit, Arc testnet); MCP'nin yerel önizlemesi çalışıyor (ARCHITECTURE §8.0), gerçek backend gelince `/connect`'e canlı bağlantı durumu ("✓ connected · last used…") eklenir.
+- Sıradaki öneriler: yönerge detay sayfası `/g/[slug]` (en önemli sayfa); MCP'nin yerel önizlemesi çalışıyor (ARCHITECTURE §8.0), gerçek backend gelince `/connect`'e canlı bağlantı durumu ("✓ connected · last used…") eklenir.
 - **Connect sayfası açık noktalar:** domain yok (adres şimdilik sayfanın origin'i); VS Code / Cursor tek tık kurulum linkleri resmi dokümanda tam doğrulanamadı → eklenmedi; claude.ai / Desktop / mobil OAuth fazında gelir (ARCHITECTURE §8.1).

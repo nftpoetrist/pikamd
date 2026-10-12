@@ -29,3 +29,12 @@ export function PixelHeart({ size = 14 }: { size?: number }) {
     </svg>
   );
 }
+
+// 7×7 pixel coin with a slot: PikaGold (K22), 1 per like on your guidelines.
+export function PixelGold({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 7 7" fill="currentColor" shapeRendering="crispEdges" aria-hidden="true">
+      <path d="M2 0h3v1H2zM1 1h5v1H1zM0 2h3v3H0zM4 2h3v3H4zM1 5h5v1H1zM2 6h3v1H2z" />
+    </svg>
+  );
+}

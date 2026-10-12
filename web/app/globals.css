@@ -3213,6 +3213,254 @@ body {
   .vision-term-cursor { animation: none; }
   .vision-step { transition: none; }
 }
+
+/* ══════════════════════════════════════════════
+   WALLET (K22) — picker dialog, navbar chip + menu, like note
+══════════════════════════════════════════════ */
+/* Like note opens to the right: the heart sits near the card's left edge */
+.md-note-start {
+  left: -6px;
+  transform: none;
+}
+.md-note-start::after {
+  left: 28px;
+}
+
+/* Native <dialog>: the box itself is the full-screen dim layer, the panel sits centered in it */
+.wallet-dialog {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 16px;
+  border: 0;
+  background: rgba(4, 2, 0, 0.7);
+  color: var(--t0);
+}
+.wallet-dialog[open] {
+  display: grid;
+  place-items: center;
+}
+.wallet-dialog::backdrop {
+  background: transparent;
+}
+
+.wallet-panel {
+  width: min(420px, 100%);
+  max-height: calc(100svh - 32px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px 22px 20px;
+  /* Opaque with a gold frame, like the card preview */
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 203, 5, 0.03) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, #170F00 0%, #070400 100%);
+  box-shadow:
+    0 -3px 0 0 var(--g1),
+    0 3px 0 0 var(--g1),
+    -3px 0 0 0 var(--g1),
+    3px 0 0 0 var(--g1),
+    inset 0 3px 0 0 rgba(255, 215, 64, 0.14),
+    inset 0 -3px 0 0 rgba(0, 0, 0, 0.55),
+    0 0 40px rgba(255, 203, 5, 0.22),
+    0 24px 48px rgba(0, 0, 0, 0.7);
+}
+
+.wallet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 3px dashed rgba(255, 203, 5, 0.22);
+}
+.wallet-head h2 {
+  font-family: var(--font-jersey);
+  font-weight: 400;
+  font-size: 32px;
+  line-height: 1;
+  color: var(--t0);
+  text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.7);
+}
+
+.wallet-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px; /* two 2px frames + 10px clear space */
+  padding: 2px;
+}
+
+.wallet-option {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  font-family: var(--font-vt323);
+  font-size: 22px;
+  line-height: 1;
+  text-align: left;
+  color: var(--t0);
+  background: rgba(255, 203, 5, 0.06);
+  cursor: pointer;
+  box-shadow:
+    0 -2px 0 0 rgba(255, 203, 5, 0.35),
+    0 2px 0 0 rgba(255, 203, 5, 0.35),
+    -2px 0 0 0 rgba(255, 203, 5, 0.35),
+    2px 0 0 0 rgba(255, 203, 5, 0.35);
+  transition: background 0.12s steps(2);
+}
+.wallet-option:hover:not(:disabled) {
+  background: rgba(255, 203, 5, 0.16);
+  box-shadow:
+    0 -2px 0 0 var(--y1),
+    0 2px 0 0 var(--y1),
+    -2px 0 0 0 var(--y1),
+    2px 0 0 0 var(--y1);
+}
+.wallet-option:disabled {
+  cursor: wait;
+  opacity: 0.75;
+}
+.wallet-option:focus-visible {
+  outline: 3px solid var(--y1);
+  outline-offset: 4px;
+}
+.wallet-option img,
+.wallet-option-blank {
+  flex: none;
+  width: 28px;
+  height: 28px;
+}
+.wallet-option-blank {
+  background: rgba(255, 203, 5, 0.25);
+}
+.wallet-option-wait {
+  margin-left: auto;
+  font-size: 17px;
+  color: var(--y1);
+}
+
+.wallet-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--font-vt323);
+  font-size: 20px;
+  line-height: 1.2;
+  color: var(--t1);
+}
+.wallet-empty p:first-child {
+  font-size: 22px;
+  color: var(--y1);
+}
+.wallet-empty a,
+.wallet-note a {
+  color: var(--y1);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.wallet-error {
+  font-family: var(--font-vt323);
+  font-size: 19px;
+  line-height: 1.2;
+  color: var(--red);
+}
+
+.wallet-note {
+  font-family: var(--font-vt323);
+  font-size: 17px;
+  line-height: 1.2;
+  color: var(--t2);
+}
+
+/* Navbar chip: PikaGold + short address, same skeleton as the ghost buttons */
+.wallet-wrap {
+  position: relative;
+}
+.wallet-chip {
+  gap: 10px;
+}
+.wallet-gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--y1);
+}
+.wallet-chip > span:last-child {
+  color: var(--t1);
+}
+
+.wallet-menu {
+  position: absolute;
+  top: calc(100% + 18px);
+  right: 0;
+  z-index: 70;
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px 16px;
+  font-family: var(--font-vt323);
+  /* Opaque: the hero text behind must not show through */
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 203, 5, 0.03) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, #170F00 0%, #070400 100%);
+}
+.wallet-menu-label {
+  font-size: 16px;
+  color: var(--t2);
+}
+.wallet-menu-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.wallet-menu-row code {
+  font-family: var(--font-vt323);
+  font-size: 21px;
+  color: var(--t0);
+}
+.wallet-menu-gold {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 3px dashed rgba(255, 203, 5, 0.18);
+  font-family: var(--font-jersey);
+  font-size: 24px;
+  line-height: 1;
+  color: var(--y1);
+  text-shadow: 2px 2px 0 var(--g4);
+}
+.wallet-menu-note {
+  font-size: 16px;
+  line-height: 1.2;
+  color: var(--t1);
+}
+.wallet-disconnect {
+  align-self: flex-start;
+  margin-top: 6px;
+}
+
+/* In the mobile menu the wallet sits in the column: the menu opens in the flow */
+.nav-mobile .wallet-wrap {
+  display: flex;
+  flex-direction: column;
+}
+.nav-mobile .wallet-menu {
+  position: static;
+  width: auto;
+  margin-top: 16px;
+}
 }
 
 /* ══════════════════════════════════════════════

@@ -3,6 +3,7 @@ import Image from "next/image";
 import { Geist, Geist_Mono, Jersey_10, VT323 } from "next/font/google";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import WalletProvider from "@/components/wallet/WalletProvider";
 import bgImage from "@/public/bg/background1.png";
 import "./globals.css";
 
@@ -50,9 +51,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <Image src={bgImage} alt="" fill preload sizes="100vw" placeholder="blur" />
           </div>
         </div>
-        <Navbar />
-        <div className="relative z-10 flex flex-1 flex-col pt-24">{children}</div>
-        <Footer />
+        <WalletProvider>
+          <Navbar />
+          <div className="relative z-10 flex flex-1 flex-col pt-24">{children}</div>
+          <Footer />
+        </WalletProvider>
       </body>
     </html>
   );

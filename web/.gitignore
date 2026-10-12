@@ -42,3 +42,6 @@ next-env.d.ts
 
 # local MCP preview store (lib/mcp/mock-store.ts)
 /.data/
+
+# env template is safe to commit
+!.env.example

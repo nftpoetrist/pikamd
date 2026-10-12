@@ -7,17 +7,21 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --experimental-strip-types --no-warnings --test lib/scan.test.mjs lib/mcp/connect.test.mjs lib/mcp/tools.test.mjs",
-    "mcp:smoke": "node scripts/mcp-smoke.mjs"
+    "test": "node --experimental-strip-types --no-warnings --test lib/scan.test.mjs lib/mcp/connect.test.mjs lib/mcp/tools.test.mjs lib/auth/auth.test.mjs lib/likes/rules.test.mjs",
+    "mcp:smoke": "node scripts/mcp-smoke.mjs",
+    "auth:smoke": "node scripts/auth-smoke.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/server": "^2.3.1",
+    "@tanstack/react-query": "^5.104.2",
     "next": "16.4.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-markdown": "^10.1.0",
     "rehype-sanitize": "^6.0.0",
     "remark-gfm": "^4.0.1",
+    "viem": "^2.57.4",
+    "wagmi": "^3.7.7",
     "zod": "^4.6.6"
   },
   "devDependencies": {

@@ -174,11 +174,12 @@ export const wagmiConfig = createConfig({
 })
 ```
 
-⚠ **Not:** viem'deki `arcTestnet` tanımı hâlâ eski `rpc.testnet.arc.network` / `testnet.arcscan.app` adreslerini kullanıyor.
+⚠ **Not:** viem'deki `arcTestnet` tanımı hâlâ eski `rpc.testnet.arc.network` / `testnet.arcscan.app` adreslerini kullanıyor (viem 2.57.4'te tekrar kontrol edildi, 2026-10-12; PikaMd `lib/chain.ts`'te override ediyor).
 Eski adresler çalışıyor ama resmi yeni adres `rpc.testnet.arc.io`. Testnet'te `http('https://rpc.testnet.arc.io')` ile override et.
 
 **Cüzdan kütüphaneleri ile ilgili notlar (docs'tan):**
-- **RainbowKit / wagmi:** viem zincirlerini kullandığı için `arc` doğrudan verilebilir. ⚠ DOĞRULA: RainbowKit'in Arc ikonu yoksa `iconUrl` eklenir.
+- **RainbowKit / wagmi:** viem zincirlerini kullandığı için `arc` doğrudan verilebilir. **2026-10-12:** RainbowKit'in son sürümü (2.2.11) sadece wagmi 2'yi destekliyor; PikaMd wagmi 3 + kendi seçicisini kullanıyor (ARCHITECTURE §9.3). viem'in `arc`/`arcTestnet` tanımlarında zincir ikonu yok.
+- **SIWE (viem 2.57.4, kaynak okundu):** `generateSiweNonce` `Math.random` kullanıyor (kriptografik değil) → nonce'u `crypto.getRandomValues` ile üret. `verifySiweMessage` chainId/uri/version/issuedAt'i kontrol etmiyor → kendin kontrol et. Akıllı cüzdan imzaları (ERC-6492/1271) deployless `eth_call` ile doğrulanır; Arc Studio Arc'ta çalıştığını söyledi (doğrulanmamış, gerçek akıllı cüzdanla henüz denenmedi).
 - **ConnectKit:** `chains` içinde Ethereum `mainnet` yoksa CORS'u engelleyen bir ENS endpoint'ine düşer. `mainnet`'i CORS-güvenli bir transport ile ekle.
 - **Reown AppKit:** `defineChain`'i `viem`'den değil `@reown/appkit/networks`'ten import et (`caipNetworkId` ve `chainNamespace` gerekiyor).
 - **WalletConnect:** Arc (en azından testnet) WalletConnect zincir kayıtlarında yok. İlk bağlantıda kullanıcıya `wallet_addEthereumChain` gösterilir.

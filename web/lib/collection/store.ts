@@ -1,9 +1,10 @@
 import { useSyncExternalStore } from "react";
 import { syncCollection } from "@/lib/mcp/mock-sync";
 
-// Mock per-viewer stores (roadmap step 3): slugs live in this browser's localStorage so
-// collect and like can be designed end to end. Replaced by the real API in step 8
-// (collections + stars tables, Supabase + SIWE session, ARCHITECTURE §10).
+// Mock per-viewer collection (roadmap step 3): slugs live in this browser's localStorage so
+// collecting can be designed end to end. Replaced by the real API in step 8 (collections
+// table, Supabase + SIWE session, ARCHITECTURE §10). Likes moved to the server (K22,
+// lib/likes/client.ts).
 const EMPTY: readonly string[] = [];
 
 function createSlugStore(key: string, onChange?: (slugs: readonly string[]) => void) {
@@ -71,10 +72,6 @@ function createSlugStore(key: string, onChange?: (slugs: readonly string[]) => v
 
 // The collection is mirrored to the local MCP preview so my_collection can see it (lib/mcp/mock-sync.ts).
 const collection = createSlugStore("pikamd:collection", syncCollection);
-const likes = createSlugStore("pikamd:likes");
 
 export const toggleCollected = collection.toggle;
 export const useCollection = () => collection.use();
-
-export const toggleLiked = likes.toggle;
-export const useLikes = () => likes.use();

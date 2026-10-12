@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import WalletButton from "@/components/wallet/WalletButton";
 
 const LINKS = [
   { href: "/explore", label: "Explore" },
@@ -59,11 +60,7 @@ export default function Navbar() {
           <Link href="/new" className="btn-gold hidden sm:inline-flex">
             <span aria-hidden="true">+</span> Publish
           </Link>
-          {/* Wallet connection lands in roadmap step 5 (wagmi + RainbowKit) */}
-          <button type="button" className="btn-ghost hidden sm:inline-flex">
-            <span className="nav-dot" />
-            Connect Wallet
-          </button>
+          <WalletButton className="hidden sm:inline-flex" />
           <button
             type="button"
             className="nav-menu-btn xl:hidden"
@@ -88,10 +85,7 @@ export default function Navbar() {
           <Link href="/new" className="btn-gold mt-2 justify-center sm:hidden" onClick={() => setOpen(false)}>
             <span aria-hidden="true">+</span> Publish
           </Link>
-          <button type="button" className="btn-ghost justify-center sm:hidden">
-            <span className="nav-dot" />
-            Connect Wallet
-          </button>
+          <WalletButton className="justify-center sm:hidden" />
         </div>
       )}
     </nav>

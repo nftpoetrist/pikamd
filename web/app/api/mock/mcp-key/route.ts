@@ -1,4 +1,5 @@
-import { cleanSlugs, mockGuard, readJson } from "@/lib/mcp/mock-api";
+import { cleanSlugs, mockGuard } from "@/lib/mcp/mock-api";
+import { readJson } from "@/lib/server/guard";
 import { clearKeyHash, setCollection, setKeyHash } from "@/lib/mcp/mock-store";
 
 // Local preview (Connect page): register the SHA-256 hash of a new key, never the key itself.
