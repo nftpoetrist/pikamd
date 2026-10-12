@@ -10,7 +10,7 @@ import {
   formatSearchResults,
   missingKeyMessage,
   parseGuidelineRef,
-  searchGuidelines,
+  searchForAgent,
 } from "@/lib/mcp/tools";
 
 // One fresh server per HTTP request (stateless, MCP SDK v2 createMcpHandler).
@@ -25,15 +25,22 @@ export function buildMcpServer({ collection, connectUrl }: { collection: string[
     {
       title: "Search PikaMd guidelines",
       description:
-        "Search PikaMd's public library of agent guidelines (rules, skills, prompts, subagents, guides) by topic, language or tool. Returns slugs, titles, authors and short summaries. Read one in full with get_guideline.",
+        "Search PikaMd's public library of agent guidelines (rules, skills, prompts, subagents, guides) by topic, language or tool, including the text inside the files. Returns slugs, titles, authors, short summaries and the matching lines. Read one in full with get_guideline.",
       inputSchema: z.object({
-        query: z.string().trim().min(1).max(200).describe("Words to look for, e.g. 'react performance' or 'solidity security'"),
+        query: z
+          .string()
+          .trim()
+          .min(1)
+          .max(200)
+          .describe(
+            'Words to look for, e.g. \'react performance\'. Every word must match. Also: "exact phrase", -word to exclude, kind:skill (rules, skill, prompt, agent, guide), tag:react, author:@handle',
+          ),
         tags: z.array(z.string().trim().min(1).max(40)).max(5).optional().describe("Only return guidelines that have all of these tags"),
         limit: z.number().int().min(1).max(SEARCH_LIMIT_MAX).optional().describe(`How many results to return (default 10, max ${SEARCH_LIMIT_MAX})`),
       }),
       annotations: readOnly,
     },
-    async ({ query, tags, limit }) => text(formatSearchResults(query, searchGuidelines(await listGuidelines(), query, { tags, limit }))),
+    async ({ query, tags, limit }) => text(formatSearchResults(query, searchForAgent(await listGuidelines(), query, { tags, limit }))),
   );
 
   server.registerTool(

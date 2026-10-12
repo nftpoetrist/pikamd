@@ -48,6 +48,9 @@ try {
         const search = await client.callTool({ name: "search_guidelines", arguments: { query: "solidity" } });
         check(!search.isError && text(search).includes("secure-solidity@v3"), `${label} search_guidelines`);
 
+        const inFile = await client.callTool({ name: "search_guidelines", arguments: { query: "reentrancy kind:rules" } });
+        check(!inFile.isError && /line \d+: .*reentrancy/i.test(text(inFile)), `${label} search finds text inside files, with line numbers`);
+
         const read = await client.callTool({ name: "get_guideline", arguments: { slug: "secure-solidity@v3" } });
         check(!read.isError && text(read).startsWith("[Community guideline") && text(read).includes("# Secure Solidity"), `${label} get_guideline`);
 

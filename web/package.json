@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --experimental-strip-types --no-warnings --test lib/scan.test.mjs lib/mcp/connect.test.mjs lib/mcp/tools.test.mjs lib/auth/auth.test.mjs lib/likes/rules.test.mjs",
+    "test": "node --experimental-strip-types --no-warnings --test lib/scan.test.mjs lib/mcp/connect.test.mjs lib/mcp/tools.test.mjs lib/auth/auth.test.mjs lib/likes/rules.test.mjs lib/search/search.test.mjs",
     "mcp:smoke": "node scripts/mcp-smoke.mjs",
     "auth:smoke": "node scripts/auth-smoke.mjs"
   },

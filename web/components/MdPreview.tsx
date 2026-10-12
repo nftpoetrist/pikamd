@@ -28,12 +28,19 @@ function fromCard(panel: HTMLElement, card: HTMLElement) {
 const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // Markdown source view: syntax markers (#, -, 1., ---, >) in gold, headings brighter.
-function SourceLine({ line }: { line: string }) {
+// `hit`: the line a search result pointed at, marked and scrolled into view.
+function SourceLine({ line, n, hit }: { line: string; n: number; hit: boolean }) {
   const match = line.match(/^(#{1,6} |- |\d+\. |> |---$)(.*)$/);
-  if (!match) return <span className="mdp-line">{line || " "}</span>;
+  const cls = (base: string) => (hit ? `${base} mdp-hit` : base);
+  if (!match)
+    return (
+      <span className={cls("mdp-line")} data-line={n}>
+        {line || " "}
+      </span>
+    );
   const [, marker, rest] = match;
   return (
-    <span className={marker.startsWith("#") ? "mdp-line mdp-heading" : "mdp-line"}>
+    <span className={cls(marker.startsWith("#") ? "mdp-line mdp-heading" : "mdp-line")} data-line={n}>
       <span className="mdp-marker">{marker}</span>
       {rest}
     </span>
@@ -42,7 +49,10 @@ function SourceLine({ line }: { line: string }) {
 
 type Props = {
   guideline: Guideline;
+  /** Element the panel grows out of and shrinks back into: a card, or a search result row. */
   card: RefObject<HTMLElement | null>;
+  /** 1-based line to scroll to and mark (opened from a search result). */
+  focusLine?: number;
   closing: boolean;
   onClose: () => void;
   onClosed: () => void;
@@ -50,8 +60,9 @@ type Props = {
 
 // Full-content view of a card: grows out of the card into the center of the screen,
 // and shrinks back into it on close. Rendered in a portal above the page.
-export default function MdPreview({ guideline, card, closing, onClose, onClosed }: Props) {
+export default function MdPreview({ guideline, card, focusLine, closing, onClose, onClosed }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const sourceRef = useRef<HTMLPreElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const { slug, title, description, kind, tags, author, latestVersion, stars, license, content } = guideline;
@@ -63,6 +74,13 @@ export default function MdPreview({ guideline, card, closing, onClose, onClosed 
     const root = document.documentElement;
     root.setAttribute("data-md-preview", "");
     closeRef.current?.focus({ preventScroll: true });
+    // Scroll the file to the searched line before the grow animation (measures the panel at rest)
+    const source = sourceRef.current;
+    const target = focusLine ? source?.querySelector<HTMLElement>(`[data-line="${focusLine}"]`) : null;
+    if (source && target) {
+      const offset = target.getBoundingClientRect().top - source.getBoundingClientRect().top;
+      source.scrollTop += offset - source.clientHeight / 2 + target.offsetHeight / 2;
+    }
     // Cancelled on cleanup: a re-run must measure the panel at rest, not mid-animation.
     const anims: Animation[] = [];
     if (panel && card.current && !reducedMotion()) {
@@ -74,6 +92,8 @@ export default function MdPreview({ guideline, card, closing, onClose, onClosed 
       anims.forEach((a) => a.cancel());
       root.removeAttribute("data-md-preview");
     };
+    // Opens once per mount; focusLine is read at that moment
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [card]);
 
   // Close: shrink back into the card, then unmount.
@@ -117,9 +137,9 @@ export default function MdPreview({ guideline, card, closing, onClose, onClosed 
         <h3 className="mdp-title">{title}</h3>
         <p className="mdp-summary">{description}</p>
 
-        <pre className="mdp-source">
+        <pre ref={sourceRef} className="mdp-source" tabIndex={0} aria-label={`${slug}.md`}>
           {content.split("\n").map((line, i) => (
-            <SourceLine key={i} line={line} />
+            <SourceLine key={i} line={line} n={i + 1} hit={focusLine === i + 1} />
           ))}
         </pre>
 

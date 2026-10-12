@@ -8,7 +8,7 @@ import {
   formatSearchResults,
   missingKeyMessage,
   parseGuidelineRef,
-  searchGuidelines,
+  searchForAgent,
 } from "./tools.ts";
 import { hashKey } from "./connect.ts";
 import { MOCK_GUIDELINES } from "../data/mock-guidelines.ts";
@@ -33,19 +33,24 @@ test("bad refs are explained, never guessed", () => {
 });
 
 test("search needs every word, ranks title hits first and honours tags and limits", () => {
-  const react = searchGuidelines(MOCK_GUIDELINES, "react");
-  assert.equal(react[0].slug, "react-performance");
-  assert.ok(react.every((g) => [g.title, g.description, g.content, ...g.tags].join(" ").toLowerCase().includes("react")));
-
-  assert.equal(searchGuidelines(MOCK_GUIDELINES, "react solidity").length, 0);
-  assert.deepEqual(searchGuidelines(MOCK_GUIDELINES, "react", { tags: ["nextjs"] }).map((g) => g.slug), ["nextjs-app-router"]);
-  assert.equal(searchGuidelines(MOCK_GUIDELINES, "a", { limit: 2 }).length, 2);
-  assert.ok(searchGuidelines(MOCK_GUIDELINES, "e", { limit: 999 }).length <= SEARCH_LIMIT_MAX);
+  const slugs = (q, o) => searchForAgent(MOCK_GUIDELINES, q, o).hits.map((h) => h.guideline.slug);
+  assert.equal(slugs("react")[0], "react-performance");
+  assert.deepEqual(slugs("react solidity"), []);
+  assert.deepEqual(slugs("react", { tags: ["nextjs"] }), ["nextjs-app-router"]);
+  assert.deepEqual(slugs("react", { tags: ["#NextJS"] }), ["nextjs-app-router"]);
+  assert.equal(slugs("kind:rules", { limit: 2 }).length, 2);
+  assert.ok(slugs("kind:rules", { limit: 999 }).length <= SEARCH_LIMIT_MAX);
 });
 
-test("search output names the next step and says when nothing matched", () => {
-  assert.match(formatSearchResults("react", searchGuidelines(MOCK_GUIDELINES, "react")), /get_guideline/);
-  assert.match(formatSearchResults("zzz", []), /No guidelines match "zzz"/);
+test("search output names the next step, shows matching lines and says when nothing matched", () => {
+  const out = formatSearchResults("reentrancy", searchForAgent(MOCK_GUIDELINES, "reentrancy"));
+  assert.match(out, /get_guideline/);
+  assert.match(out, /secure-solidity@v3/);
+  assert.match(out, /line \d+: .*reentrancy/i);
+  assert.match(formatSearchResults("zzz", searchForAgent(MOCK_GUIDELINES, "zzz")), /No guidelines match "zzz"/);
+  assert.match(formatSearchResults("kind:banana", searchForAgent(MOCK_GUIDELINES, "kind:banana")), /Unknown type "banana"/);
+  assert.match(formatSearchResults("kind:rules", searchForAgent(MOCK_GUIDELINES, "kind:rules", { limit: 2 })), /showing the top 2/);
+  assert.match(formatSearchResults("solidty", searchForAgent(MOCK_GUIDELINES, "solidty")), /close spelling match/);
 });
 
 test("a guideline is labelled as data and wrapped in a tag its text can't close", () => {
