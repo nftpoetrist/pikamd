@@ -2832,7 +2832,7 @@ body {
   --px-gap: 10px;
   --px-h: 26px;
   --px-base: 3px;
-  /* Arc logo colors, same as the Built on Arc card */
+  /* Arc logo colors, same as the Build on Arc card */
   --arc-face: #E6EAF5;
   --arc-light: #FFFFFF;
   --arc-shade: #9FB3E6;
@@ -2877,7 +2877,7 @@ body {
   margin: 0 auto;
   /* 20px = the navbar's side inset; safe area keeps it clear of the iPhone home bar */
   padding: 7px calc(20px + 22px) calc(7px + env(safe-area-inset-bottom));
-  /* 1fr · auto · 1fr: Build on Arc is always dead center */
+  /* 1fr · auto · 1fr: Built on Arc is always dead center */
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;

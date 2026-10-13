@@ -5,7 +5,7 @@ import TradingCard from "@/components/TradingCard";
 
 // "Why PikaMd" — platform features as a row of compact pixel trading cards.
 // 001: zero platform fees (honest: PikaMd takes no cut, publishing still pays Arc gas).
-// 002: built on Arc — facts from ARC.md (~0.5s blocks, deterministic finality, USDC gas).
+// 002: build on Arc — facts from ARC.md (~0.5s blocks, deterministic finality, USDC gas).
 // 003: tips — USDC goes wallet to wallet to the author, PikaMd takes 0% (ARCHITECTURE.md K21).
 export default function VisionCards() {
   return (
@@ -31,7 +31,7 @@ export default function VisionCards() {
       <TradingCard
         theme="arc"
         stage="Native"
-        name="Built on Arc"
+        name="Build on Arc"
         stat="0.5s"
         statLabel="Block"
         art={

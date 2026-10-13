@@ -2,7 +2,7 @@ import Link from "next/link";
 import PixelArcLogo from "@/components/PixelArcLogo";
 
 // Slim full-width bar flush to the bottom of every page (dashed gold line on the top edge, mirroring the navbar).
-// Left: wordmark · center: Build on Arc · right: PikaMd on X, Arc on X, Arc docs (navbar button skeleton).
+// Left: wordmark · center: Built on Arc · right: PikaMd on X, Arc on X, Arc docs (navbar button skeleton).
 // Arc links verified on arc.io (2026-10-10): x.com/arc, docs.arc.io.
 // PikaMd's X account is @PikaStake for now; the button shows "@pikamd" (user's choice, 2026-10-10).
 const X_MARK = [
@@ -49,7 +49,7 @@ export default function Footer() {
         <p className="footer-arc">
           <PixelArcLogo scale={1} />
           <span>
-            Build on <span>Arc</span>
+            Built on <span>Arc</span>
           </span>
         </p>
 
