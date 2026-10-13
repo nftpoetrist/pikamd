@@ -322,6 +322,18 @@ Gas düşümleri log üretmez; maliyeti receipt'ten hesapla.
 | Memo | `0x5294E9927c3306DcBaDb03fe70b92e01cCede505` |
 | Multicall3From (gönderen korunur) | `0x522fAf9A91c41c443c66765030741e4AaCe147D0` |
 
+### PikaMd — GuidelineRegistry (testnet, 2026-10-13)
+
+| Alan | Değer |
+|---|---|
+| Adres | `0x8dA7825634079ce232141B8EDeD0682557c8b4A1` (https://explorer.testnet.arc.io/address/0x8dA7825634079ce232141B8EDeD0682557c8b4A1) |
+| Deploy tx | `0x2c644188565b48e0bf1f6ff0dd45d7d94a79de66279a8803e090e1b5f21ea667` |
+| Deploy bloğu | **67003886** (indexer buradan başlar) |
+| Deployer = admin + moderatör | `0xd76B24F43bCF5C3fFe09906A7414CD4D02EA7cDe` (kullanıcı kendi terminalinden deploy etti; keystore `pikamd-deployer`). ⚠ Bu cüzdanın anahtarı PikaStake `blockchain/.env`'de düz metin; mainnet'te yeni admin/multisig şart |
+| Maliyet | 1.437.953 gas × 26,1 Gwei ≈ **0,0376 USDC** |
+| Zincirden doğrulandı | kod var, `hasRole(DEFAULT_ADMIN_ROLE/MODERATOR_ROLE, admin)` = true, rastgele adres false, `licenses(0)` = "CC-BY-4.0", `nextId` = 1 |
+| Explorer verify | ❌ Blockscout yöntemi `Fail - Unable to verify`: explorer'ın derleyici listesi **en fazla 0.8.36** (`/api/v2/smart-contracts/verification/config`, 2026-10-13); `osaka` destekleniyor. ✅ **Sourcify** (`--verifier sourcify`, Arc testnet + mainnet Sourcify'da destekli) → `exact_match`; Blockscout ~30 sn içinde içe aktardı: `is_verified: true, is_fully_verified: true`. **Ders:** Arc explorer'da verify için solc ≤ 0.8.36 kullan ya da Sourcify ile doğrula. |
+
 ### Testnet (5042002)
 
 | Kontrat | Adres |

@@ -9,6 +9,8 @@ arc-forge build
 arc-forge test                     # unit + fuzz tests
 ```
 
+Testnet deployment: `0x8dA7825634079ce232141B8EDeD0682557c8b4A1`, block 67003886 (`../ARC.md` §8).
+
 ## Deploy (Arc testnet)
 
 The deployer key lives in an encrypted Foundry keystore, never in a file or on the command line (K17).
@@ -24,10 +26,11 @@ PIKAMD_ADMIN=0x<admin> arc-forge script script/Deploy.s.sol --rpc-url arc_testne
 # deploy
 PIKAMD_ADMIN=0x<admin> arc-forge script script/Deploy.s.sol --rpc-url arc_testnet --account pikamd-deployer --broadcast
 
-# verify the source on the explorer (Blockscout)
+# verify the source: Sourcify (the explorer imports it within a minute). The explorer's own
+# Blockscout verifier only knows solc up to 0.8.36 (2026-10-13), so it fails for 0.8.37.
 arc-forge verify-contract <ADDRESS> src/GuidelineRegistry.sol:GuidelineRegistry \
-  --verifier blockscout --verifier-url https://explorer.testnet.arc.io/api/ \
-  --chain 5042002 --constructor-args $(arc-cast abi-encode "constructor(address)" 0x<admin>)
+  --verifier sourcify --chain 5042002 --watch \
+  --constructor-args $(arc-cast abi-encode "constructor(address)" 0x<admin>)
 ```
 
 `PIKAMD_ADMIN` gets `DEFAULT_ADMIN_ROLE` and `MODERATOR_ROLE`. The script checks both on-chain
