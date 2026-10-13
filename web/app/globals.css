@@ -3838,6 +3838,131 @@ body {
   width: auto;
   margin-top: 16px;
 }
+
+/* PikaGold box: right of the wallet button, ghost button skeleton, 15px coin at 2× (30px) */
+.pg-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.pg-box {
+  gap: 6px;
+  min-width: var(--px-h);
+  padding: 0 10px 0 4px;
+}
+.pg-coin {
+  display: block;
+  flex-shrink: 0;
+}
+.pg-count {
+  padding-top: 2px;
+  font-family: var(--font-jersey);
+  font-size: 24px;
+  line-height: 1;
+  color: var(--y1);
+  text-shadow: 2px 2px 0 var(--g4);
+}
+.wallet-menu-gold .pg-coin {
+  margin: -4px 0;
+}
+
+/* Every 4.8s a light stripe crosses the coin in 2-pixel jumps, then a sparkle blinks on the rim.
+   In SVG, px in a CSS transform are coin pixels (viewBox units). */
+.pg-shine {
+  fill: #FFF8E7;
+  opacity: 0.85;
+  transform: translateX(-4px);
+  animation: pg-shine 4.8s steps(15) infinite;
+}
+@keyframes pg-shine {
+  0% { transform: translateX(-4px); }
+  10%, 100% { transform: translateX(26px); }
+}
+.pg-box:hover .pg-shine {
+  animation: pg-shine-once 0.45s steps(15) 1 forwards;
+}
+@keyframes pg-shine-once {
+  from { transform: translateX(-4px); }
+  to { transform: translateX(26px); }
+}
+.pg-spark {
+  fill: #FFFFFF;
+  opacity: 0;
+}
+.pg-spark-dot { animation: pg-spark-dot 4.8s steps(1) infinite; }
+.pg-spark-plus { animation: pg-spark-plus 4.8s steps(1) infinite; }
+@keyframes pg-spark-dot {
+  0% { opacity: 0; }
+  11% { opacity: 1; }
+  13% { opacity: 0; }
+  17% { opacity: 1; }
+  19%, 100% { opacity: 0; }
+}
+@keyframes pg-spark-plus {
+  0% { opacity: 0; }
+  13% { opacity: 1; }
+  17%, 100% { opacity: 0; }
+}
+
+/* Gold went up: the coin hops in 2px frames and "+N" floats up */
+.pg-box.is-gain .pg-coin {
+  animation: pg-hop 0.4s steps(1) 1;
+}
+@keyframes pg-hop {
+  0% { transform: translateY(0); }
+  20% { transform: translateY(-2px); }
+  40% { transform: translateY(-4px); }
+  60% { transform: translateY(-2px); }
+  80%, 100% { transform: translateY(0); }
+}
+/* Floats above the box's top frame, over the number: on the coin it would be yellow on yellow */
+.pg-gain {
+  position: absolute;
+  bottom: calc(100% + var(--px-b) + 1px);
+  right: 6px;
+  z-index: 2;
+  font-family: var(--font-jersey);
+  font-size: 18px;
+  line-height: 1;
+  color: var(--y2);
+  text-shadow: 2px 2px 0 var(--ink);
+  pointer-events: none;
+  animation: pg-gain 0.9s steps(6) forwards;
+}
+@keyframes pg-gain {
+  0% { transform: translateY(2px); opacity: 1; }
+  60% { opacity: 1; }
+  100% { transform: translateY(-6px); opacity: 0; }
+}
+
+/* Explanation balloon under the box, tail pointing up at the coin */
+.pg-note {
+  top: calc(100% + 16px);
+  bottom: auto;
+  left: auto;
+  right: -6px;
+  z-index: 70;
+  width: 210px;
+  transform: none;
+}
+.pg-note::after {
+  top: auto;
+  bottom: 100%;
+  left: auto;
+  right: 26px;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pg-shine,
+  .pg-box:hover .pg-shine,
+  .pg-spark-dot,
+  .pg-spark-plus,
+  .pg-box.is-gain .pg-coin,
+  .pg-gain {
+    animation: none;
+  }
+  .pg-gain { opacity: 0; }
+}
 }
 
 /* ══════════════════════════════════════════════

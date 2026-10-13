@@ -3,15 +3,15 @@
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { useConnection, useDisconnect } from "wagmi";
 import CopyButton from "@/components/CopyButton";
-import { PixelGold } from "@/components/md-format";
+import PikaGoldCoin from "@/components/PikaGoldCoin";
 import { useProfile } from "@/lib/likes/client";
 import { openWalletModal } from "@/lib/wallet/modal";
 
 const shortAddress = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 const noop = () => () => {};
 
-// Navbar wallet entry (K22): "Connect Wallet" until a wallet is connected, then the wallet's
-// PikaGold and short address. Connecting needs no signature; the profile is public data.
+// Navbar wallet entry (K22): "Connect Wallet" until a wallet is connected, then the short address.
+// The PikaGold count sits in its own box next to it (PikaGoldBox). Connecting needs no signature.
 export default function WalletButton({ className = "" }: { className?: string }) {
   // The server can't see the wallet: render the disconnected button until hydrated
   const hydrated = useSyncExternalStore(noop, () => true, () => false);
@@ -50,7 +50,12 @@ function ConnectedWallet({ address, className }: { address: `0x${string}`; class
     };
   }, [open]);
 
-  const goldLabel = gold === undefined ? "PikaGold loading" : `${gold.toLocaleString("en-US")} PikaGold`;
+  const goldLabel =
+    gold !== undefined
+      ? `${gold.toLocaleString("en-US")} PikaGold`
+      : profile.isError
+        ? "PikaGold isn't available right now"
+        : "PikaGold loading";
 
   return (
     <div ref={wrapRef} className={`wallet-wrap ${className}`}>
@@ -62,10 +67,6 @@ function ConnectedWallet({ address, className }: { address: `0x${string}`; class
         aria-label={`Wallet ${shortAddress(address)}, ${goldLabel}`}
         onClick={() => setOpen((o) => !o)}
       >
-        <span className="wallet-gold" aria-hidden="true">
-          <PixelGold size={14} />
-          {gold === undefined ? "…" : gold.toLocaleString("en-US")}
-        </span>
         <span aria-hidden="true">{shortAddress(address)}</span>
       </button>
 
@@ -78,7 +79,7 @@ function ConnectedWallet({ address, className }: { address: `0x${string}`; class
           </div>
 
           <p className="wallet-menu-gold">
-            <PixelGold size={18} />
+            <PikaGoldCoin clipId={`${panelId}-coin`} />
             <span>{goldLabel}</span>
           </p>
           <p className="wallet-menu-note">You earn 1 PikaGold for every like on guidelines you share</p>

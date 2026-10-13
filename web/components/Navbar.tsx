@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import PikaGoldBox from "@/components/wallet/PikaGoldBox";
 import WalletButton from "@/components/wallet/WalletButton";
 
 const LINKS = [
@@ -61,6 +62,7 @@ export default function Navbar() {
             <span aria-hidden="true">+</span> Publish
           </Link>
           <WalletButton className="hidden sm:inline-flex" />
+          <PikaGoldBox />
           <button
             type="button"
             className="nav-menu-btn xl:hidden"
