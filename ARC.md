@@ -206,7 +206,7 @@ Ağ değiştirme hata kodları (PikaStake'te test edildi, çoklu cüzdan):
 
 ### 6.3 Foundry (ARCHITECTURE K: kontrat aracı Foundry)
 
-**Kurulum (Apple Silicon Mac; bu makine `arm64`, hazır binary var):**
+**Kurulum (Apple Silicon Mac; bu makine `arm64`, hazır binary var).** ✅ 2026-10-13 kuruldu: v0.8.0-2 (`arc-forge` 1.7.1-dev), sha256 release'teki `.sha256` dosyasıyla doğrulandı. **macOS'ta `libusb` gerekiyor** (`brew install libusb`; yoksa `dyld: Library not loaded: …libusb-1.0.0.dylib`). Bu Arc dokümanında ve repo README'sinde yazmıyor. `arc-anvil --network arc` yerelde 20 Gwei taban ücretini uygulamıyor (10 Gwei'lik işlem kabul edildi).
 ```bash
 # https://github.com/circlefin/arc-foundry/releases → macOS arm64 arşivini indir
 tar -xzf arc-foundry-<version>-<target>.tar.gz
@@ -231,7 +231,8 @@ optimizer_runs = 200
 arc         = "${ARC_MAINNET_RPC_URL}"
 arc_testnet = "${ARC_TESTNET_RPC_URL}"
 
-# ⚠ DOĞRULA: verifier URL'leri — ilk testnet deploy'unda dene, çalışanı buraya yaz
+# 2026-10-13: explorer.testnet.arc.io bir Blockscout; /api (etherscan tarzı) ve /api/v2 çalışıyor, PikaStake'in
+# PikaUSDC'sini doğrulanmış gösteriyor. testnet.arcscan.app/api/v2 JSON dönmedi. Kendi verify'ımızla kesinleşecek.
 [etherscan]
 arc         = { key = "blockscout", url = "https://explorer.arc.io/api",         chain = 5042 }
 arc_testnet = { key = "blockscout", url = "https://explorer.testnet.arc.io/api", chain = 5042002 }

@@ -14,3 +14,5 @@ node_modules/
 # Foundry (contracts/)
 contracts/out/
 contracts/cache/
+# Simulations only; real deploy records under contracts/broadcast/ are kept
+contracts/broadcast/**/dry-run/

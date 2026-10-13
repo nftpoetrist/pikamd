@@ -167,6 +167,18 @@ event DelistedSet(uint256 indexed id, bool delisted, address by);
 - Kontrat **upgrade edilemez** tutulsun (basitlik + güven); gerekirse v2 deploy edilir.
 - Testler: register, version, fork, yetkisiz version (revert), delist rolleri, event'ler.
 
+### 5.1 Uygulama (2026-10-13, `contracts/`, dal `feat/guideline-registry`)
+- **Araç:** arc-foundry v0.8.0-2 (`arc-forge` 1.7.1-dev; macOS'ta `brew install libusb` gerekiyor, Arc dokümanında yazmıyor), Solidity **0.8.37** (sabit), `evm_version = "osaka"` (Arc'ın temel aldığı fork, docs.arc.io EVM farkları), optimizer 200. OpenZeppelin **v5.7.0** ve forge-std **v1.17.0** git submodule olarak sürüm etiketine sabit (`foundry.lock`).
+- **Taslaktan farklar (kullanıcı kararları, 2026-10-13):**
+  - **Lisans:** CC BY 4.0 onaylandı. `uint8 license` alanı kaldı; anlamı zincirde `string[] licenses` listesinde (0 = `"CC-BY-4.0"`). Admin `addLicense(name)` ile yeni lisans ekleyebilir (yeni kontrat gerekmez); mevcut id'lerin anlamı değişmez; en fazla 256.
+  - **Moderatör kilidi:** yazar kendi yönergesini gizleyip açabilir; moderatör gizlerse `moderatorLocked = true` → yazar açamaz ve **yeni sürüm yayınlayamaz**, sadece moderatör açar (açınca kilit kalkar). Taslaktaki "yazar veya moderatör" hali yazarın moderatör kararını geri almasına izin veriyordu.
+  - `DelistedSet` event'ine `byModerator` eklendi; `LicenseAdded` event'i yeni.
+- **Girdi kontrolleri (custom error):** CID boş olamaz, ≤128 bayt; `contentHash ≠ 0`; lisans listede olmalı; `parentId` varsa mevcut olmalı (gizlenmiş bir yönerge de fork'lanabilir: kaynak gösterme korunur). Hiçbir fonksiyon `payable` değil.
+- **Sürümler 1'den başlar** (`slug@v1` = kayıt). Okuma: `getGuideline(id)`, `getVersion(id, v)`, `latestVersion(id)`, `licenses(i)`, `licenseCount()`, `nextId`.
+- **Testler:** 25 (2'si 1000 turlu fuzz), hepsi geçiyor. `script/Deploy.s.sol`: admin `PIKAMD_ADMIN` ortam değişkeninden açıkça (K17), anahtar keystore'dan (`--account`), deploy sonrası roller zincirden kontrol edilir.
+- **Doğrulandı:** yerel `arc-anvil --network arc` üzerinde deploy + `register` (**219.803 gas** ≈ 20 Gwei'de 0,0044 USDC; yerel düğüm 20 Gwei tabanını uygulamıyor). Gerçek Arc testnet'e karşı yayınsız simülasyon başarılı: deploy ≈1,87M gas, forge'un tahmini **≈0,078 USDC** (gas fiyatını ~2× tahmin ediyor; deploy cüzdanında ≥0,1 USDC olsun).
+- **Sırada:** deploy cüzdanı (kullanıcı) → testnet deploy → explorer verify → adres + deploy bloğu ARC.md ve env'e.
+
 ---
 
 ## 6. Depolama — IPFS
@@ -548,7 +560,8 @@ Faz 0 notu: Arc ağ bilgileri doğrulandı (ARC.md), Arc Studio ile testnet'e de
 - [ ] Gas'ı kim öder: yazar mı (USDC, çok düşük), platform sponsorluğu mu? (Ana sayfa kartı 001 şu an "0% platform fee" diyor; sponsorluk seçilirse "Zero fees" olur)
 - [ ] Dokümanlar (ARCHITECTURE/ARC/CLAUDE/DESIGN.md) İngilizceye çevrilsin mi? (K18 ürün için kesin; dokümanlar şu an Türkçe)
 - [ ] Telif/marka: Pikachu (logo, arka plan, X görselleri) ve X kapağındaki AI logoları — site herkese açılmadan önce
-- [~] Lisans: **yazar seçmez** (kullanıcı kararı 2026-10-10, Publish'teki seçim kaldırıldı). Tek lisans şimdilik **CC-BY-4.0** (öneri, K14 ile uyumlu; kullanıcı CC0 isterse `web/lib/publish/draft.ts` → `LICENSE` tek satır). Kontrattaki `license` alanı ileride ihtiyaç olursa diye kalabilir; tek lisansta kaldırılması da düşünülebilir (Faz 1'de karar).
-- [ ] IPFS servisi: Pinata mı, Filebase mi?
+- [x] Lisans: **CC BY 4.0, onaylandı (2026-10-13)**; kontratta lisans listesi var (§5.1). Eski not: **yazar seçmez** (kullanıcı kararı 2026-10-10, Publish'teki seçim kaldırıldı). Tek lisans şimdilik **CC-BY-4.0** (öneri, K14 ile uyumlu; kullanıcı CC0 isterse `web/lib/publish/draft.ts` → `LICENSE` tek satır). Kontrattaki `license` alanı ileride ihtiyaç olursa diye kalabilir; tek lisansta kaldırılması da düşünülebilir (Faz 1'de karar).
+- [x] IPFS servisi → **Pinata** (2026-10-13, kullanıcı kararı). JWT sadece sunucuda (PikaStake'te `index.html`'e gömülüydü, ARC.md §11 #3)
+- [x] Hosting → **Vercel**, GitHub'a push ile otomatik deploy (PikaStake gibi); repo **nftpoetrist** hesabında (2026-10-13)
 - [x] Maksimum dosya boyutu → **512 KB kesin, 100 KB uyarı** (2026-10-10, kullanıcı kararı; gerçek bir 263 KB'lık CLAUDE.md 100 KB'a sığmıyordu)
 - [ ] Moderasyon yönetimi: başlangıçta tek cüzdan, sonra multisig/topluluk?
