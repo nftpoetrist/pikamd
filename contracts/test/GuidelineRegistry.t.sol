@@ -66,7 +66,7 @@ contract GuidelineRegistryTest is Test {
         assertEq(g.parentId, 0);
         assertEq(g.license, 0);
         assertEq(g.versionCount, 1);
-        assertFalse(g.delisted);
+        assertFalse(g.authorHidden);
         assertFalse(g.moderatorLocked);
         assertEq(g.createdAt, block.timestamp);
 
@@ -125,7 +125,7 @@ contract GuidelineRegistryTest is Test {
     function test_ForkOfDelistedParentIsAllowed() public {
         uint256 parent = _register(ayse);
         vm.prank(moderator);
-        registry.setDelisted(parent, true);
+        registry.setModeratorLock(parent, true);
         vm.prank(bob);
         assertEq(registry.register(CID2, HASH2, parent, 0), 2, "provenance is kept even for hidden parents");
     }
@@ -181,81 +181,120 @@ contract GuidelineRegistryTest is Test {
         registry.getGuideline(0);
     }
 
-    // ── Delisting (moderator lock) ──
+    // ── Hiding (author) and moderator lock: two separate flags ──
 
-    function test_AuthorHidesAndListsOwnGuideline() public {
+    function test_AuthorHidesAndShowsOwnGuideline() public {
         uint256 id = _register(ayse);
+        assertTrue(registry.isListed(id));
         vm.expectEmit(true, true, true, true, address(registry));
-        emit GuidelineRegistry.DelistedSet(id, true, ayse, false);
+        emit GuidelineRegistry.HiddenSet(id, true);
         vm.prank(ayse);
-        registry.setDelisted(id, true);
-        assertTrue(registry.getGuideline(id).delisted);
-        assertFalse(registry.getGuideline(id).moderatorLocked);
+        registry.setHidden(id, true);
+        assertTrue(registry.getGuideline(id).authorHidden);
+        assertFalse(registry.isListed(id));
 
         vm.prank(ayse);
         registry.publishVersion(id, CID2, HASH2); // allowed while self-hidden
 
         vm.prank(ayse);
-        registry.setDelisted(id, false);
-        assertFalse(registry.getGuideline(id).delisted);
+        registry.setHidden(id, false);
+        assertTrue(registry.isListed(id));
     }
 
-    function test_ModeratorDelistLocksOutTheAuthor() public {
+    function test_ModeratorLockHidesAndBlocksNewVersions() public {
         uint256 id = _register(ayse);
         vm.expectEmit(true, true, true, true, address(registry));
-        emit GuidelineRegistry.DelistedSet(id, true, moderator, true);
+        emit GuidelineRegistry.ModeratorLockSet(id, true, moderator);
         vm.prank(moderator);
-        registry.setDelisted(id, true);
-        assertTrue(registry.getGuideline(id).delisted);
+        registry.setModeratorLock(id, true);
         assertTrue(registry.getGuideline(id).moderatorLocked);
+        assertFalse(registry.isListed(id));
 
-        vm.startPrank(ayse);
-        vm.expectRevert(abi.encodeWithSelector(GuidelineRegistry.LockedByModerator.selector, id));
-        registry.setDelisted(id, false);
-        vm.expectRevert(abi.encodeWithSelector(GuidelineRegistry.LockedByModerator.selector, id));
-        registry.setDelisted(id, true);
+        vm.prank(ayse);
         vm.expectRevert(abi.encodeWithSelector(GuidelineRegistry.LockedByModerator.selector, id));
         registry.publishVersion(id, CID2, HASH2);
-        vm.stopPrank();
+
+        vm.prank(ayse);
+        registry.setHidden(id, false); // the author's own flag; the lock still hides it
+        assertFalse(registry.isListed(id), "the author can't lift a moderator lock");
 
         vm.prank(moderator);
-        registry.setDelisted(id, false);
-        assertFalse(registry.getGuideline(id).delisted);
-        assertFalse(registry.getGuideline(id).moderatorLocked, "listing again lifts the lock");
-
+        registry.setModeratorLock(id, false);
+        assertTrue(registry.isListed(id));
         vm.prank(ayse);
         registry.publishVersion(id, CID2, HASH2);
     }
 
-    function test_ModeratorCanLockAnAuthorHiddenGuideline() public {
+    /// The bug found in the first deployment: lifting a moderator lock made a guideline the author
+    /// had hidden (e.g. after leaking personal data) public again.
+    function test_UnlockingKeepsTheAuthorsHide() public {
         uint256 id = _register(ayse);
         vm.prank(ayse);
-        registry.setDelisted(id, true);
+        registry.setHidden(id, true);
         vm.prank(moderator);
-        registry.setDelisted(id, true);
-        assertTrue(registry.getGuideline(id).moderatorLocked);
-        vm.prank(ayse);
-        vm.expectRevert(abi.encodeWithSelector(GuidelineRegistry.LockedByModerator.selector, id));
-        registry.setDelisted(id, false);
+        registry.setModeratorLock(id, true);
+        vm.prank(moderator);
+        registry.setModeratorLock(id, false);
+        assertTrue(registry.getGuideline(id).authorHidden);
+        assertFalse(registry.isListed(id), "still hidden by its author");
     }
 
-    function test_StrangersCannotDelist() public {
+    function test_AuthorCanHideWhileLocked() public {
+        uint256 id = _register(ayse);
+        vm.prank(moderator);
+        registry.setModeratorLock(id, true);
+        vm.prank(ayse);
+        registry.setHidden(id, true);
+        vm.prank(moderator);
+        registry.setModeratorLock(id, false);
+        assertFalse(registry.isListed(id), "the author's hide outlives the lock");
+    }
+
+    function test_ModeratorWhoIsAlsoAnAuthorHidesAsAnAuthor() public {
+        vm.prank(moderator);
+        uint256 id = registry.register(CID1, HASH1, 0, 0);
+        vm.prank(moderator);
+        registry.setHidden(id, true);
+        assertTrue(registry.getGuideline(id).authorHidden);
+        assertFalse(registry.getGuideline(id).moderatorLocked, "a hide is not a lock");
+    }
+
+    function test_OnlyTheAuthorHides() public {
         uint256 id = _register(ayse);
         vm.prank(bob);
-        vm.expectRevert(abi.encodeWithSelector(GuidelineRegistry.NotAuthorOrModerator.selector, id, bob));
-        registry.setDelisted(id, true);
+        vm.expectRevert(abi.encodeWithSelector(GuidelineRegistry.NotAuthor.selector, id, bob));
+        registry.setHidden(id, true);
+        vm.prank(moderator);
+        vm.expectRevert(abi.encodeWithSelector(GuidelineRegistry.NotAuthor.selector, id, moderator));
+        registry.setHidden(id, true);
         vm.expectRevert(abi.encodeWithSelector(GuidelineRegistry.UnknownGuideline.selector, uint256(3)));
-        registry.setDelisted(3, true);
+        registry.setHidden(3, true);
     }
 
-    function test_RevokedModeratorIsAStrangerAgain() public {
+    function test_OnlyModeratorsLock() public {
+        uint256 id = _register(ayse);
+        bytes32 role = registry.MODERATOR_ROLE();
+        vm.prank(ayse);
+        vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, ayse, role));
+        registry.setModeratorLock(id, true);
+        vm.prank(moderator);
+        vm.expectRevert(abi.encodeWithSelector(GuidelineRegistry.UnknownGuideline.selector, uint256(3)));
+        registry.setModeratorLock(3, true);
+    }
+
+    function test_RevokedModeratorCannotLock() public {
         uint256 id = _register(ayse);
         bytes32 role = registry.MODERATOR_ROLE();
         vm.prank(admin);
         registry.revokeRole(role, moderator);
         vm.prank(moderator);
-        vm.expectRevert(abi.encodeWithSelector(GuidelineRegistry.NotAuthorOrModerator.selector, id, moderator));
-        registry.setDelisted(id, true);
+        vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, moderator, role));
+        registry.setModeratorLock(id, true);
+    }
+
+    function test_IsListedRevertsForUnknownIds() public {
+        vm.expectRevert(abi.encodeWithSelector(GuidelineRegistry.UnknownGuideline.selector, uint256(1)));
+        registry.isListed(1);
     }
 
     function test_ModeratorCannotGrantRoles() public {
@@ -320,6 +359,30 @@ contract GuidelineRegistryTest is Test {
             assertEq(registry.getGuideline(i).author, author);
         }
         assertEq(registry.nextId(), uint256(count) + 1);
+    }
+
+    /// Any order of author hides and moderator locks: the author's last choice and the moderator's
+    /// last decision are both kept, and the guideline is listed only when both allow it.
+    function testFuzz_HideAndLockNeverOverrideEachOther(uint8[] calldata ops) public {
+        uint256 id = _register(ayse);
+        bool hidden;
+        bool locked;
+        for (uint256 i = 0; i < ops.length && i < 24; i++) {
+            bool on = ops[i] & 1 == 1;
+            if (ops[i] & 2 == 0) {
+                vm.prank(ayse);
+                registry.setHidden(id, on);
+                hidden = on;
+            } else {
+                vm.prank(moderator);
+                registry.setModeratorLock(id, on);
+                locked = on;
+            }
+            GuidelineRegistry.Guideline memory g = registry.getGuideline(id);
+            assertEq(g.authorHidden, hidden);
+            assertEq(g.moderatorLocked, locked);
+            assertEq(registry.isListed(id), !hidden && !locked);
+        }
     }
 
     function testFuzz_OnlyTheAuthorCanPublish(address caller) public {

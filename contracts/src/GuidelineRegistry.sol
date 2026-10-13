@@ -21,8 +21,8 @@ contract GuidelineRegistry is AccessControl {
         address author;
         uint8 license; // index into `licenses`
         uint32 versionCount; // versions are numbered 1..versionCount
-        bool delisted;
-        bool moderatorLocked; // delisted by a moderator: only a moderator can list it again
+        bool authorHidden; // the author's own choice; only the author changes it
+        bool moderatorLocked; // a moderator's decision; only a moderator changes it
         uint64 createdAt;
         uint256 parentId; // 0 = original, otherwise the guideline this one forks
     }
@@ -46,7 +46,8 @@ contract GuidelineRegistry is AccessControl {
         uint256 indexed id, address indexed author, uint256 indexed parentId, string cid, bytes32 contentHash, uint8 license
     );
     event VersionPublished(uint256 indexed id, uint32 version, string cid, bytes32 contentHash);
-    event DelistedSet(uint256 indexed id, bool delisted, address by, bool byModerator);
+    event HiddenSet(uint256 indexed id, bool hidden);
+    event ModeratorLockSet(uint256 indexed id, bool locked, address indexed moderator);
     event LicenseAdded(uint8 indexed license, string name);
 
     error ZeroAdmin();
@@ -58,7 +59,6 @@ contract GuidelineRegistry is AccessControl {
     error TooManyLicenses();
     error UnknownGuideline(uint256 id);
     error NotAuthor(uint256 id, address caller);
-    error NotAuthorOrModerator(uint256 id, address caller);
     error LockedByModerator(uint256 id);
     error UnknownVersion(uint256 id, uint32 version);
 
@@ -89,7 +89,7 @@ contract GuidelineRegistry is AccessControl {
             author: msg.sender,
             license: license,
             versionCount: 1,
-            delisted: false,
+            authorHidden: false,
             moderatorLocked: false,
             createdAt: now_,
             parentId: parentId
@@ -112,23 +112,25 @@ contract GuidelineRegistry is AccessControl {
         emit VersionPublished(id, version, cid, contentHash);
     }
 
-    // ── Moderation ────────────────────────────────────────────────────────────────────────
+    // ── Hiding and moderation ─────────────────────────────────────────────────────────────
+    // Two separate decisions, kept in two flags: a guideline is listed only when neither is set
+    // (`isListed`). Nothing is ever deleted; the site, index and MCP stop serving it.
 
-    /// @notice Hides or lists a guideline. Nothing is deleted; the site, index and MCP stop serving it.
-    /// The author can hide and list their own guideline. A moderator's delist locks it: the author
-    /// can't list it again (or publish new versions) until a moderator lists it.
-    function setDelisted(uint256 id, bool delisted) external {
+    /// @notice The author hides or shows their own guideline. Allowed while a moderator lock is on
+    /// (hiding more is always fine); showing again only takes effect once the lock is lifted.
+    function setHidden(uint256 id, bool hidden) external {
         Guideline storage g = _requireExists(id);
-        bool moderator = hasRole(MODERATOR_ROLE, msg.sender);
-        if (moderator) {
-            g.moderatorLocked = delisted;
-        } else if (g.author == msg.sender) {
-            if (g.moderatorLocked) revert LockedByModerator(id);
-        } else {
-            revert NotAuthorOrModerator(id, msg.sender);
-        }
-        g.delisted = delisted;
-        emit DelistedSet(id, delisted, msg.sender, moderator);
+        if (g.author != msg.sender) revert NotAuthor(id, msg.sender);
+        g.authorHidden = hidden;
+        emit HiddenSet(id, hidden);
+    }
+
+    /// @notice A moderator locks or unlocks a guideline. While locked it isn't listed and the author
+    /// can't publish new versions. Unlocking never changes the author's own hide choice.
+    function setModeratorLock(uint256 id, bool locked) external onlyRole(MODERATOR_ROLE) {
+        Guideline storage g = _requireExists(id);
+        g.moderatorLocked = locked;
+        emit ModeratorLockSet(id, locked, msg.sender);
     }
 
     /// @notice Makes another license available to `register`. Existing ids never change meaning.
@@ -152,6 +154,12 @@ contract GuidelineRegistry is AccessControl {
     function latestVersion(uint256 id) external view returns (Version memory) {
         Guideline storage g = _requireExists(id);
         return _versions[id][g.versionCount - 1];
+    }
+
+    /// @notice True when neither the author nor a moderator has hidden it.
+    function isListed(uint256 id) external view returns (bool) {
+        Guideline storage g = _requireExists(id);
+        return !g.authorHidden && !g.moderatorLocked;
     }
 
     function licenseCount() external view returns (uint256) {
