@@ -9,7 +9,7 @@ export type LikeDecision =
   | { ok: true }
   | { ok: false; status: 401 | 404; error: string };
 
-export function decideLike(wallet: string | null, slug: string, knownSlugs: ReadonlySet<string>): LikeDecision {
+export function decideLike(wallet: string | null, slug: string, knownSlugs: Pick<ReadonlySet<string>, "has">): LikeDecision {
   if (!wallet) return { ok: false, status: 401, error: "Sign in with your wallet to like guidelines" };
   if (!knownSlugs.has(slug)) return { ok: false, status: 404, error: "Guideline not found" };
   return { ok: true };

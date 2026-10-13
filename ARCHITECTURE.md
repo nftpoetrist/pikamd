@@ -366,6 +366,14 @@ auth_nonces      (nonce PK, expires_at)          -- veya Redis
 indexer_state    (key PK, last_block BIGINT)
 ```
 - Arama MVP: Postgres full-text (`search_tsv`). İleride `pgvector` ile anlamsal arama.
+
+### 10.1 Uygulama (2026-10-13, dal `feat/supabase-backend`)
+- **Şema:** `web/supabase/migrations/20261013000000_init.sql` (Supabase SQL editöründe bir kez çalıştırılır). Taslaktan farklar: `guidelines` zincir kopyası alanları (`moderator_locked`, `tx_hash`, `block_number`); `guideline_versions.content` = IPFS içeriğinin **önbellek kopyası** (≤512 KB, hash ile doğrulanmış; arama ve MCP gateway beklemesin); `mcp_keys.masked` + **cüzdan başına tek aktif anahtar** (kısmi unique index); `reports` cüzdan başına yönerge başına bir; `pending_uploads` içerik + tarama sonucu tutar. `users` tablosu yok (handle henüz yok). Cüzdanlar küçük harf, her alan `check` ile doğrulanır.
+- **Görünüm `listed_guidelines`:** delist edilmemiş + son sürümü `suspicious` olmayan yönergeler, son sürüm içeriği ve beğeni sayısıyla. Site, arama, MCP ve PikaGold sadece bunu okur.
+- **Fonksiyonlar (atomik):** `save_nonce` (süresi geçenleri siler, bekleyen sınırı), `consume_nonce` (tek kullanımlık, satır her durumda silinir), `add_like` (listelenmemiş yönerge → `P0002`; `on conflict do nothing`), `like_counts`, `liked_slugs`, `wallet_profile` (PikaGold hesaplanır, saklanmaz).
+- **Erişim modeli:** sadece sunucu, **Data API (supabase-js 2.117.2) + secret anahtar (`sb_secret_…`)**. Doğrudan Postgres bağlantısı seçilmedi: Supabase dokümanına göre serverless için transaction pooler (6543) gerekiyor ve Postgres.js'in pipelining'i onunla sorunlu, kapatmanın çalışan yolu yok (supabase.com/docs, 2026-10-13). Eski `service_role`/`anon` anahtarları 2026 sonunda kaldırılıyor. **Tüm tablolarda RLS açık, politika yok; `anon`/`authenticated` rollerinden tablo, view ve fonksiyon yetkileri alındı** (Supabase fonksiyonları varsayılan olarak `/rest/v1/rpc` ile herkese açar: `add_like` açık kalsa herkes başkası adına beğeni yazabilirdi) + gelecekteki nesneler için varsayılan yetkiler kapalı.
+- **Testler:** `supabase/schema.test.mjs` migration'ı PGlite (WASM Postgres) üzerinde Supabase rolleriyle çalıştırır (10 test). Ters kontrol yapıldı: yetki satırları çıkarılınca 3 güvenlik testi düşüyor.
+- **Uygulama tarafı:** `lib/server/supabase.ts` (istemci, `server-only`), `lib/server/store.ts` (`AppStore`: Supabase → yoksa dev'de yerel dosya → production'da null/503; yeni `profile()`), `lib/data/guidelines.ts` (`"use cache"` + `cacheLife("minutes")` + `cacheTag("guidelines")`; Supabase yoksa örnek veri), `lib/data/rows.ts` (satır → `Guideline`, bozuk satır atlanır + loglanır).
 - `uses_count`: MCP `get_guideline` + kopyala/indir olaylarıyla artar (yaklaşık).
 
 ---
