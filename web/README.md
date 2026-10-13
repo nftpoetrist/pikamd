@@ -41,3 +41,11 @@ See `.env.example`. Never commit `.env*` files or `.data/` (local dev store).
 | `NEXT_PUBLIC_ARC_RPC_URL` | browser | Optional keyed, domain-restricted RPC; also allowed by the CSP |
 | `ARC_RPC_URL` | server | Optional RPC for smart-wallet signature checks |
 | `PIKAMD_ALLOWED_HOSTS` | server | Deployed hostnames allowed to reach `/mcp` (localhost always is) |
+| `SUPABASE_URL` | server | Supabase project URL |
+| `SUPABASE_SECRET_KEY` | server | Supabase secret key (`sb_secret_…`); bypasses RLS, server only |
+
+## Database
+
+`supabase/migrations/*.sql` holds the schema. Run each file once, in order, in the Supabase SQL
+editor. Every table has RLS on with no policies and the public roles get no privileges, so only the
+server (secret key) can read or write. `supabase/schema.test.mjs` runs the migration on PGlite in `npm test`.
