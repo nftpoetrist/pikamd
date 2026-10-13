@@ -34,19 +34,20 @@ Piksel tasarım sistemi, bileşenler, sayfaların güncel hali, geliştirme orta
 - **Hiçbir şeyi varsayma (kullanıcı isteği, tekrar tekrar söylendi):** kütüphane API'lerini kurulu paketin kaynağından / tip dosyalarından, Next kurallarını `node_modules/next/dist/docs/`'tan, Arc bilgisini ARC.md / docs.arc.io'dan, mock veriyi dosyadan oku; test verisi bile tahminle yazılmaz. UX kararlarında (sonuç nasıl görünsün, hangi özellikler) önce kullanıcıya sor.
 - **Bitti demeden önce:** `npx tsc --noEmit` + `npx eslint app components lib scripts` + `npm test` + (dev sunucu açıkken) `npm run mcp:smoke` ve `npm run auth:smoke`; UI işlerinde headless Chrome ile ölçüm + ekran görüntüsü; büyük işlerde `npx next build` (sonra `npx next typegen`, yoksa eski `.next/types` tip kontrolünü bozar). Headless Chrome'u her seferinde kapat.
 
-## Nerede kaldık (2026-10-12 oturumu sonu)
-Yeni oturum buradan devam eder. Ayrıntılar ilgili bölümlerde; bu bir özet ve yol gösterici.
+## Nerede kaldık (2026-10-13 oturumu)
+Yeni oturum buradan devam eder. Hedef (kullanıcı isteği): **projeyi adım adım Arc testnet'te yayına hazır hale getirmek, hiçbir şeyi varsaymadan.** Plan ve durum aşağıda; ayrıntılar ARCHITECTURE §5.1, §9.2, §10.1, ARC.md §6.3.
 
-**Bu oturumda yapılanlar (sırayla):**
-1. Footer: ince (46px), tam genişlik, alta yapışık şerit (DESIGN §2 `Footer.tsx`). Sayfa sonundaki esnemede arka plan görünmesi için denenen çözümler (overscroll kapatma, sticky arka plan) **kullanıcı isteğiyle geri alındı**; konu açık değil, kullanıcı şu anki hali kabul etti.
-2. Git kuruldu (kök dizinde, `main` = ilk commit).
-3. **Cüzdan + SIWE girişi + beğeni/PikaGold (K22)** → ARCHITECTURE §9.3. wagmi 3 + kendi piksel cüzdan seçicimiz (RainbowKit wagmi 3'ü desteklemiyor). Arc Studio'ya incelettik (doğrulanmamış ajan çıktısı); önerilerinden 30 sn bağlanma zaman aşımı, sunucu zamanlı imza ve checksum'lı adres uygulandı.
-4. **Explore araması** → ARCHITECTURE §11.1. Açılır liste (şeritler akmaya devam eder), tür/etiket düğmeleri, dosya içi eşleşen satırlar, yazım hatası toleransı, sorgu dili; MCP `search_guidelines` aynı motoru kullanır.
-5. Explore şerit kartları kompakt (272px), arama çubuğu büyük (800×54) → DESIGN §2.
-6. Dokümanlar ve eskimiş UI metinleri (Connect / Publish'teki "cüzdan yok" ifadeleri) güncellendi.
+**Kararlar (2026-10-13, kullanıcı):** hosting **Vercel** (PikaStake gibi GitHub push → otomatik deploy) · IPFS **Pinata** (JWT sadece sunucuda) · GitHub reposu **nftpoetrist** hesabında · lisans **CC BY 4.0** (kontratta lisans listesi kalır) · delist = **moderatör kilidi**.
 
-**Git durumu:** `main` ← `feat/wallet-siwe-likes` (cüzdan + beğeni) ← `feat/explore-search` (arama + kompakt kartlar + doküman güncellemesi, **şu an checkout edilmiş dal**). İkisi de **main'e birleştirilmedi**; kullanıcıya sorulacak. Yeni iş başlamadan önce hangi daldan devam edileceğini netleştir.
+**PikaStake nasıl çalışmıştı (referans, `~/Desktop/PikaStake`):** tek `index.html` (ethers.js), Vercel'de `main`'e push ile deploy; kontratlar Hardhat + `.env`'de düz `PRIVATE_KEY` (PikaMd'de yapılmaz: keystore, K17), verify `testnet.arcscan.app/api` Blockscout. ⚠ PikaStake `index.html`'inde herkese açık bir Pinata JWT var; kullanıcıya iptal etmesi önerildi.
 
-**Sıradaki adım (kullanıcının önerdiğimiz sırayı onayladığı plan):** Adım 7 — `GuidelineRegistry` kontratı (Foundry + testler + Arc testnet deploy, K17: kendi keystore cüzdanımızla, explorer verify). **Kullanıcıdan gerekenler:** deploy için yeni ve ayrı bir cüzdan (özel anahtarı keystore'a kendisi girer), faucet.circle.com'dan testnet USDC. Foundry (arc-foundry) bu makinede **kurulu değil**. Sonra Adım 6 (Supabase + IPFS; IPFS servisi Pinata mı Filebase mi → kullanıcıya sor). Kullanıcı kontrattan önce başka işler yapmak istediğini söyledi; yeni oturumda önce ne istediğini sor.
+**Git:** `main` = UI + cüzdan + arama + PikaGold kutusu + güvenlik başlıkları. Birleştirilmemiş dallar: `feat/guideline-registry` (kontrat, submodule'ler `contracts/lib/`) ve `feat/supabase-backend` (şema + Supabase deposu). İkisi de main'den ayrı; birleştirme kullanıcı onayıyla.
 
-**Bekleyen kararlar / açık konular:** dalların main'e birleştirilmesi · PikaGold ne işe yarayacak (rozet, sıralama…) · WalletConnect için Reown proje kimliği (kullanıcı açacak) · lisans CC BY 4.0 onayı · domain · gas'ı kim öder · rate limit (Upstash) · ilk işlem özelliğinden önce `wallet_addEthereumChain` / ağ değiştirme yolu (ARCHITECTURE §9.3) · ARCHITECTURE §16 ve DESIGN §7'deki diğer maddeler.
+**Adımlar:**
+- 0 ✅ commit'ler, dallar main'e birleşti · ⏳ GitHub repo (kullanıcı `gh auth login` ile nftpoetrist'e girecek; şu an gh `pierrenode`) · ⏳ Vercel projesi
+- 1 ✅ `GuidelineRegistry` + 25 test + Deploy betiği, yerel arc-anvil + testnet simülasyonu · ⏳ **deploy**: kullanıcı yeni deploy cüzdanı açar, faucet USDC (≥0,1), `arc-cast wallet import pikamd-deployer --interactive` kendisi çalıştırır; **admin adresi** sorulacak → deploy → verify (`explorer.testnet.arc.io/api/`, Blockscout) → adres + deploy bloğu ARC.md/env
+- 2 ✅ kod (şema, RLS, Supabase deposu, önbellekli okuma, 77 test) · ⏳ kullanıcı Supabase projesi açıp migration'ı SQL editöründe çalıştıracak, `SUPABASE_URL` + `SUPABASE_SECRET_KEY`'i `web/.env.local`'a kendisi yazacak → canlı smoke testi
+- 3 ⏳ IPFS (Pinata, güncel API dokümandan doğrulanacak) + gerçek Publish: `prepare` (tarama + pin + pending) → cüzdanla `register` (ağ değiştirme yolu dahil) → `confirm` (receipt + event doğrulama) → indexer cron
+- 4 ⏳ `/g/[slug]` detay sayfası (tasarımı kullanıcıya sor), `/raw`, hash rozeti · 5 ⏳ MCP anahtarı + koleksiyon cüzdana bağlı (Supabase) · 6 ⏳ Upstash rate limit, rapor + delist · 7 ⏳ yayın kontrolleri, gerçek olmayan iddialar için metin kararları (kullanıcıya sor), PIKAMD_ALLOWED_HOSTS / domain
+
+**Araçlar:** arc-foundry v0.8.0-2 `~/.local/bin/arc-{forge,cast,anvil}` (macOS'ta libusb gerekiyor, kuruldu). Vercel CLI ve Supabase CLI yok (gerekmeyebilir).
