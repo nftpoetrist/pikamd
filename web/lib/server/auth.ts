@@ -6,7 +6,8 @@ import { CHAIN, RPC_URL } from "@/lib/chain";
 
 // Session cookie and signature checks for the routes under app/api (ARCHITECTURE §9.2, K22).
 
-function secret(): string {
+/** PIKAMD_SESSION_SECRET: signs session cookies and sign-in nonces (with separate labels). */
+export function secret(): string {
   const value = process.env.PIKAMD_SESSION_SECRET;
   assertSecret(value);
   return value;

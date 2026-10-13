@@ -2,27 +2,17 @@
 // Pure and I/O-free so it runs in tests; the routes under app/api/auth wire it to the store.
 import { getAddress, isAddress } from "viem";
 import { createSiweMessage, parseSiweMessage } from "viem/siwe";
+import { NONCE_RE } from "./nonce.ts";
 
 /** Shown in the wallet's signing prompt. Signing is free: no transaction, no gas. */
 export const SIWE_STATEMENT = "Sign in to PikaMd. This is free: it doesn't send a transaction or cost gas.";
 
-/** A nonce is single-use and must be signed within this window (ARCHITECTURE §9.2). */
+/** A nonce must be signed within this window and works once (ARCHITECTURE §9.2, lib/auth/nonce.ts). */
 export const NONCE_TTL_MS = 5 * 60 * 1000;
 
 /** Tolerated clock difference. The issue time comes from the server with the nonce
  * (/api/auth/nonce), so a wrong clock on the user's device can't make sign-in fail. */
 const CLOCK_SKEW_MS = 60 * 1000;
-
-const NONCE_RE = /^[0-9a-f]{32}$/;
-
-/**
- * 128-bit nonce from the platform CSPRNG. Not viem's generateSiweNonce: that one is built on
- * Math.random, which is predictable (checked in viem 2.57.4, utils/uid.js).
- */
-export function newNonce(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(16));
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
-}
 
 export const isNonce = (value: unknown): value is string => typeof value === "string" && NONCE_RE.test(value);
 

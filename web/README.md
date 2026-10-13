@@ -21,12 +21,17 @@ framework code.
 
 ## Check it
 
+Enable the secret guard once per clone: `git config core.hooksPath .githooks` (blocks commits that
+add keys, JWTs or filled secret env vars; prints only the file and the rule).
+
 ```bash
 npx tsc --noEmit
 npx eslint app components lib scripts
 npm test                     # unit tests (scan, MCP, SIWE/session, likes, search)
 npm run mcp:smoke            # needs the dev server: MCP over HTTP with the official client
 npm run auth:smoke           # needs the dev server: wallet sign-in, likes, PikaGold
+# Both use the sample data and write likes, so they refuse to run when .env.local sets
+# SUPABASE_URL (they never write to a real database).
 npx next build
 ```
 

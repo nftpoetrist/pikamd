@@ -5,15 +5,13 @@ import { jsonFileStore } from "@/lib/server/json-file";
 import { check, supabase } from "@/lib/server/supabase";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-// Server-side storage for sign-in nonces, likes and profiles (ARCHITECTURE §10: auth_nonces,
+// Server-side storage for used sign-in nonces, likes and profiles (ARCHITECTURE §10: auth_nonces,
 // stars). Routes only talk to the AppStore interface. Supabase when SUPABASE_URL and
 // SUPABASE_SECRET_KEY are set (web/supabase/migrations); otherwise the local dev file in
 // development, and nothing in production: the routes answer 503 instead of pretending.
 export interface AppStore {
-  /** Remembers a sign-in nonce until `expiresAt`. False if too many are pending (abuse guard). */
-  saveNonce(nonce: string, expiresAt: Date): Promise<boolean>;
-  /** Single use: true once for an unexpired nonce, then it's gone. */
-  consumeNonce(nonce: string, now: Date): Promise<boolean>;
+  /** Marks a server-signed nonce as used until it expires. True the first time, false on a replay. */
+  useNonce(nonce: string, expiresAt: Date): Promise<boolean>;
   /** Records a like (permanent, one per wallet). Null if the guideline isn't listed. */
   addLike(wallet: string, slug: string): Promise<{ created: boolean; count: number } | null>;
   /** Slugs this wallet liked. */
@@ -24,21 +22,12 @@ export interface AppStore {
   profile(wallet: string): Promise<{ pikagold: number; guidelines: number }>;
 }
 
-const MAX_PENDING_NONCES = 10_000;
-
 // ── Supabase ───────────────────────────────────────────────────────────────────────────────
 
 function supabaseStore(db: SupabaseClient): AppStore {
   return {
-    async saveNonce(nonce, expiresAt) {
-      return check(
-        await db.rpc("save_nonce", { p_nonce: nonce, p_expires_at: expiresAt.toISOString(), p_max_pending: MAX_PENDING_NONCES }),
-        "save_nonce",
-      ) === true;
-    },
-    // The database clock decides expiry (now()), so `now` is only used by the dev store
-    async consumeNonce(nonce) {
-      return check(await db.rpc("consume_nonce", { p_nonce: nonce }), "consume_nonce") === true;
+    async useNonce(nonce, expiresAt) {
+      return check(await db.rpc("use_nonce", { p_nonce: nonce, p_expires_at: expiresAt.toISOString() }), "use_nonce") === true;
     },
     async addLike(wallet, slug) {
       const res = await db.rpc("add_like", { p_wallet: wallet.toLowerCase(), p_slug: slug });
@@ -84,22 +73,13 @@ const devFile = jsonFileStore<DevState>("pikamd-dev.json", (raw) => {
 const key = (wallet: string) => wallet.toLowerCase();
 
 const devStore: AppStore = {
-  saveNonce: (nonce, expiresAt) =>
+  useNonce: (nonce, expiresAt) =>
     devFile.update((s) => {
       const now = Date.now();
       const nonces = Object.fromEntries(Object.entries(s.nonces).filter(([, exp]) => exp > now));
-      if (Object.keys(nonces).length >= MAX_PENDING_NONCES) return { next: { ...s, nonces }, result: false };
+      if (nonce in nonces) return { next: { ...s, nonces }, result: false };
       nonces[nonce] = expiresAt.getTime();
       return { next: { ...s, nonces }, result: true };
-    }),
-
-  consumeNonce: (nonce, now) =>
-    devFile.update((s) => {
-      const exp = s.nonces[nonce];
-      if (exp === undefined) return { next: s, result: false };
-      const nonces = { ...s.nonces };
-      delete nonces[nonce];
-      return { next: { ...s, nonces }, result: exp > now.getTime() };
     }),
 
   async addLike(wallet, slug) {

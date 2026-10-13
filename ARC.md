@@ -326,7 +326,8 @@ Gas düşümleri log üretmez; maliyeti receipt'ten hesapla.
 
 | Alan | Değer |
 |---|---|
-| Adres | `0x8dA7825634079ce232141B8EDeD0682557c8b4A1` (https://explorer.testnet.arc.io/address/0x8dA7825634079ce232141B8EDeD0682557c8b4A1) |
+| ⚠ Durum | **Bu ilk deploy geçersiz** (delist hatası, ARCHITECTURE §5.1). Kayıt yok; düzeltilmiş sürüm yeniden deploy edilecek, bu tablo yeni adresle güncellenecek |
+| Adres (eski) | `0x8dA7825634079ce232141B8EDeD0682557c8b4A1` (https://explorer.testnet.arc.io/address/0x8dA7825634079ce232141B8EDeD0682557c8b4A1) |
 | Deploy tx | `0x2c644188565b48e0bf1f6ff0dd45d7d94a79de66279a8803e090e1b5f21ea667` |
 | Deploy bloğu | **67003886** (indexer buradan başlar) |
 | Deployer = admin + moderatör | `0xd76B24F43bCF5C3fFe09906A7414CD4D02EA7cDe` (kullanıcı kendi terminalinden deploy etti; keystore `pikamd-deployer`). ⚠ Bu cüzdanın anahtarı PikaStake `blockchain/.env`'de düz metin; mainnet'te yeni admin/multisig şart |

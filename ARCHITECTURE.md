@@ -129,7 +129,8 @@ struct Guideline {
     uint256 parentId;      // 0 = orijinal, >0 = fork kaynağı
     uint8   license;       // 0 = CC-BY-4.0, 1 = CC0 (enum)
     uint32  versionCount;
-    bool    delisted;
+    bool    authorHidden;      // yazarın kararı (§5.1)
+    bool    moderatorLocked;   // moderatörün kararı
     uint64  createdAt;
 }
 struct Version {
@@ -146,7 +147,9 @@ uint256 public nextId = 1;
 ```solidity
 register(string cid, bytes32 contentHash, uint256 parentId, uint8 license) returns (uint256 id)
 publishVersion(uint256 id, string cid, bytes32 contentHash)   // sadece author
-setDelisted(uint256 id, bool delisted)                         // MODERATOR_ROLE veya author
+setHidden(uint256 id, bool hidden)                             // sadece author
+setModeratorLock(uint256 id, bool locked)                      // sadece MODERATOR_ROLE
+isListed(uint256 id) view returns (bool)                       // !authorHidden && !moderatorLocked
 getVersion(uint256 id, uint32 v) view returns (Version)
 latestVersion(uint256 id) view returns (Version)
 ```
@@ -155,7 +158,9 @@ latestVersion(uint256 id) view returns (Version)
 ```solidity
 event GuidelineRegistered(uint256 indexed id, address indexed author, uint256 indexed parentId, string cid, bytes32 contentHash, uint8 license);
 event VersionPublished(uint256 indexed id, uint32 version, string cid, bytes32 contentHash);
-event DelistedSet(uint256 indexed id, bool delisted, address by);
+event HiddenSet(uint256 indexed id, bool hidden);
+event ModeratorLockSet(uint256 indexed id, bool locked, address indexed moderator);
+event LicenseAdded(uint8 indexed license, string name);
 ```
 
 ### Notlar
@@ -171,13 +176,13 @@ event DelistedSet(uint256 indexed id, bool delisted, address by);
 - **Araç:** arc-foundry v0.8.0-2 (`arc-forge` 1.7.1-dev; macOS'ta `brew install libusb` gerekiyor, Arc dokümanında yazmıyor), Solidity **0.8.37** (sabit), `evm_version = "osaka"` (Arc'ın temel aldığı fork, docs.arc.io EVM farkları), optimizer 200. OpenZeppelin **v5.7.0** ve forge-std **v1.17.0** git submodule olarak sürüm etiketine sabit (`foundry.lock`).
 - **Taslaktan farklar (kullanıcı kararları, 2026-10-13):**
   - **Lisans:** CC BY 4.0 onaylandı. `uint8 license` alanı kaldı; anlamı zincirde `string[] licenses` listesinde (0 = `"CC-BY-4.0"`). Admin `addLicense(name)` ile yeni lisans ekleyebilir (yeni kontrat gerekmez); mevcut id'lerin anlamı değişmez; en fazla 256.
-  - **Moderatör kilidi:** yazar kendi yönergesini gizleyip açabilir; moderatör gizlerse `moderatorLocked = true` → yazar açamaz ve **yeni sürüm yayınlayamaz**, sadece moderatör açar (açınca kilit kalkar). Taslaktaki "yazar veya moderatör" hali yazarın moderatör kararını geri almasına izin veriyordu.
-  - `DelistedSet` event'ine `byModerator` eklendi; `LicenseAdded` event'i yeni.
+  - **Moderatör kilidi = iki ayrı bayrak (2026-10-13 derin incelemede düzeltildi):** `setHidden` (sadece yazar; kilitliyken de gizleyebilir) → `authorHidden`; `setModeratorLock` (sadece moderatör) → `moderatorLocked`. `isListed` ikisi de kapalıysa true. Kilitliyken yazar yeni sürüm yayınlayamaz. İlk deploy edilen sürümde tek `delisted` bayrağı vardı ve iki hata içeriyordu (testle kanıtlandı): (1) moderatör kilidi kaldırınca **yazarın kendi gizlediği yönerge yeniden yayına giriyordu** (ör. kişisel veri sızdırdığı için gizlemişse), (2) moderatör yetkisi olan biri kendi yönergesini yazar olarak gizleyemiyordu. Regresyon testi + tüm gizle/kilitle sıralarını deneyen fuzz testi eklendi.
+  - Event'ler: `HiddenSet`, `ModeratorLockSet`, `LicenseAdded` (taslaktaki `DelistedSet` yok).
 - **Girdi kontrolleri (custom error):** CID boş olamaz, ≤128 bayt; `contentHash ≠ 0`; lisans listede olmalı; `parentId` varsa mevcut olmalı (gizlenmiş bir yönerge de fork'lanabilir: kaynak gösterme korunur). Hiçbir fonksiyon `payable` değil.
 - **Sürümler 1'den başlar** (`slug@v1` = kayıt). Okuma: `getGuideline(id)`, `getVersion(id, v)`, `latestVersion(id)`, `licenses(i)`, `licenseCount()`, `nextId`.
 - **Testler:** 25 (2'si 1000 turlu fuzz), hepsi geçiyor. `script/Deploy.s.sol`: admin `PIKAMD_ADMIN` ortam değişkeninden açıkça (K17), anahtar keystore'dan (`--account`), deploy sonrası roller zincirden kontrol edilir.
 - **Doğrulandı:** yerel `arc-anvil --network arc` üzerinde deploy + `register` (**219.803 gas** ≈ 20 Gwei'de 0,0044 USDC; yerel düğüm 20 Gwei tabanını uygulamıyor). Gerçek Arc testnet'e karşı yayınsız simülasyon başarılı: deploy ≈1,87M gas, forge'un tahmini **≈0,078 USDC** (gas fiyatını ~2× tahmin ediyor; deploy cüzdanında ≥0,1 USDC olsun).
-- ✅ **Testnet'e deploy edildi (2026-10-13):** `0x8dA7825634079ce232141B8EDeD0682557c8b4A1`, blok 67003886, admin = deployer = `0xd76B…7cDe`; Sourcify ile doğrulandı (exact match), explorer'da doğrulanmış görünüyor. Ayrıntı ARC.md §8. Web: `lib/chain.ts` → `REGISTRY`.
+- ⚠ **İlk deploy geçersiz, yeniden deploy bekliyor (2026-10-13):** aşağıdaki adres yukarıdaki delist hatasını içeren sürüm; içinde hiç kayıt yok, kullanılmayacak. Düzeltilmiş sürüm testnet'e karşı simüle edildi (≈0,079 USDC), kullanıcı kendi terminalinden deploy edecek. Eski: `0x8dA7825634079ce232141B8EDeD0682557c8b4A1`, blok 67003886, admin = deployer = `0xd76B…7cDe`; Sourcify ile doğrulandı (exact match), explorer'da doğrulanmış görünüyor. Ayrıntı ARC.md §8. Web: `lib/chain.ts` → `REGISTRY`.
 
 ---
 
@@ -322,9 +327,9 @@ Tarama raporu `guideline_versions.scan_report` (jsonb) olarak saklanır ve detay
 - **Önce yazarın kendi ajanı (2026-10-10, kullanıcı kararı):** Publish sayfası yazara hazır bir prompt verir; yazar kendi ajanından kişisel verisi arındırılmış bir kopya ister (`CLAUDE.shared.md`), sonra onu yükler. Platformun kural tabanlı taraması ikinci kontrol olarak kalır (platform metni AI ile yeniden yazmaz).
 
 ### 9.2 Diğer
-- **Auth:** SIWE (viem `createSiweMessage` / `verifySiweMessage`), nonce **DB veya Redis'te** (in-process Map Vercel'de çalışmaz — eski projedeki hata tekrarlanmasın), tek kullanımlık, 5 dk TTL. JWT HttpOnly cookie, SameSite=Strict.
+- **Auth:** SIWE (viem `createSiweMessage` / `verifySiweMessage`), nonce **sunucu imzalı, verilirken hiçbir yere yazılmaz; sadece kullanılmış nonce'lar saklanır** (§9.3, 2026-10-13). Eski not: nonce **DB veya Redis'te** (in-process Map Vercel'de çalışmaz — eski projedeki hata tekrarlanmasın), tek kullanımlık, 5 dk TTL. JWT HttpOnly cookie, SameSite=Strict.
 - **Sürüm sabitleme** + **hash doğrulama** (web'de tarayıcıda, MCP'de sunucuda).
-- **Rapor sistemi:** her yönergede [⚑ Rapor et] → `reports` tablosu → moderatör → `setDelisted`.
+- **Rapor sistemi:** her yönergede [⚑ Rapor et] → `reports` tablosu → moderatör → `setModeratorLock`.
 - **Security headers / CSP** ✅ (2026-10-13): `web/next.config.ts` → `headers()`, middleware/proxy yok. Next'in "nonce'suz CSP" yolu (nonce her sayfayı dinamik yapar, statik/PPR biter): `default-src 'self'`, script/style `'unsafe-inline'` (dev'de ayrıca `'unsafe-eval'` + `ws:`), `img-src 'self' blob: data:` (EIP-6963 cüzdan ikonları data: URI), `font-src 'self'` (next/font kendi sunar), `connect-src 'self'` + Arc RPC'leri (`rpc.testnet.arc.io`, `rpc.mainnet.arc.io`, varsa `NEXT_PUBLIC_ARC_RPC_URL` origin'i), `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `frame-ancestors 'none'`, production'da `upgrade-insecure-requests`. Ayrıca `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` (kamera/mikrofon/konum/ödeme kapalı), HSTS 2 yıl; `poweredByHeader: false`. Dev + production'da tüm sayfalar (1440 + 390) headless Chrome'la gezildi: CSP ihlali yok. **Yeni bir dış kaynak eklenirse (IPFS gateway, WalletConnect relay, Supabase'e tarayıcıdan erişim) CSP'ye eklenmeli**, yoksa sessizce engellenir.
 - **Raw endpoint** (`/raw/...`): `text/markdown; charset=utf-8`, JS gerektirmez, bot koruması AI fetcher'larını engellememeli.
 
@@ -332,7 +337,7 @@ Tarama raporu `guideline_versions.scan_report` (jsonb) olarak saklanır ve detay
 - **Cüzdan:** wagmi **3.7.7** + viem **2.57.4** + TanStack Query. Tarayıcı cüzdanları EIP-6963 ile bulunur (wagmi'de varsayılan), eski cüzdanlar için `injected()` yedek. **RainbowKit kullanılmıyor:** son sürümü (2.2.11) sadece wagmi 2'yi destekliyor, wagmi 2 Kasım 2025'ten beri güncellenmiyor; ConnectKit React 19'u desteklemiyor (npm, 2026-10-12). Yerine piksel tarzı kendi seçicimiz (`components/wallet/WalletModal.tsx`, native `<dialog>`). Bağlanma 30 sn'de zaman aşımına uğrar (ARC.md §11 #10). WalletConnect (mobil/QR) Reown proje kimliği gelince eklenir. Zincir: `lib/chain.ts` (viem `arcTestnet` + resmi `rpc.testnet.arc.io` / `explorer.testnet.arc.io`; `NEXT_PUBLIC_ARC_NETWORK=mainnet` → `arc`).
 - **Akış:** Connect Wallet → navbar'da PikaGold + kısa adres (imza yok, profil herkese açık veri: `GET /api/profile/[address]`) → ilk beğenide **tek SIWE imzası** (gas yok, işlem yok, ağ değiştirme istenmez: `personal_sign` ağdan bağımsız, chainId'yi sunucu kontrol eder) → 7 gün HttpOnly oturum, sonraki beğeniler tek tık. Cüzdan bağlı değilken kalbe basılırsa seçici açılır ve bağlanınca beğeni kendiliğinden devam eder.
 - **Uçlar:** `POST /api/auth/nonce` (nonce + **sunucu zamanı**: cihaz saati yanlış olsa da giriş bozulmaz) · `POST /api/auth/verify` · `GET /api/auth/me` · `POST /api/auth/logout` (`{address}` verilirse sadece o cüzdanın oturumunu kapatır: hesap değiştirmede geç kalan çağrı yeni oturumu silemez) · `GET /api/likes` (sayılar + benim beğenilerim) · `PUT /api/likes/[slug]` (gövde yok, cüzdan sadece oturumdan; idempotent; **DELETE yok**) · `GET /api/profile/[address]`. Yazma uçlarında Origin kontrolü (CSRF) + SameSite=Strict cookie.
-- **SIWE doğrulaması (`lib/auth/siwe.ts`):** viem'in `verifySiweMessage`'ı chainId, uri, version, statement ve issuedAt'i **kontrol etmiyor** (viem 2.57.4 kaynağı okundu) → hepsi bizde. Mesaj, alanlarından birebir yeniden üretilip karşılaştırılır (ayrıştırıcı tanımadığı ekleri yok sayıyor). Nonce `crypto.getRandomValues` ile (viem'in `generateSiweNonce`'u `Math.random` kullanıyor), tek kullanımlık, 5 dk. Önce alanlar, sonra nonce harcanır, sonra imza (akıllı cüzdanlar ERC-6492/1271 için Arc RPC, normal cüzdanlar yerelde).
+- **SIWE doğrulaması (`lib/auth/siwe.ts`):** viem'in `verifySiweMessage`'ı chainId, uri, version, statement ve issuedAt'i **kontrol etmiyor** (viem 2.57.4 kaynağı okundu) → hepsi bizde. Mesaj, alanlarından birebir yeniden üretilip karşılaştırılır (ayrıştırıcı tanımadığı ekleri yok sayıyor). **Nonce sunucu imzalı (`lib/auth/nonce.ts`, 2026-10-13):** 48 hex = 16 rastgele (`crypto.getRandomValues`; viem'in `generateSiweNonce`'u `Math.random` kullanıyor) + 8 bitiş zamanı + 24 MAC (HMAC-SHA256, `PIKAMD_SESSION_SECRET`, ayrı etiketle). `/api/auth/nonce` **hiçbir şey yazmaz** (eskiden her istek DB'ye satır yazıyordu ve 10.000 bekleyen sınırı vardı: herkese açık bu uçla 5 dakikada 10.000 istek atan biri herkesin girişini kilitleyebiliyordu; derin incelemede bulundu). Sıra: alanlar → nonce bu sunucunun mu ve süresi geçmemiş mi (MAC) → cüzdan imzası (akıllı cüzdanlar ERC-6492/1271 için Arc RPC, normal cüzdanlar yerelde) → **ancak o zaman** nonce `use_nonce` ile kullanıldı işaretlenir (tekrar oynatma → 400). Yerel dosya deposunda 50 nonce isteği sonrası 0 satır doğrulandı.
 - **Oturum (`lib/auth/session.ts`):** HMAC-SHA256 imzalı `{v, a, iat, exp}`, cookie `pikamd_session` (HttpOnly, SameSite=Strict, production'da Secure, 7 gün). Gizli anahtar `PIKAMD_SESSION_SECRET` (≥32 karakter, `web/.env.local`, şablon `web/.env.example`); değiştirilirse herkesin oturumu kapanır. Durumsuz token: tek tek iptal yok (çıkış cookie'yi siler). Cüzdan bağlantısı kesilince veya hesap değişince istemci oturumu kapatır.
 - **Depo (`lib/server/store.ts`):** `AppStore` arayüzü (nonce kaydet/harca, beğeni ekle, beğenilerim, sayılar). Şimdi tek uygulama yerel dosya `web/.data/pikamd-dev.json` (sırayla + atomik yazım, `lib/server/json-file.ts`; mock örneklerin `stars` değeri tohum sayılır). **Production'da depo yok → uçlar 503**, kalp butonu "coming soon" der. Supabase (Adım 6) bu arayüzün yerine geçer: `stars` PK'si tek-beğeni kuralını korur, PikaGold bir view.
 - **Testler:** `npm test` (SIWE + oturum + beğeni kuralları dahil) · `npm run auth:smoke` (dev sunucu açıkken, iki test cüzdanıyla 27 kontrol: tekrar oynatma, sahte imza, başka ağ/site, uydurma nonce, CSRF, sahte cookie, imzasız/çift beğeni, DELETE yok, PikaGold +1/beğeni, hesap değiştirme yarışı). Tarayıcıda EIP-6963 test cüzdanıyla uçtan uca denendi (bağlan → imza → beğeni → kalıcı not → hesap değiştir → çıkış; 30 sn zaman aşımı; mobil menü).
@@ -370,7 +375,8 @@ indexer_state    (key PK, last_block BIGINT)
 ### 10.1 Uygulama (2026-10-13, dal `feat/supabase-backend`)
 - **Şema:** `web/supabase/migrations/20261013000000_init.sql` (Supabase SQL editöründe bir kez çalıştırılır). Taslaktan farklar: `guidelines` zincir kopyası alanları (`moderator_locked`, `tx_hash`, `block_number`); `guideline_versions.content` = IPFS içeriğinin **önbellek kopyası** (≤512 KB, hash ile doğrulanmış; arama ve MCP gateway beklemesin); `mcp_keys.masked` + **cüzdan başına tek aktif anahtar** (kısmi unique index); `reports` cüzdan başına yönerge başına bir; `pending_uploads` içerik + tarama sonucu tutar. `users` tablosu yok (handle henüz yok). Cüzdanlar küçük harf, her alan `check` ile doğrulanır.
 - **Görünüm `listed_guidelines`:** delist edilmemiş + son sürümü `suspicious` olmayan yönergeler, son sürüm içeriği ve beğeni sayısıyla. Site, arama, MCP ve PikaGold sadece bunu okur.
-- **Fonksiyonlar (atomik):** `save_nonce` (süresi geçenleri siler, bekleyen sınırı), `consume_nonce` (tek kullanımlık, satır her durumda silinir), `add_like` (listelenmemiş yönerge → `P0002`; `on conflict do nothing`), `like_counts`, `liked_slugs`, `wallet_profile` (PikaGold hesaplanır, saklanmaz).
+- **İkinci migration `20261013120000_hide_lock_and_signed_nonces.sql`** (canlıda kullanıcı çalıştıracak): `guidelines.delisted` → `author_hidden` (kontratın iki bayrağı), `listed_guidelines` = gizlenmemiş **ve** kilitlenmemiş + şüpheli olmayan; `save_nonce`/`consume_nonce` silindi, yerine `use_nonce` (ilk kullanım true, tekrar false; süresi geçenleri temizler); `auth_nonces.nonce` 48 hex.
+- **Fonksiyonlar (atomik):** `use_nonce` (ikinci migration'dan beri; eskiden `save_nonce` + `consume_nonce`), `add_like` (listelenmemiş yönerge → `P0002`; `on conflict do nothing`), `like_counts`, `liked_slugs`, `wallet_profile` (PikaGold hesaplanır, saklanmaz).
 - **Erişim modeli:** sadece sunucu, **Data API (supabase-js 2.117.2) + secret anahtar (`sb_secret_…`)**. Doğrudan Postgres bağlantısı seçilmedi: Supabase dokümanına göre serverless için transaction pooler (6543) gerekiyor ve Postgres.js'in pipelining'i onunla sorunlu, kapatmanın çalışan yolu yok (supabase.com/docs, 2026-10-13). Eski `service_role`/`anon` anahtarları 2026 sonunda kaldırılıyor. **Tüm tablolarda RLS açık, politika yok; `anon`/`authenticated` rollerinden tablo, view ve fonksiyon yetkileri alındı** (Supabase fonksiyonları varsayılan olarak `/rest/v1/rpc` ile herkese açar: `add_like` açık kalsa herkes başkası adına beğeni yazabilirdi) + gelecekteki nesneler için varsayılan yetkiler kapalı.
 - **Testler:** `supabase/schema.test.mjs` migration'ı PGlite (WASM Postgres) üzerinde Supabase rolleriyle çalıştırır (10 test). Ters kontrol yapıldı: yetki satırları çıkarılınca 3 güvenlik testi düşüyor.
 - **Uygulama tarafı:** `lib/server/supabase.ts` (istemci, `server-only`), `lib/server/store.ts` (`AppStore`: Supabase → yoksa dev'de yerel dosya → production'da null/503; yeni `profile()`), `lib/data/guidelines.ts` (`"use cache"` + `cacheLife("minutes")` + `cacheTag("guidelines")`; Supabase yoksa örnek veri), `lib/data/rows.ts` (satır → `Guideline`, bozuk satır atlanır + loglanır).

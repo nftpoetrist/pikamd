@@ -3,7 +3,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { privateKeyToAccount } from "viem/accounts";
 import { recoverMessageAddress } from "viem";
-import { NONCE_TTL_MS, buildSiweMessage, checkSiweMessage, isNonce, newNonce } from "./siwe.ts";
+import { NONCE_TTL_MS, buildSiweMessage, checkSiweMessage, isNonce } from "./siwe.ts";
+import { issueNonce, readNonce } from "./nonce.ts";
 import { SESSION_TTL_S, createSessionToken, readSessionToken } from "./session.ts";
 
 // Throwaway test key (well-known anvil account #0), never funded on Arc.
@@ -17,23 +18,44 @@ const message = (overrides = {}) =>
     chainId: 5042002,
     domain: "localhost:3001",
     origin: "http://localhost:3001",
-    nonce: "0123456789abcdef0123456789abcdef",
+    nonce: "0123456789abcdef0123456789abcdef0123456789abcdef",
     issuedAt: new Date(NOW.getTime() - 10_000),
     ...overrides,
   });
 
-test("nonces are 128-bit hex and unique", () => {
-  const seen = new Set(Array.from({ length: 1000 }, newNonce));
+const NONCE_SECRET = "test-secret-test-secret-test-secret-0123";
+
+test("server-signed nonces: unique, well-formed, readable only by this server until they expire", () => {
+  const seen = new Set(Array.from({ length: 1000 }, () => issueNonce(NONCE_SECRET, NOW, NONCE_TTL_MS).nonce));
   assert.equal(seen.size, 1000);
   for (const n of seen) assert.ok(isNonce(n));
   assert.ok(!isNonce("abc"));
-  assert.ok(!isNonce("0123456789ABCDEF0123456789ABCDEF"));
+  assert.ok(!isNonce("0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF"));
+
+  const { nonce, expiresAt } = issueNonce(NONCE_SECRET, NOW, NONCE_TTL_MS);
+  assert.equal(expiresAt.getTime(), NOW.getTime() + NONCE_TTL_MS);
+  assert.deepEqual(readNonce(nonce, NONCE_SECRET, NOW), { expiresAt });
+  assert.deepEqual(readNonce(nonce, NONCE_SECRET, new Date(expiresAt.getTime() - 1000)), { expiresAt });
+  assert.equal(readNonce(nonce, NONCE_SECRET, expiresAt), null, "expired at its expiry time");
+  assert.equal(readNonce(nonce, NONCE_SECRET + "x", NOW), null, "another server's secret");
+});
+
+test("a forged or edited nonce is refused", () => {
+  const { nonce } = issueNonce(NONCE_SECRET, NOW, NONCE_TTL_MS);
+  const flip = (s, i) => s.slice(0, i) + (s[i] === "0" ? "1" : "0") + s.slice(i + 1);
+  assert.equal(readNonce(flip(nonce, 0), NONCE_SECRET, NOW), null, "random part changed");
+  assert.equal(readNonce(flip(nonce, 20), NONCE_SECRET, NOW), null, "expiry extended");
+  assert.equal(readNonce(flip(nonce, 47), NONCE_SECRET, NOW), null, "MAC changed");
+  assert.equal(readNonce("0123456789abcdef0123456789abcdef0123456789abcdef", NONCE_SECRET, NOW), null, "made up");
+  assert.equal(readNonce(nonce.toUpperCase(), NONCE_SECRET, NOW), null);
+  assert.equal(readNonce(nonce.slice(0, 32), NONCE_SECRET, NOW), null, "old 32-hex format");
+  assert.throws(() => readNonce(nonce, "short", NOW), /PIKAMD_SESSION_SECRET/);
 });
 
 test("a message built by the site passes, and the signature recovers the signer", async () => {
   const msg = message();
   const result = checkSiweMessage(msg, EXPECTED);
-  assert.deepEqual(result, { address: account.address, nonce: "0123456789abcdef0123456789abcdef" });
+  assert.deepEqual(result, { address: account.address, nonce: "0123456789abcdef0123456789abcdef0123456789abcdef" });
   const signature = await account.signMessage({ message: msg });
   assert.equal(await recoverMessageAddress({ message: msg, signature }), account.address);
 });

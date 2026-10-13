@@ -7,6 +7,10 @@ import { createHash, randomBytes } from "node:crypto";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 
+import { refuseIfDatabase } from "./smoke-guard.mjs";
+
+await refuseIfDatabase("mcp:smoke");
+
 const BASE = process.env.PIKAMD_URL ?? "http://localhost:3001";
 const DIR = new URL("../.data/", import.meta.url);
 const FILE = new URL("mock-mcp.json", DIR);

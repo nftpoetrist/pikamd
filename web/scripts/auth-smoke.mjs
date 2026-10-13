@@ -7,6 +7,10 @@ import { readFile, rm, writeFile } from "node:fs/promises";
 import { privateKeyToAccount } from "viem/accounts";
 import { createSiweMessage } from "viem/siwe";
 
+import { refuseIfDatabase } from "./smoke-guard.mjs";
+
+await refuseIfDatabase("auth:smoke");
+
 const BASE = process.env.PIKAMD_URL ?? "http://localhost:3001";
 const ORIGIN = new URL(BASE).origin;
 const HOST = new URL(BASE).host;

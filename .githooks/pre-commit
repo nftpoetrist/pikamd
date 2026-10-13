@@ -1,0 +1,30 @@
+#!/bin/sh
+# Blocks commits that would add secrets (enable once per clone: git config core.hooksPath .githooks).
+# Prints only the file and the rule that matched, never the value.
+python3 - <<'PY'
+import re, subprocess, sys
+RULES = [
+    ("Supabase secret key", r"sb_secret_[A-Za-z0-9_-]{8,}"),
+    ("JWT (e.g. Pinata)", r"eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}"),
+    ("private key assignment", r"(?i)private_?key\s*[=:]\s*['\"]?(0x)?[0-9a-f]{64}"),
+    ("filled secret env var", r"^(PIKAMD_SESSION_SECRET|SUPABASE_SECRET_KEY|PINATA_JWT|PRIVATE_KEY)=\S+"),
+]
+staged = subprocess.run(["git", "diff", "--cached", "--name-only", "--diff-filter=ACMR"], capture_output=True, text=True).stdout.split()
+bad = []
+for f in staged:
+    name = f.rsplit("/", 1)[-1]
+    if name.startswith(".env") and name != ".env.example":
+        bad.append((f, "env file must never be committed"))
+        continue
+    diff = subprocess.run(["git", "diff", "--cached", "-U0", "--", f], capture_output=True, text=True, errors="replace").stdout
+    added = [l[1:] for l in diff.splitlines() if l.startswith("+") and not l.startswith("+++")]
+    for label, rx in RULES:
+        if any(re.search(rx, l) for l in added):
+            bad.append((f, label))
+if bad:
+    print("pre-commit: blocked, possible secret in staged changes:", file=sys.stderr)
+    for f, label in bad:
+        print(f"  {f}: {label}", file=sys.stderr)
+    print("Move the value to web/.env.local (git-ignored) and unstage it.", file=sys.stderr)
+    sys.exit(1)
+PY
