@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PikaMd web
 
-## Getting Started
+The PikaMd site and MCP server: a public, non-profit library of Markdown guidelines for AI agents
+(CLAUDE.md rules, skills, prompts, subagents, guides) on Arc. Architecture and decisions live in
+`../ARCHITECTURE.md`, the design system in `../DESIGN.md`, verified Arc network facts in `../ARC.md`.
 
-First, run the development server:
+Status: the UI runs on mock data. Wallet sign-in (SIWE), likes and PikaGold work against a local
+dev store; production has no store yet, so those routes answer 503 there. The guideline registry
+contract and the real backend (Supabase + IPFS) are not built yet.
+
+## Run it
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env.local   # then set PIKAMD_SESSION_SECRET (32+ random characters)
+npm install
+npm run dev -- -p 3001       # http://localhost:3001
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Next.js 16 differs from older versions: read `node_modules/next/dist/docs/` before changing
+framework code.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Check it
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npx tsc --noEmit
+npx eslint app components lib scripts
+npm test                     # unit tests (scan, MCP, SIWE/session, likes, search)
+npm run mcp:smoke            # needs the dev server: MCP over HTTP with the official client
+npm run auth:smoke           # needs the dev server: wallet sign-in, likes, PikaGold
+npx next build
+```
 
-## Learn More
+## Environment
 
-To learn more about Next.js, take a look at the following resources:
+See `.env.example`. Never commit `.env*` files or `.data/` (local dev store).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Variable | Where | What |
+|---|---|---|
+| `PIKAMD_SESSION_SECRET` | server | Signs session cookies. Changing it signs everyone out |
+| `NEXT_PUBLIC_ARC_NETWORK` | both | `testnet` (default) or `mainnet` |
+| `NEXT_PUBLIC_ARC_RPC_URL` | browser | Optional keyed, domain-restricted RPC; also allowed by the CSP |
+| `ARC_RPC_URL` | server | Optional RPC for smart-wallet signature checks |
+| `PIKAMD_ALLOWED_HOSTS` | server | Deployed hostnames allowed to reach `/mcp` (localhost always is) |

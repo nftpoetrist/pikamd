@@ -1,9 +1,15 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import MdLanes from "@/components/MdLanes";
 import PageTransition from "@/components/PageTransition";
 import ExploreSearch, { SearchBoxShell } from "@/components/search/ExploreSearch";
 import { listGuidelines } from "@/lib/data/guidelines";
 import type { Guideline } from "@/lib/types";
+
+export const metadata: Metadata = {
+  title: "Explore · PikaMd",
+  description: "Browse guidelines shared by the community and add the ones you like to your collection. Your agent can use them over MCP.",
+};
 
 const TOP_TAGS = 8;
 

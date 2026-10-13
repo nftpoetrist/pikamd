@@ -1,6 +1,6 @@
 # PikaMd — Tasarım Sistemi ve Güncel Durum
 
-> Son güncelleme: 2026-10-12. Arayüz geliştirmesi sürüyor (yol haritası: ARCHITECTURE.md §15).
+> Son güncelleme: 2026-10-13. Arayüz geliştirmesi sürüyor (yol haritası: ARCHITECTURE.md §15).
 > Bu dosya **piksel tasarım dilinin kurallarını** ve **sitenin şu anki halini** tutar.
 > Yeni bir UI işi yaparken önce burayı oku; buradaki kararlar kullanıcıyla tek tek onaylandı.
 
@@ -147,6 +147,7 @@
 | Dosya | Ne |
 |---|---|
 | `web/public/brand/pikamd-logo.png` | Navbar logosu: 25×37 piksel Pikachu sprite (kağıt fotoğrafından üretildi, altın dış çerçeve). `image-rendering: pixelated`, `unoptimized`. |
+| `web/app/favicon.ico`, `icon.png`, `apple-icon.png` | **Site ikonları (2026-10-13):** aynı sprite, tam sayı ölçekle (keskin): favicon 48×48 (1×, içinde tek PNG), sekme ikonu 74×74 (2×, şeffaf), iOS ana ekran 180×180 (4×, `--bg0` zemin). Next'in varsayılan "N" favicon'u ve create-next-app'ten kalan `public/*.svg` dosyaları kaldırıldı. Sayfa başlıkları: "Explore · PikaMd", "My Collection · PikaMd", "Publish · PikaMd", "Connect your agent · PikaMd", "Page not found · PikaMd"; ana sayfa "PikaMd". |
 | `design/logo/pikamd-x-profile.png` | X profil fotoğrafı (1000×1000, daire kırpmasına güvenli) |
 | `design/logo/pikamd-x-header.png` | X kapak (1500×500): Pikachu AI logolarını (Claude, ChatGPT, Gemini, Mistral) kovalıyor; metinler İngilizce. Kaynak: `x-header.html` |
 | `design/logo/*.mjs` | Sprite / profil / kapak üretim betikleri (sharp ile) |

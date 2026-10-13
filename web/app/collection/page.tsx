@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import CollectionPanel from "@/components/CollectionPanel";
 import PageTransition from "@/components/PageTransition";
 import { listGuidelines } from "@/lib/data/guidelines";
+
+export const metadata: Metadata = {
+  title: "My Collection · PikaMd",
+  description: "Every guideline you've collected, in one place. Connect your agent once and it can read them all over MCP.",
+};
 
 // My Collection: hero in the same layout as Home and Explore, then the saved guidelines.
 export default async function CollectionPage() {
