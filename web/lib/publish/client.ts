@@ -66,11 +66,12 @@ export function usePublish(draft: Draft, update: (patch: Partial<Draft>) => void
       return;
     }
     try {
-      // A transaction from an earlier try: only confirm it again
-      if (draft.publishTx) return await confirm(draft.publishTx);
-
+      // Signed in first in every case: a reload or a new browser session has no session cookie
       setPhase(0);
       if (!session.data || !sameWallet(session.data, address)) await signIn(address);
+
+      // A transaction from an earlier try: only confirm it again
+      if (draft.publishTx) return await confirm(draft.publishTx);
 
       setPhase(1);
       const prepared = await api<Prepared>("/api/guidelines/prepare", {

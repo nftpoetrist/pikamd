@@ -154,7 +154,7 @@ const prep = (wallet, slug, cid, hash, { ttl = 3600, meta } = {}) =>
     wallet, slug, cid, hash, JSON.stringify(meta ?? { title: "Published One", description: "A sample summary", kind: "skill", tags: ["x", "y"] }), ttl,
   ]).then((r) => r.rows[0].r);
 const confirm = (wallet, id, cid, hash) =>
-  db.query(`select confirm_guideline($1, $2, $3, $4, 0, 0::smallint, $5, 7, 3) as slug`, [wallet, id, cid, hash, hex64("e")]).then((r) => r.rows[0].slug);
+  db.query(`select confirm_guideline($1, $2, $3, $4, 0, 0::smallint, $5, 7, 3) as slug`, [wallet, id, cid, hash, "0x" + String(id).padStart(64, "e")]).then((r) => r.rows[0].slug);
 
 test("prepare_upload reserves a free slug and refuses taken ones", async () => {
   assert.equal(await prep(A, "secure-solidity", "bafy1", hex64("1")), "slug_taken", "an existing guideline's slug");
@@ -186,4 +186,24 @@ test("confirm_guideline turns the wallet's matching upload into version 1, once"
 test("public roles can't call the publish functions", async () => {
   await assert.rejects(asRole("anon", `select prepare_upload('a','b','c','d','e','f','{}'::jsonb,'clean','{}'::jsonb,1)`), /permission denied/);
   await assert.rejects(asRole("authenticated", `select confirm_guideline('a',1,'c','d',0,0::smallint,'t',1,1)`), /permission denied/);
+});
+
+// ── Indexer ──
+
+test("claim_indexer gives one sync turn at a time and save_indexer never moves backwards", async () => {
+  const claim = (min = 120) => db.query(`select claim_indexer('reg:test', 99, $1) as b`, [min]).then((r) => r.rows[0].b);
+  assert.equal(await claim(), 99, "first claim starts at p_start");
+  assert.equal(await claim(), null, "a second claim right away gets nothing");
+  await db.query(`select save_indexer('reg:test', 500)`);
+  await db.query(`select save_indexer('reg:test', 300)`);
+  assert.equal((await db.query(`select last_block from indexer_state where key = 'reg:test'`)).rows[0].last_block, 500, "never backwards");
+  await db.query(`update indexer_state set updated_at = now() - interval '10 minutes' where key = 'reg:test'`);
+  assert.equal(await claim(), 500, "after the interval the next sync resumes from the saved block");
+  await assert.rejects(asRole("anon", `select claim_indexer('x', 1, 1)`), /permission denied/);
+});
+
+test("confirming keeps the Pinata file id for later unpinning", async () => {
+  await prep(B, "pinned-one", "bafyQ", hex64("6"));
+  await confirm(B, 11, "bafyQ", hex64("6"));
+  assert.equal((await db.query(`select pinata_id from guideline_versions where guideline_id = 11`)).rows[0].pinata_id, "pin-id");
 });

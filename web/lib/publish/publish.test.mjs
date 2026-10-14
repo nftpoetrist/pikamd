@@ -90,3 +90,33 @@ test("failed, foreign, someone else's or ambiguous registrations are refused", (
   assert.match(readRegistration(receipt([registeredLog(), registeredLog({ id: 2n, logIndex: 1 })]), REGISTRY, WALLET).error, /No registration/);
   assert.match(readRegistration(receipt([]), REGISTRY, WALLET).error, /No registration/);
 });
+
+// ── Registry events → index actions (lib/registry-events.ts) ──
+import { registryActions } from "../registry-events.ts";
+
+const ev = (eventName, args, { address = REGISTRY, block = 10n, logIndex = 0 } = {}) => {
+  const def = REGISTRY_ABI.find((x) => x.type === "event" && x.name === eventName);
+  const nonIndexed = def.inputs.filter((i) => !i.indexed);
+  return {
+    address, blockNumber: block, logIndex, transactionHash: TX,
+    topics: encodeEventTopics({ abi: REGISTRY_ABI, eventName, args }),
+    data: encodeAbiParameters(nonIndexed, nonIndexed.map((i) => args[i.name])),
+  };
+};
+
+test("registry logs become index actions in chain order, foreign contracts ignored", () => {
+  const logs = [
+    ev("ModeratorLockSet", { id: 3n, locked: true, moderator: WALLET }, { block: 12n }),
+    ev("HiddenSet", { id: 1n, hidden: true }, { block: 11n, logIndex: 2 }),
+    ev("GuidelineRegistered", { id: 1n, author: WALLET, parentId: 0n, cid: "bafy1", contentHash: HASH, license: 0 }, { block: 11n, logIndex: 0 }),
+    ev("VersionPublished", { id: 1n, version: 1, cid: "bafy1", contentHash: HASH }, { block: 11n, logIndex: 1 }),
+    ev("VersionPublished", { id: 1n, version: 2, cid: "bafy2", contentHash: HASH }, { block: 13n }),
+    ev("HiddenSet", { id: 9n, hidden: true }, { address: "0x000000000000000000000000000000000000bEEF", block: 11n, logIndex: 5 }),
+  ];
+  const actions = registryActions(logs, REGISTRY.toLowerCase());
+  assert.deepEqual(actions.map((a) => a.kind), ["registered", "hidden", "locked", "version"], "v1 is part of the registration; foreign log dropped");
+  assert.deepEqual(actions[0], { kind: "registered", id: 1n, author: WALLET, parentId: 0n, cid: "bafy1", contentHash: HASH, license: 0, txHash: TX, blockNumber: 11n, logIndex: 0 });
+  assert.deepEqual(actions[1], { kind: "hidden", id: 1n, hidden: true });
+  assert.deepEqual(actions[2], { kind: "locked", id: 3n, locked: true });
+  assert.deepEqual(actions[3], { kind: "version", id: 1n, version: 2 });
+});

@@ -3,7 +3,9 @@
 // Safe to run again: rows are upserted, likes are added only once.
 //   npm run db:seed
 // The rows are dev-only stand-ins: fake tx hashes (sha256 of a label), block 0, and a CID that
-// isn't on IPFS. content_hash is the real sha256 of each sample's text.
+// isn't on IPFS. content_hash is the real sha256 of each sample's text. Their ids start at
+// SEED_ID_BASE so they never collide with real registrations, whose on-chain ids start at 1
+// (a seed at id 1 once broke the first real publish in development).
 import { createHash } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { MOCK_GUIDELINES } from "../lib/data/mock-guidelines.ts";
@@ -20,6 +22,8 @@ if (ref === LIVE_SUPABASE_REF) {
   process.exit(2);
 }
 
+const SEED_ID_BASE = 900_000_000;
+const seedId = (mockId) => SEED_ID_BASE + mockId;
 const sha = (text) => createHash("sha256").update(text, "utf8").digest("hex");
 const db = createClient(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
 const fail = (what, error) => {
@@ -27,8 +31,20 @@ const fail = (what, error) => {
   process.exit(1);
 };
 
+// Earlier seeds used the sample ids themselves (1..18): remove those first (seed rows have block 0)
+const oldIds = MOCK_GUIDELINES.map((g) => g.id);
+for (const table of ["stars", "collections", "guideline_versions"]) {
+  const res = await db.from(table).delete().in("guideline_id", oldIds).in("guideline_id",
+    (await db.from("guidelines").select("id").in("id", oldIds).eq("block_number", 0)).data?.map((r) => r.id) ?? []);
+  if (res.error) fail(`cleanup ${table}`, res.error);
+}
+{
+  const res = await db.from("guidelines").delete().in("id", oldIds).eq("block_number", 0);
+  if (res.error) fail("cleanup guidelines", res.error);
+}
+
 const guidelines = MOCK_GUIDELINES.map((g) => ({
-  id: g.id,
+  id: seedId(g.id),
   slug: g.slug,
   author_address: g.author.address.toLowerCase(),
   title: g.title,
@@ -42,7 +58,7 @@ const guidelines = MOCK_GUIDELINES.map((g) => ({
   block_number: 0,
 }));
 const versions = MOCK_GUIDELINES.map((g) => ({
-  guideline_id: g.id,
+  guideline_id: seedId(g.id),
   version: g.latestVersion,
   cid: `dev-seed-${g.slug}`,
   content_hash: "0x" + sha(g.content),
@@ -59,7 +75,7 @@ if (r.error) fail("guideline_versions", r.error);
 
 // Each sample's like count as likes from deterministic stand-in wallets (dev only)
 const wallet = (i) => "0x" + sha(`dev-seed-wallet:${i}`).slice(0, 40);
-const stars = MOCK_GUIDELINES.flatMap((g) => Array.from({ length: g.stars }, (_, i) => ({ wallet_address: wallet(i), guideline_id: g.id })));
+const stars = MOCK_GUIDELINES.flatMap((g) => Array.from({ length: g.stars }, (_, i) => ({ wallet_address: wallet(i), guideline_id: seedId(g.id) })));
 for (let i = 0; i < stars.length; i += 500) {
   r = await db.from("stars").upsert(stars.slice(i, i + 500), { onConflict: "wallet_address,guideline_id", ignoreDuplicates: true });
   if (r.error) fail("stars", r.error);
