@@ -21,11 +21,12 @@ export type GuidelineRow = {
   uses_count: number;
   stars_count: number;
   content: string;
+  scan_status?: string;
 };
 
 /** The columns `rowToGuideline` reads, for .select(). */
 export const GUIDELINE_COLUMNS =
-  "id, slug, author_address, title, description, kind, tags, license, latest_version, uses_count, stars_count, content";
+  "id, slug, author_address, title, description, kind, tags, license, latest_version, uses_count, stars_count, content, scan_status";
 
 /** A guideline, or null when the row doesn't fit (the caller logs and skips it). */
 export function rowToGuideline(row: GuidelineRow): Guideline | null {
@@ -48,5 +49,9 @@ export function rowToGuideline(row: GuidelineRow): Guideline | null {
     stars: Number(row.stars_count) || 0,
     uses: Number(row.uses_count) || 0,
     content: row.content,
+    flagged: row.scan_status === "suspicious",
   };
 }
+
+/** What agents may receive over MCP: never guidelines with unchecked flagged lines (ARCHITECTURE §8, §9.1). */
+export const forAgents = <G extends { flagged?: boolean }>(guidelines: G[]): G[] => guidelines.filter((g) => !g.flagged);

@@ -2,7 +2,7 @@ import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import type { Guideline } from "@/lib/types";
 import { MOCK_GUIDELINES } from "@/lib/data/mock-guidelines";
-import { GUIDELINE_COLUMNS, rowToGuideline, type GuidelineRow } from "@/lib/data/rows";
+import { GUIDELINE_COLUMNS, forAgents, rowToGuideline, type GuidelineRow } from "@/lib/data/rows";
 import { searchGuidelines as runSearch, type SearchOutcome } from "@/lib/search/engine";
 import { check, supabase } from "@/lib/server/supabase";
 
@@ -31,6 +31,11 @@ export async function listGuidelines(): Promise<Guideline[]> {
     else console.error(`[guidelines] skipped malformed row id=${String(row.id)}`);
   }
   return out;
+}
+
+/** The list the MCP server serves: flagged guidelines stay off until a moderator checks them. */
+export async function listGuidelinesForAgents(): Promise<Guideline[]> {
+  return forAgents(await listGuidelines());
 }
 
 export async function getGuideline(slug: string): Promise<Guideline | null> {

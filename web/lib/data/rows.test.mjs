@@ -1,7 +1,7 @@
 // Supabase row → Guideline mapping (lib/data/rows.ts).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { rowToGuideline } from "./rows.ts";
+import { forAgents, rowToGuideline } from "./rows.ts";
 
 const row = {
   id: "7", slug: "secure-solidity", author_address: "0x9b2e7f1a4c8d3e6b5a0f2c9d7e1b4a8c3f6d0e77",
@@ -13,7 +13,7 @@ test("maps a listed row to a Guideline", () => {
   assert.deepEqual(rowToGuideline(row), {
     id: 7, slug: "secure-solidity", title: "Secure Solidity", description: "d", kind: "rules", tags: ["solidity"],
     author: { address: "0x9b2e7f1A4C8D3E6B5a0f2C9D7E1b4A8C3F6d0E77" }, // checksummed for display
-    license: "CC-BY-4.0", latestVersion: 3, stars: 12, uses: 5, content: "# hi",
+    license: "CC-BY-4.0", latestVersion: 3, stars: 12, uses: 5, content: "# hi", flagged: false,
   });
 });
 
@@ -28,4 +28,13 @@ test("rows that don't fit are refused, not guessed", () => {
 test("missing tags and counts become empty / zero", () => {
   const g = rowToGuideline({ ...row, tags: null, stars_count: null, uses_count: undefined });
   assert.deepEqual([g.tags, g.stars, g.uses], [[], 0, 0]);
+});
+
+test("flagged guidelines are marked, and agents never get them", () => {
+  const flagged = rowToGuideline({ ...row, slug: "risky", scan_status: "suspicious" });
+  const warned = rowToGuideline({ ...row, slug: "warned", scan_status: "warning" });
+  const clean = rowToGuideline({ ...row, scan_status: "clean" });
+  assert.equal(flagged.flagged, true);
+  assert.equal(warned.flagged, false, "kept personal data is not a moderation flag");
+  assert.deepEqual(forAgents([flagged, warned, clean]).map((g) => g.slug), ["warned", "secure-solidity"]);
 });

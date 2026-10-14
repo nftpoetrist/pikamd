@@ -25,4 +25,6 @@ export interface Guideline {
   uses: number;
   /** Markdown of the latest version. */
   content: string;
+  /** The scan flagged lines a moderator hasn't checked yet: shown on the site, never served over MCP. */
+  flagged?: boolean;
 }
