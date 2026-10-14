@@ -114,11 +114,10 @@ test("authors can like their own guideline and earn PikaGold for it", async () =
   assert.equal(counts["tailwind-v4"], 0);
 });
 
-test("unknown, hidden, locked and suspicious guidelines can't be liked and don't count", async () => {
+test("unknown, hidden and locked guidelines can't be liked and don't count", async () => {
   await addGuideline(3, "hidden", A, { hidden: true });
-  await addGuideline(4, "flagged", A, { scan: "suspicious" });
   await addGuideline(5, "locked", A, { locked: true });
-  for (const slug of ["nope", "hidden", "flagged", "locked"]) {
+  for (const slug of ["nope", "hidden", "locked"]) {
     await assert.rejects(db.query(`select * from add_like($1, $2)`, [B, slug]), /unknown guideline/, slug);
   }
   await db.query(`insert into stars (wallet_address, guideline_id) values ($1, 3)`, [B]); // liked before it was hidden
@@ -126,6 +125,14 @@ test("unknown, hidden, locked and suspicious guidelines can't be liked and don't
   assert.deepEqual(p, { pikagold: 2, guidelines: 1 }, "hidden guideline's likes don't count");
   const slugs = (await db.query(`select slug from like_counts()`)).rows.map((r) => r.slug).sort();
   assert.deepEqual(slugs, ["secure-solidity", "tailwind-v4"]);
+});
+
+test("flagged (suspicious) guidelines stay listed with their scan status, for the site; MCP filters them", async () => {
+  await addGuideline(4, "flagged", B, { scan: "suspicious" });
+  const row = (await db.query(`select slug, scan_status from listed_guidelines where id = 4`)).rows[0];
+  assert.deepEqual(row, { slug: "flagged", scan_status: "suspicious" });
+  await db.query(`delete from guideline_versions where guideline_id = 4`);
+  await db.query(`delete from guidelines where id = 4`);
 });
 
 test("constraints reject malformed data", async () => {
@@ -138,4 +145,45 @@ test("constraints reject malformed data", async () => {
     /duplicate key/,
     "one active key per wallet",
   );
+});
+
+// ── Publish flow: prepare_upload / confirm_guideline ──
+
+const prep = (wallet, slug, cid, hash, { ttl = 3600, meta } = {}) =>
+  db.query(`select prepare_upload($1, $2, $3, 'pin-id', $4, '# body', $5::jsonb, 'clean', '{}'::jsonb, $6) as r`, [
+    wallet, slug, cid, hash, JSON.stringify(meta ?? { title: "Published One", description: "A sample summary", kind: "skill", tags: ["x", "y"] }), ttl,
+  ]).then((r) => r.rows[0].r);
+const confirm = (wallet, id, cid, hash) =>
+  db.query(`select confirm_guideline($1, $2, $3, $4, 0, 0::smallint, $5, 7, 3) as slug`, [wallet, id, cid, hash, hex64("e")]).then((r) => r.rows[0].slug);
+
+test("prepare_upload reserves a free slug and refuses taken ones", async () => {
+  assert.equal(await prep(A, "secure-solidity", "bafy1", hex64("1")), "slug_taken", "an existing guideline's slug");
+  assert.equal(await prep(A, "fresh-one", "bafy1", hex64("1")), "ok");
+  assert.equal(await prep(B, "fresh-one", "bafy2", hex64("2")), "slug_taken", "reserved by another wallet");
+  assert.equal(await prep(A, "fresh-one", "bafy3", hex64("3")), "ok", "the same wallet may prepare again");
+  const rows = (await db.query(`select cid from pending_uploads where slug = 'fresh-one'`)).rows;
+  assert.deepEqual(rows, [{ cid: "bafy3" }], "its earlier reservation is replaced");
+  await db.query(`update pending_uploads set expires_at = now() - interval '1 second'`);
+  assert.equal(await prep(B, "fresh-one", "bafy2", hex64("2")), "ok", "an expired reservation frees the slug");
+  await db.query(`delete from pending_uploads`);
+});
+
+test("confirm_guideline turns the wallet's matching upload into version 1, once", async () => {
+  await prep(A, "published-one", "bafyP", hex64("4"));
+  await assert.rejects(confirm(B, 10, "bafyP", hex64("4")), /no matching upload/, "another wallet");
+  await assert.rejects(confirm(A, 10, "bafyOTHER", hex64("4")), /no matching upload/, "another CID");
+  await assert.rejects(confirm(A, 10, "bafyP", hex64("5")), /no matching upload/, "another hash");
+  assert.equal(await confirm(A, 10, "bafyP", hex64("4")), "published-one");
+  const g = (await db.query(`select slug, author_address, title, kind, tags, latest_version, parent_id from guidelines where id = 10`)).rows[0];
+  assert.deepEqual(g, { slug: "published-one", author_address: A, title: "Published One", kind: "skill", tags: ["x", "y"], latest_version: 1, parent_id: null });
+  const v = (await db.query(`select version, cid, content, block_number, log_index from guideline_versions where guideline_id = 10`)).rows[0];
+  assert.deepEqual(v, { version: 1, cid: "bafyP", content: "# body", block_number: 7, log_index: 3 });
+  assert.equal((await db.query(`select count(*)::int as c from pending_uploads`)).rows[0].c, 0, "reservation used up");
+  assert.equal(await confirm(A, 10, "bafyP", hex64("4")), "published-one", "confirming again is harmless");
+  assert.ok((await db.query(`select 1 from listed_guidelines where slug = 'published-one'`)).rows.length === 1, "listed");
+});
+
+test("public roles can't call the publish functions", async () => {
+  await assert.rejects(asRole("anon", `select prepare_upload('a','b','c','d','e','f','{}'::jsonb,'clean','{}'::jsonb,1)`), /permission denied/);
+  await assert.rejects(asRole("authenticated", `select confirm_guideline('a',1,'c','d',0,0::smallint,'t',1,1)`), /permission denied/);
 });

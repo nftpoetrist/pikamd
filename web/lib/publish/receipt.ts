@@ -1,0 +1,54 @@
+// Reads a registration out of an Arc transaction receipt (ARCHITECTURE §7.1, step 7). The server
+// trusts only what the chain says: the transaction succeeded, it went to our registry, our registry
+// emitted GuidelineRegistered, and its author (the contract's msg.sender) is the signed-in wallet.
+// Not the receipt's `from` or `to`: with a smart-contract wallet a bundler sends the transaction to
+// the ERC-4337 EntryPoint. Only events emitted by the registry's own address count.
+// Pure, so it runs in tests.
+import { parseEventLogs, type Log } from "viem";
+import { REGISTRY_ABI } from "../registry-abi.ts";
+
+export type Registration = {
+  id: bigint;
+  author: `0x${string}`;
+  parentId: bigint;
+  cid: string;
+  contentHash: `0x${string}`;
+  license: number;
+  txHash: `0x${string}`;
+  blockNumber: bigint;
+  logIndex: number;
+};
+
+type ReceiptLike = {
+  status: "success" | "reverted";
+  transactionHash: `0x${string}`;
+  blockNumber: bigint;
+  logs: Log[];
+};
+
+const same = (a: string | null | undefined, b: string) => !!a && a.toLowerCase() === b.toLowerCase();
+
+export function readRegistration(receipt: ReceiptLike, registry: `0x${string}`, wallet: `0x${string}`): Registration | { error: string } {
+  if (receipt.status !== "success") return { error: "The transaction failed on Arc" };
+
+  const events = parseEventLogs({
+    abi: REGISTRY_ABI,
+    eventName: "GuidelineRegistered",
+    logs: receipt.logs.filter((l) => same(l.address, registry)),
+  });
+  if (events.length !== 1) return { error: "No registration found in this transaction" };
+  const [e] = events;
+  if (!same(e.args.author, wallet)) return { error: "The guideline was registered by another wallet" };
+
+  return {
+    id: e.args.id,
+    author: e.args.author,
+    parentId: e.args.parentId,
+    cid: e.args.cid,
+    contentHash: e.args.contentHash,
+    license: e.args.license,
+    txHash: receipt.transactionHash,
+    blockNumber: receipt.blockNumber,
+    logIndex: e.logIndex ?? 0,
+  };
+}

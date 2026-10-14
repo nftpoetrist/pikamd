@@ -4,6 +4,7 @@ import { useState } from "react";
 import MdCard from "@/components/MdCard";
 import type { Draft } from "@/lib/publish/draft";
 import { KIND_INFO, slugify } from "@/lib/publish/templates";
+import { SUMMARY_MAX, SUMMARY_MIN, TAGS_MAX, TAG_MAX, TITLE_MAX, TITLE_MIN } from "@/lib/publish/validate";
 import { scanGuideline } from "@/lib/scan";
 import type { Guideline, GuidelineKind } from "@/lib/types";
 
@@ -13,10 +14,8 @@ type Props = {
   takenSlugs: string[];
 };
 
-export const TITLE_MAX = 60;
-export const SUMMARY_MAX = 100;
+// Limits shared with the server check (lib/publish/validate.ts), so both always agree
 export const SUMMARY_IDEAL = 80; // three lines on an Explore card
-const TAGS_MAX = 5;
 
 const KINDS = Object.keys(KIND_INFO) as GuidelineKind[];
 
@@ -28,8 +27,8 @@ export function metaLeak(meta: Draft["meta"], privateTerms: string[]) {
 
 /** Details are complete when the card has a title and a summary, and neither leaks anything. */
 export function detailsProblem(meta: Draft["meta"], takenSlugs: string[], privateTerms: string[]): string | null {
-  if (meta.title.trim().length < 3) return "Give it a title (at least 3 characters).";
-  if (meta.description.trim().length < 10) return "Write a one-line summary of what it does.";
+  if (meta.title.trim().length < TITLE_MIN) return `Give it a title (at least ${TITLE_MIN} characters).`;
+  if (meta.description.trim().length < SUMMARY_MIN) return "Write a one-line summary of what it does.";
   if (takenSlugs.includes(slugify(meta.title))) return "That title is already taken. Try a more specific one.";
   if (metaLeak(meta, privateTerms)) return "Remove the private info from the card text.";
   return null;
@@ -40,7 +39,7 @@ const cleanTag = (t: string) =>
     .toLowerCase()
     .replace(/[^a-z0-9-]+/g, "-")
     .replace(/^-+|-+$/g, "")
-    .slice(0, 20);
+    .slice(0, TAG_MAX);
 
 // Step 3: what goes on the card, with the Explore card rendered live next to the form.
 // No license picker: every guideline is shared under one license (see lib/publish/draft.ts).

@@ -25,6 +25,8 @@ export interface Draft {
     tags: string[];
     license: License;
   };
+  /** Register transaction sent but not confirmed yet: a retry or reload only confirms it. */
+  publishTx?: `0x${string}`;
 }
 
 // One license for every guideline: credit stays with the author (K14). Not a choice in the UI.

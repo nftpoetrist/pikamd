@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import StepBar, { STEPS } from "@/components/publish/StepBar";
 import StepCleanup, { openCount } from "@/components/publish/StepCleanup";
 import StepDetails, { detailsProblem } from "@/components/publish/StepDetails";
 import StepFile from "@/components/publish/StepFile";
-import StepPublish, { PHASES } from "@/components/publish/StepPublish";
+import StepPublish from "@/components/publish/StepPublish";
+import { DONE, usePublish } from "@/lib/publish/client";
 import { EMPTY_DRAFT, clearDraft, loadDraft, saveDraft, type Draft, type Step } from "@/lib/publish/draft";
 import { guessMeta } from "@/lib/publish/templates";
 import { MAX_BYTES, byteLength, scanGuideline, stripInvisible } from "@/lib/scan";
@@ -15,8 +16,6 @@ import { MAX_BYTES, byteLength, scanGuideline, stripInvisible } from "@/lib/scan
 export default function PublishFlow({ takenSlugs }: { takenSlugs: string[] }) {
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [ready, setReady] = useState(false);
-  // Publish step state lives here so its button can sit in the footer.
-  const [phase, setPhase] = useState(-1);
   const panelRef = useRef<HTMLElement>(null);
 
   // The draft lives in this browser: restore it once, then save every change.
@@ -32,7 +31,10 @@ export default function PublishFlow({ takenSlugs }: { takenSlugs: string[] }) {
     return () => window.clearTimeout(t);
   }, [draft, ready]);
 
-  const update = (patch: Partial<Draft>) => setDraft((d) => ({ ...d, ...patch }));
+  const update = useCallback((patch: Partial<Draft>) => setDraft((d) => ({ ...d, ...patch })), []);
+  // Publish step state lives here so its button can sit in the footer.
+  const publish = usePublish(draft, update);
+  const busy = publish.phase >= 0 && publish.phase < DONE;
 
   const scan = useMemo(() => scanGuideline(draft.content, draft.privateTerms), [draft.content, draft.privateTerms]);
 
@@ -58,8 +60,6 @@ export default function PublishFlow({ takenSlugs }: { takenSlugs: string[] }) {
       const guess = guessMeta(draft.content);
       update({ meta: { ...draft.meta, title: draft.meta.title || guess.title || "", description: draft.meta.description || guess.description || "" } });
     }
-    // Leaving Publish (e.g. after the demo) starts it fresh next time.
-    if (next !== 4) setPhase(-1);
     update({ step: next });
     panelRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
   };
@@ -67,7 +67,7 @@ export default function PublishFlow({ takenSlugs }: { takenSlugs: string[] }) {
   const reset = () => {
     clearDraft();
     setDraft(EMPTY_DRAFT);
-    setPhase(-1);
+    publish.reset();
   };
 
   const label = STEPS.find((s) => s.step === step)?.label;
@@ -92,15 +92,15 @@ export default function PublishFlow({ takenSlugs }: { takenSlugs: string[] }) {
             {step === 2 && <StepCleanup draft={draft} update={update} scan={scan} />}
             {step === 3 && <StepDetails draft={draft} update={update} takenSlugs={takenSlugs} />}
             {step === 4 && (
-              <StepPublish draft={draft} scan={scan} onReset={reset} phase={phase} setPhase={setPhase} />
+              <StepPublish draft={draft} scan={scan} onReset={reset} publish={publish} />
             )}
           </div>
 
-          {/* Step 1 with no file yet, and the finished demo, have their own calls to action */}
-          {!(step === 1 && !draft.content) && !(step === 4 && phase >= PHASES.length) && (
+          {/* Step 1 with no file yet, and the finished publish, have their own calls to action */}
+          {!(step === 1 && !draft.content) && !(step === 4 && publish.phase >= DONE) && (
             <footer className="pub-nav">
               {step > 1 ? (
-                <button type="button" className="btn-ghost" disabled={phase >= 0} onClick={() => go((step - 1) as Step)}>
+                <button type="button" className="btn-ghost" disabled={busy || !!publish.pendingTx} onClick={() => go((step - 1) as Step)}>
                   ← Back
                 </button>
               ) : (
@@ -116,15 +116,13 @@ export default function PublishFlow({ takenSlugs }: { takenSlugs: string[] }) {
                   </button>
                 </div>
               ) : (
-                phase < 0 && (
-                  <div className="pub-nav-next">
-                    {/* K20: say it's permanent right before publishing (a notice, no checkbox) */}
-                    <span className="pub-permanent">Published guidelines are stored on IPFS and Arc, so treat them as permanent</span>
-                    <button type="button" className="btn-gold" onClick={() => setPhase(0)}>
-                      Publish (demo)
-                    </button>
-                  </div>
-                )
+                <div className="pub-nav-next">
+                  {/* K20: say it's permanent right before publishing (a notice, no checkbox) */}
+                  <span className="pub-permanent">Published guidelines are stored on IPFS and Arc, so treat them as permanent</span>
+                  <button type="button" className="btn-gold" disabled={busy} aria-busy={busy || undefined} onClick={() => void publish.start()}>
+                    {busy ? "Publishing…" : publish.pendingTx ? "Finish publishing" : publish.error ? "Try again" : "Publish"}
+                  </button>
+                </div>
               )}
             </footer>
           )}

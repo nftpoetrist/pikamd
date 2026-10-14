@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useConnection } from "wagmi";
+import { CHAIN } from "@/lib/chain";
+import { DONE, PHASES, type usePublish } from "@/lib/publish/client";
 import { LICENSE_TEXT, type Draft } from "@/lib/publish/draft";
 import { KIND_INFO, slugify } from "@/lib/publish/templates";
 import { byteLength, formatBytes, type ScanResult } from "@/lib/scan";
@@ -10,47 +12,37 @@ type Props = {
   draft: Draft;
   scan: ScanResult;
   onReset: () => void;
-  // Owned by PublishFlow: consent and the Publish button live in the always-visible footer.
-  phase: number; // -1 idle, 0..3 running, 4 done
-  setPhase: (update: (p: number) => number) => void;
+  // Owned by PublishFlow: the Publish button lives in the always-visible footer.
+  publish: ReturnType<typeof usePublish>;
 };
 
-// The real flow (ARCHITECTURE §7.1): server re-scan + IPFS pin → wallet signs → Arc tx → confirm.
-export const PHASES = ["Checking your file again", "Uploading to IPFS", "Waiting for your wallet", "Writing to Arc"];
-const PHASE_MS = 900;
+const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
+const txUrl = (hash: string) => `${CHAIN.blockExplorers?.default.url}/tx/${hash}`;
 
-// Step 4: last look, permanence note, then publish (demo until the registry contract lands, roadmap step 7).
-export default function StepPublish({ draft, scan, onReset, phase, setPhase }: Props) {
-  useEffect(() => {
-    if (phase < 0 || phase >= PHASES.length) return;
-    const t = window.setTimeout(() => setPhase((p) => p + 1), PHASE_MS);
-    return () => window.clearTimeout(t);
-  }, [phase, setPhase]);
+// Step 4: last look, then publish for real (ARCHITECTURE §7.1): the server checks and pins the
+// file, the author's own wallet registers it on Arc, the server confirms it from the receipt.
+export default function StepPublish({ draft, scan, onReset, publish }: Props) {
+  const { address, status } = useConnection();
+  const { phase, error, result, pendingTx } = publish;
 
   const kept = draft.kept.length;
   const review = scan.counts.review;
   const slug = slugify(draft.meta.title);
 
-  const rows: [string, string][] = [
-    ["File", `${slug}.md · ${formatBytes(byteLength(draft.content))}`],
-    ["Type", KIND_INFO[draft.meta.kind].label],
-    ["License", LICENSE_TEXT],
-    ["Tags", draft.meta.tags.join(", ") || "none"],
-    ["Clean up", `${draft.replaced} replaced · ${kept} kept on purpose · ${scan.counts.block} ${scan.counts.block === 1 ? "secret" : "secrets"}`],
-  ];
-
-  if (phase >= PHASES.length) {
+  if (phase >= DONE && result) {
     return (
       <div className="pub-done" role="status">
-        <p className="pub-done-title">Demo complete</p>
+        <p className="pub-done-title">Published</p>
         <p className="pub-done-text">
-          This is what publishing will look like. Nothing was uploaded or written to Arc yet: on-chain publishing
-          arrives in a later release. Your draft is still saved in this browser.
+          <strong>{draft.meta.title}</strong> is on IPFS and recorded on Arc under your wallet. It&apos;s on Explore now.
         </p>
         <div className="pub-done-actions">
-          <Link href="/explore" className="btn-ghost">
-            Back to Explore
+          <Link href={`/explore?q=${encodeURIComponent(result.slug)}`} className="btn-ghost">
+            See it on Explore
           </Link>
+          <a href={txUrl(result.txHash)} target="_blank" rel="noopener noreferrer" className="btn-ghost">
+            View on Arc ↗
+          </a>
           <button type="button" className="btn-gold" onClick={onReset}>
             Start a new guideline
           </button>
@@ -59,15 +51,18 @@ export default function StepPublish({ draft, scan, onReset, phase, setPhase }: P
     );
   }
 
-  const running = phase >= 0;
+  const rows: [string, string][] = [
+    ["File", `${slug}.md · ${formatBytes(byteLength(draft.content))}`],
+    ["Type", KIND_INFO[draft.meta.kind].label],
+    ["License", LICENSE_TEXT],
+    ["Tags", draft.meta.tags.join(", ") || "none"],
+    ["Clean up", `${draft.replaced} replaced · ${kept} kept on purpose · ${scan.counts.block} ${scan.counts.block === 1 ? "secret" : "secrets"}`],
+    ["Wallet", status === "connected" && address ? short(address) : "not connected"],
+  ];
+  const running = phase >= 0 && phase < DONE;
 
   return (
     <div className="pub-final">
-      <p className="pub-demo" role="note">
-        <strong>Demo mode.</strong> Publishing isn&apos;t linked to your wallet and Arc yet, so this step shows the flow
-        without uploading or sending anything.
-      </p>
-
       <dl className="pub-summary">
         {rows.map(([k, v]) => (
           <div key={k}>
@@ -90,6 +85,22 @@ export default function StepPublish({ draft, scan, onReset, phase, setPhase }: P
           USDC, usually less than a cent. PikaMd takes no fee.
         </p>
       </div>
+
+      {pendingTx && !running && (
+        <p className="pub-note" role="note">
+          Your guideline is already written to Arc (
+          <a href={txUrl(pendingTx)} target="_blank" rel="noopener noreferrer">
+            {short(pendingTx)}
+          </a>
+          ). Press <strong>Finish publishing</strong> to add it to PikaMd. This doesn&apos;t send anything again.
+        </p>
+      )}
+
+      {error && (
+        <p className="pub-note pub-error" role="alert">
+          {error}
+        </p>
+      )}
 
       {running && (
         <ol className="pub-phases" aria-live="polite">
