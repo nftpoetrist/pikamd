@@ -182,7 +182,7 @@ event LicenseAdded(uint8 indexed license, string name);
 - **Sürümler 1'den başlar** (`slug@v1` = kayıt). Okuma: `getGuideline(id)`, `getVersion(id, v)`, `latestVersion(id)`, `licenses(i)`, `licenseCount()`, `nextId`.
 - **Testler:** 25 (2'si 1000 turlu fuzz), hepsi geçiyor. `script/Deploy.s.sol`: admin `PIKAMD_ADMIN` ortam değişkeninden açıkça (K17), anahtar keystore'dan (`--account`), deploy sonrası roller zincirden kontrol edilir.
 - **Doğrulandı:** yerel `arc-anvil --network arc` üzerinde deploy + `register` (**219.803 gas** ≈ 20 Gwei'de 0,0044 USDC; yerel düğüm 20 Gwei tabanını uygulamıyor). Gerçek Arc testnet'e karşı yayınsız simülasyon başarılı: deploy ≈1,87M gas, forge'un tahmini **≈0,078 USDC** (gas fiyatını ~2× tahmin ediyor; deploy cüzdanında ≥0,1 USDC olsun).
-- ⚠ **İlk deploy geçersiz, yeniden deploy bekliyor (2026-10-13):** aşağıdaki adres yukarıdaki delist hatasını içeren sürüm; içinde hiç kayıt yok, kullanılmayacak. Düzeltilmiş sürüm testnet'e karşı simüle edildi (≈0,079 USDC), kullanıcı kendi terminalinden deploy edecek. Eski: `0x8dA7825634079ce232141B8EDeD0682557c8b4A1`, blok 67003886, admin = deployer = `0xd76B…7cDe`; Sourcify ile doğrulandı (exact match), explorer'da doğrulanmış görünüyor. Ayrıntı ARC.md §8. Web: `lib/chain.ts` → `REGISTRY`.
+- ✅ **Düzeltilmiş sürüm testnet'te (2026-10-14):** `0x27cf926771B0A311A9574543ea29dc5e3ea59986`, blok 67092487; kullanıcı keystore ile deploy etti; Sourcify `exact_match`, explorer'da doğrulanmış. Terk edilen ilk deploy (delist hatası, kayıt yok): `0x8dA7825634079ce232141B8EDeD0682557c8b4A1`, blok 67003886, admin = deployer = `0xd76B…7cDe`; Sourcify ile doğrulandı (exact match), explorer'da doğrulanmış görünüyor. Ayrıntı ARC.md §8. Web: `lib/chain.ts` → `REGISTRY`.
 
 ---
 

@@ -9,7 +9,8 @@ arc-forge build
 arc-forge test                     # unit + fuzz tests
 ```
 
-Testnet deployment: `0x8dA7825634079ce232141B8EDeD0682557c8b4A1`, block 67003886 (`../ARC.md` §8).
+Testnet deployment: `0x27cf926771B0A311A9574543ea29dc5e3ea59986`, block 67092487 (`../ARC.md` §8). The first one
+(`0x8dA7…b4A1`) had the delist bug fixed in this version and is abandoned.
 
 ## Deploy (Arc testnet)
 

@@ -20,7 +20,9 @@ export const CHAIN: Chain = process.env.NEXT_PUBLIC_ARC_NETWORK === "mainnet" ? 
 // GuidelineRegistry deployments (contracts/broadcast, ARC.md §8). Verified on the explorer via
 // Sourcify (exact match). The indexer starts from deployBlock. No mainnet deployment yet.
 const REGISTRIES: Record<number, { address: `0x${string}`; deployBlock: bigint } | undefined> = {
-  [arcTestnet.id]: { address: "0x8dA7825634079ce232141B8EDeD0682557c8b4A1", deployBlock: BigInt(67003886) },
+  // 2026-10-14 redeploy with setHidden / setModeratorLock; the first deployment (0x8dA7…b4A1) had
+  // the delist bug (ARCHITECTURE §5.1) and is abandoned, it holds no guidelines.
+  [arcTestnet.id]: { address: "0x27cf926771B0A311A9574543ea29dc5e3ea59986", deployBlock: BigInt(67092487) },
 };
 
 /** The registry on the configured network, or undefined where it isn't deployed. */

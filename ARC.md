@@ -326,7 +326,10 @@ Gas düşümleri log üretmez; maliyeti receipt'ten hesapla.
 
 | Alan | Değer |
 |---|---|
-| ⚠ Durum | **Bu ilk deploy geçersiz** (delist hatası, ARCHITECTURE §5.1). Kayıt yok; düzeltilmiş sürüm yeniden deploy edilecek, bu tablo yeni adresle güncellenecek |
+| **Adres (geçerli, 2026-10-14)** | **`0x27cf926771B0A311A9574543ea29dc5e3ea59986`** (https://explorer.testnet.arc.io/address/0x27cf926771B0A311A9574543ea29dc5e3ea59986) |
+| Deploy tx / blok | `0xca4f410bf9e434edc542f6c2c118695458cdc197480a64e98b1190b51e04fb55` · **blok 67092487** (indexer buradan başlar) · 1.461.130 gas × 25,75 Gwei ≈ 0,0376 USDC |
+| Zincirden doğrulandı | roller sadece admin'de, `licenses(0)` = "CC-BY-4.0", `nextId` = 1, `setHidden`/`isListed` var, `setDelisted` yok; Sourcify `exact_match`, explorer `is_fully_verified: true` |
+| Eski (terk edildi) | `0x8dA7825634079ce232141B8EDeD0682557c8b4A1`: delist hatası (ARCHITECTURE §5.1), hiç kayıt yok, kullanılmıyor. Aşağıdaki satırlar o deploy'a ait |
 | Adres (eski) | `0x8dA7825634079ce232141B8EDeD0682557c8b4A1` (https://explorer.testnet.arc.io/address/0x8dA7825634079ce232141B8EDeD0682557c8b4A1) |
 | Deploy tx | `0x2c644188565b48e0bf1f6ff0dd45d7d94a79de66279a8803e090e1b5f21ea667` |
 | Deploy bloğu | **67003886** (indexer buradan başlar) |
