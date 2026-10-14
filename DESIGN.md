@@ -1,6 +1,6 @@
 # PikaMd — Tasarım Sistemi ve Güncel Durum
 
-> Son güncelleme: 2026-10-13. Arayüz geliştirmesi sürüyor (yol haritası: ARCHITECTURE.md §15).
+> Son güncelleme: 2026-10-14. Arayüz geliştirmesi sürüyor (yol haritası: ARCHITECTURE.md §15).
 > Bu dosya **piksel tasarım dilinin kurallarını** ve **sitenin şu anki halini** tutar.
 > Yeni bir UI işi yaparken önce burayı oku; buradaki kararlar kullanıcıyla tek tek onaylandı.
 
@@ -89,7 +89,7 @@
 | `/` | **Ana sayfa (vizyon).** Başlık *"Built by the community / for the community"* + iki satır alt yazı + koleksiyon kartları + altında **"How PikaMd works"** paneli (§3.2a). Akan şerit **yok**. Navbar logosu buraya gider. | ✅ UI (mock) |
 | `/explore` | Başlık *"Give your agent / a creative edge"* + iki satır alt yazı (ana sayfayla aynı `hero-title` / `hero-sub` düzeni) + **arama çubuğu** (açılır sonuç listesi, §2 `ExploreSearch`) + iki sonsuz şerit (üst sağdan sola, alt soldan sağa, ~20px/sn), navbar ile aynı genişlikte (20px kenar). Kartlar mock veriden; yazarlar İngilizce nick veya kısa cüzdan adresi. | ✅ UI (mock) |
 | `/collection` | Başlık *"Your agent's / personal library"* + alt yazı *"Every guideline you've collected, in one place / Connect your agent once and it can read them all over MCP"* (ana sayfa düzeni) + `CollectionPanel` (Explore'da kaydedilenler, mock localStorage). Kart butonuyla koleksiyondan çıkarılabilir. | ✅ UI (mock) |
-| `/new` | **Publish.** Başlık *"Contribute to the community / by sharing your guidelines"* + tek satır alt yazı *"Earn tips, collect likes and get PikaGold"* (kullanıcı metni, 2026-10-10; eski "Share what makes your agent great…" metni kaldırıldı; gizlilik mesajı artık I–IV kareleri ve Clean up'ta) + 4 adımlı görev paneli (`components/publish/`). Ayrıntı §3.2. | ✅ UI (demo yayın) |
+| `/new` | **Publish.** Başlık *"Contribute to the community / by sharing your guidelines"* + tek satır alt yazı *"Earn tips, collect likes and get PikaGold"* (kullanıcı metni, 2026-10-10; eski "Share what makes your agent great…" metni kaldırıldı; gizlilik mesajı artık I–IV kareleri ve Clean up'ta) + 4 adımlı görev paneli (`components/publish/`). Ayrıntı §3.2. | ✅ **gerçek yayın** (Arc testnet, 2026-10-14) |
 | `/connect` | **Connect your agent.** Başlık *"Connect your agent / to your library"* + alt yazı *"Paste one prompt into Claude Code, Cursor, VS Code or Codex / Your agent reads your collection over MCP, no downloads"* + `ConnectPanel` (§3.3). | ✅ UI (demo) |
 | 404 | `ComingSoon` paneli | ⏳ |
 
@@ -111,7 +111,7 @@
 - **4 kare** (siyahımsı → koyu altın degrade + silik 16px piksel dama deseni, koyu altın çerçeve, hover'da altın çerçeve ve 3px yükselme `steps(2)`): **01 Share · 02 Collect · 03 Connect · 04 Stay safe** (güvenlik karesi, kullanıcı isteği: "Ask" yerine; kalkan ikonu). Masaüstünde 4 sütun ve en az kare (`min-height` container query ile, `aspect-ratio` değil: stretch ile birlikte genişliği büyütüp kareleri birbirine değdiriyordu); tablet 2×2 ve mobil tek sütunda kare zorunluluğu yok. Aralık 22px (iki çerçeve + 16px).
 - Altta **"For example, in your agent"** terminal kutusu: ürünün kalbindeki cümle (koleksiyondaki Secure Solidity ile CLAUDE.md'yi tamamla) + 3 yeşil ✓ adım (`my_collection`, `get_guideline secure-solidity@v3`). Yanıp sönen imleç.
 - En altta güven şeridi: No account needed to read · Authors recorded on Arc · Works with any MCP agent · 0% platform fee.
-- ⚠ MCP sadece yerel önizlemede çalışıyor; sabitlenmiş sürüm ve Arc kaydı henüz yok (Adım 7–8); panel vizyonu anlatıyor. Yayına açılmadan önce bu özellikler hazır olmalı ya da metin "coming soon" demeli (§7).
+- ⚠ (2026-10-14) Arc kaydı artık gerçek (yayın kontrata yazılıyor); MCP anahtarı ve koleksiyon hâlâ demo, sabitlenmiş sürüm (`slug@v3`) henüz yok; panel vizyonu anlatıyor. Yayına açılmadan önce bu özellikler hazır olmalı ya da metin "coming soon" demeli (§7).
 
 ---
 

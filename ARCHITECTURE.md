@@ -1,6 +1,6 @@
 # PikaMd — Mimari Tasarım Dokümanı
 
-> Durum: **Geliştirme sürüyor — arayüz önce, mock veriyle.** `web/` (Next.js) çalışıyor: ana sayfa, Explore (**arama çubuğu**, §11.1, + akan şeritler; kartlarda OPEN önizleme, ♥ beğeni, ★ Tip, + Add), My Collection (mock), Publish (4 adım + kişisel veri / sır tarayıcısı, demo yayın), navbar, piksel tasarım sistemi. **Cüzdan + SIWE girişi ve beğeni/PikaGold (K22) çalışıyor** (wagmi 3, Arc testnet; veriler yerel geliştirme deposunda, §9.3). MCP sunucusu yerel önizlemede (§8.0). Kontrat ve gerçek backend (Supabase/IPFS) henüz yok. Kod git'te (kökte repo; iş dalları `feat/…`). Tasarım sistemi ve güncel ekranlar: **DESIGN.md**. (Son güncelleme: 2026-10-12)
+> Durum: **Arc testnet'te gerçek yayın uçtan uca çalışıyor; site henüz internette değil.** `web/` (Next.js): ana sayfa, Explore (arama §11.1 + şeritler), Publish (**gerçek**: tarama → Pinata/IPFS → cüzdanla `register` → onay, §7.1.1), Connect (MCP anahtarı hâlâ demo), My Collection (hâlâ tarayıcıda). Cüzdan + SIWE (sunucu imzalı nonce) + beğeni/PikaGold Supabase'te (§9.3, §10.1). `GuidelineRegistry` Arc testnet'te (§5.1). Indexer (§7.4). MCP `/mcp` (işaretli içerik ajanlara gitmez). Supabase iki proje (canlı + geliştirme). Tasarım: **DESIGN.md**; nerede kaldığımız: **CLAUDE.md**. (Son güncelleme: 2026-10-14)
 > Bu doküman, önceki tasarım konuşmasında alınan kararların tamamını içerir.
 > Yeni bir oturum buradan devam edebilmeli. "Kararlar" bölümündeki maddeler
 > kullanıcıyla netleştirildi — yeniden tartışmaya açmadan uygula.
@@ -543,11 +543,11 @@ Arayüz mock veriyle önce geliştirilir; veri tipleri baştan gerçek şemaya u
 | 2 | Veri tipleri + tek okuma girişi (`lib/data/guidelines.ts`) + mock veri | ✅ |
 | 3 | Ana sayfa (vizyon + koleksiyon kartları 001–003 + "How PikaMd works" paneli), Explore şeritleri + **arama** (§11.1), My Collection (mock), kart önizlemesi (OPEN), **Connect your agent** (`/connect`, demo: kod üretimi + ajan prompt'u + 4 ajan için elle kurulum, DESIGN §3.3) | ✅ · sırada: yönerge detay sayfası `/g/[slug]` |
 | 3b | Kartlarda beğeni (♥, veride `stars`) ve bağış (★ Tip) butonları — beğeni mock (localStorage), bağış "coming soon" notu (K21, Faz 6) | ✅ UI |
-| 4 | Yayınlama ekranları (`/new` editör, temizlik adımı §9.1.1, tüm işlem durumları) — mock işlem | ✅ UI (demo yayın; tarayıcı `lib/scan.ts` + 15 test) |
+| 4 | Yayınlama ekranları (`/new` editör, temizlik adımı §9.1.1, tüm işlem durumları) | ✅ **gerçek yayın** (2026-10-14, §7.1.1) |
 | 5 | Cüzdan bağlantısı + SIWE oturumu + beğeni/PikaGold (K22, §9.3) | ✅ Arc testnet, yerel depo; WalletConnect ve Supabase sonra |
-| 6 | Okuma backend'i: Supabase + IPFS + `/raw` (mock kalkar) | ⏳ |
-| 7 | Kontrat + yayınlama (Arc Studio yazar/denetler, biz deploy ederiz — K17) | ⏳ |
-| 8 | MCP + koleksiyon ⭐ | 🟡 yerel önizleme çalışıyor (mock veri, tek demo kullanıcı, §8.0); gerçek key/koleksiyon backend'i Adım 6 sonrası |
+| 6 | Okuma backend'i: Supabase + IPFS + `/raw` (mock kalkar) | ✅ Supabase (iki proje, §10.1) + IPFS (Pinata) · ⏳ `/raw` |
+| 7 | Kontrat + yayınlama (Arc Studio yazar/denetler, biz deploy ederiz — K17) | ✅ kontrat testnet'te (§5.1), gerçek yayın + indexer (§7.1.1, §7.4); Arc Studio kullanılmadı, kontratı biz yazdık |
+| 8 | MCP + koleksiyon ⭐ | 🟡 MCP araçları gerçek veriden okuyor (işaretliler hariç); MCP anahtarı ve koleksiyon hâlâ demo (tek kullanıcı, §8.0) → cüzdana bağlanacak |
 | 9 | Güvenlik, topluluk, bağış (K21), mainnet | ⏳ |
 
 Faz 0 notu: Arc ağ bilgileri doğrulandı (ARC.md), Arc Studio ile testnet'e deneme kontratı deploy edildi (ARC.md §10).
