@@ -7,9 +7,10 @@ import { readFile, rm, writeFile } from "node:fs/promises";
 import { privateKeyToAccount } from "viem/accounts";
 import { createSiweMessage } from "viem/siwe";
 
-import { refuseIfDatabase } from "./smoke-guard.mjs";
+import { clearTestLikes, devDatabase } from "./smoke-guard.mjs";
 
-await refuseIfDatabase("auth:smoke");
+// null = local dev store; otherwise the development Supabase project (never the live one)
+const db = await devDatabase("auth:smoke");
 
 const BASE = process.env.PIKAMD_URL ?? "http://localhost:3001";
 const ORIGIN = new URL(BASE).origin;
@@ -53,6 +54,7 @@ async function signIn(account) {
 }
 
 const backup = await readFile(FILE, "utf8").catch(() => null);
+await clearTestLikes(db, [alice.address, bob.address]);
 
 try {
   // ── Sign-in ──
@@ -143,6 +145,7 @@ try {
   const out = await call("POST", "/api/auth/logout", { cookie: a.cookie });
   check(out.status === 200 && /pikamd_session=;|Max-Age=0|Expires=Thu, 01 Jan 1970/i.test(out.setCookie ?? ""), "logout clears the cookie");
 } finally {
+  await clearTestLikes(db, [alice.address, bob.address]);
   if (backup === null) await rm(FILE, { force: true });
   else await writeFile(FILE, backup);
 }

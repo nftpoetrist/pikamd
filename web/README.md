@@ -30,8 +30,9 @@ npx eslint app components lib scripts
 npm test                     # unit tests (scan, MCP, SIWE/session, likes, search)
 npm run mcp:smoke            # needs the dev server: MCP over HTTP with the official client
 npm run auth:smoke           # needs the dev server: wallet sign-in, likes, PikaGold
-# Both use the sample data and write likes, so they refuse to run when .env.local sets
-# SUPABASE_URL (they never write to a real database).
+# Both need the sample data. With the local dev store (no SUPABASE_URL) they just run. With the
+# development Supabase project, seed it once (npm run db:seed); auth:smoke clears its test
+# wallets' likes before and after. Both refuse the LIVE project (scripts/smoke-guard.mjs).
 npx next build
 ```
 
@@ -50,6 +51,10 @@ See `.env.example`. Never commit `.env*` files or `.data/` (local dev store).
 | `SUPABASE_SECRET_KEY` | server | Supabase secret key (`sb_secret_…`); bypasses RLS, server only |
 
 ## Database
+
+Two Supabase projects: **live** (`sdjsvemkchgonznhbuku`, used by the deployed testnet site, keys only
+in Vercel) and **development** (`bvtmtkkscseouplfinvj`, used by localhost through `.env.local`).
+`npm run db:seed` fills the development project with the sample guidelines; it refuses the live one.
 
 `supabase/migrations/*.sql` holds the schema. Run each file once, in order, in the Supabase SQL
 editor. Every table has RLS on with no policies and the public roles get no privileges, so only the

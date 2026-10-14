@@ -1,18 +1,56 @@
 // Smoke tests drive the dev server, which uses Supabase when web/.env.local sets SUPABASE_URL.
-// They rely on the sample guidelines and write likes, which are permanent: never let them run
-// against a real database. Reads only the variable names and the project host, never secrets.
+// They need the sample guidelines and write likes, which are permanent in the app. So:
+// - local dev store (no SUPABASE_URL): run as before
+// - the LIVE project: never run (it would leave test likes on the real site)
+// - any other project (the development one): run, after `npm run db:seed`, and clear the test
+//   wallets' likes before and after through the server key
+// Reads values from .env.local but never prints secrets.
 import { readFile } from "node:fs/promises";
 
-export async function refuseIfDatabase(name) {
-  const env = await readFile(new URL("../.env.local", import.meta.url), "utf8").catch(() => "");
-  const line = env.split(/\r?\n/).find((l) => /^SUPABASE_URL=\S/.test(l));
-  if (!line) return;
-  const host = line.slice("SUPABASE_URL=".length).trim().replace(/^https?:\/\//, "");
-  console.error(
-    `${name}: skipped. The dev server reads guidelines and writes likes to Supabase (${host}) because\n` +
-      `web/.env.local sets SUPABASE_URL. This test needs the sample data and writes permanent likes, so it\n` +
-      `only runs against the local dev store: remove SUPABASE_URL and SUPABASE_SECRET_KEY from .env.local\n` +
-      `(or point them at a separate development project with its own test data) and try again.`,
+/** The project the deployed testnet site uses. Override if it ever changes. */
+export const LIVE_SUPABASE_REF = process.env.PIKAMD_LIVE_SUPABASE_REF ?? "sdjsvemkchgonznhbuku";
+
+export async function readEnvLocal() {
+  const text = await readFile(new URL("../.env.local", import.meta.url), "utf8").catch(() => "");
+  return Object.fromEntries(
+    text.split(/\r?\n/).filter((l) => /^[A-Z_][A-Z0-9_]*=/.test(l)).map((l) => [l.slice(0, l.indexOf("=")), l.slice(l.indexOf("=") + 1).trim()]),
   );
-  process.exit(2);
+}
+
+/** The development database the dev server uses, or null for the local dev store. Exits for the live one. */
+export async function devDatabase(name) {
+  const env = await readEnvLocal();
+  if (!env.SUPABASE_URL) return null;
+  const ref = new URL(env.SUPABASE_URL).hostname.split(".")[0];
+  if (ref === LIVE_SUPABASE_REF) {
+    console.error(
+      `${name}: skipped. web/.env.local points at the LIVE Supabase project (${ref}). This test writes\n` +
+        `likes, so it only runs against the local dev store or the development project.`,
+    );
+    process.exit(2);
+  }
+  const db = { url: env.SUPABASE_URL, key: env.SUPABASE_SECRET_KEY, ref };
+  const res = await rest(db, "GET", "/rest/v1/listed_guidelines?select=id&limit=1");
+  const rows = await res.json().catch(() => null);
+  if (!res.ok || !Array.isArray(rows)) {
+    console.error(`${name}: can't read the development database ${ref} (HTTP ${res.status}).`);
+    process.exit(2);
+  }
+  if (rows.length === 0) {
+    console.error(`${name}: the development database ${ref} has no guidelines yet. Run: npm run db:seed`);
+    process.exit(2);
+  }
+  return db;
+}
+
+function rest(db, method, path) {
+  return fetch(db.url + path, { method, headers: { apikey: db.key, Authorization: `Bearer ${db.key}`, Prefer: "return=minimal" } });
+}
+
+/** Deletes the test wallets' likes (development database only; the app itself never deletes likes). */
+export async function clearTestLikes(db, wallets) {
+  if (!db) return;
+  const list = wallets.map((w) => w.toLowerCase()).join(",");
+  const res = await rest(db, "DELETE", `/rest/v1/stars?wallet_address=in.(${list})`);
+  if (!res.ok) throw new Error(`clearing test likes failed (HTTP ${res.status})`);
 }
