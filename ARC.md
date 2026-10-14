@@ -276,7 +276,7 @@ Arc'ın deterministik finality'si indexer'ı çok basitleştirir:
 - **Onay bekleme, reorg tespiti, rollback gerekmez.** Receipt geldiyse işlem kesindir. Hemen Supabase'e yaz.
 - Kaldığın yerden devam: `indexer_state.last_block`'tan itibaren tara. İşlenmiş blokları yeniden doğrulamaya gerek yok.
 - Sıralama: **`blockNumber`, sonra `logIndex`**. Asla `timestamp` ile sıralama.
-- Backfill: `eth_getLogs`'u **1.000 blokluk** parçalar halinde çağır (docs örneği). Sağlayıcının limitini kontrol et.
+- Backfill: `eth_getLogs`'u **1.000 blokluk** parçalar halinde çağır (docs örneği). Sağlayıcının limitini kontrol et. ✅ **Ölçüldü (2026-10-14): `rpc.testnet.arc.io` en fazla 10.000 blok** kabul ediyor (10.001 → "requested range too large"); PikaMd indexer'ı 10.000'lik parça kullanıyor. Mainnet ve anahtarlı sağlayıcılar için ayrıca ölç.
 - Canlı akış: `eth_subscribe("newHeads")` WebSocket ile yapılabilir, ama Vercel cron + `getLogs` modeli (ARCHITECTURE §7.4) Arc için de uygun.
 - **Hız:** Saniyede ~2 blok üretilir, yani dakikada ~120 blok. Her dakika çalışan cron tek `getLogs` çağrısıyla (≤1.000 blok) rahatça yetişir.
 - Kontratın `deployBlock` numarasını kaydet ve indexer'ı oradan başlat (PikaName'de deploy bloğu not edilmişti, aynı alışkanlık).

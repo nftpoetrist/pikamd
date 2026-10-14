@@ -221,6 +221,14 @@ Tarayıcı                         Sunucu (Next.js)                 IPFS      Ar
 - Kullanıcı 6. adıma gelmeden çıkarsa: **Indexer** event'i yakalar ve kaydı tamamlar
   (pending kaydındaki meta ile). Pending kaydı TTL sonunda temizlenir, onaylanmamış CID unpin edilir.
 
+### 7.1.1 Uygulama (2026-10-14)
+- **`POST /api/guidelines/prepare`** (SIWE oturumu şart): `lib/publish/validate.ts` (tarayıcıdaki adımlarla **aynı sınırlar**, tek kaynak): görünmez karakterler silinir, ≤512 KB, başlık 3–60, özet 10–100, tür, ≤5 etiket; kart metninde gizli/kişisel veri → red; dosyada **sır → red**, işaretli satır → `suspicious`, bırakılan kişisel veri → `warning`; rapor sadece kural/önem/satır (eşleşen metin asla). Ad (slug) boş mu → Pinata'ya **public** yükleme (Pinata varsayılanı private!) → `prepare_upload` ad ayırır (başka cüzdan alırsa yükleme geri silinir). Yanıt: cid, contentHash (sha256), slug, registry, chainId.
+- **Tarayıcı** (`lib/publish/client.ts`): oturum yoksa SIWE → prepare → gerekirse `switchChain` (wagmi 4902'de `wallet_addEthereumChain`'i kendi yapar, USDC native currency ile) → `writeContract(register)` → işlem hash'i taslağa yazılır → `waitForTransactionReceipt` → confirm.
+- **`POST /api/guidelines/confirm`**: receipt'i Arc'tan okur (bulunamazsa 5 kez 1 sn bekler), `lib/publish/receipt.ts`: işlem başarılı + **registry adresinden** tek `GuidelineRegistered` + `author` = oturum cüzdanı (receipt `from`/`to` bilerek kontrol edilmez: akıllı cüzdanda bundler → EntryPoint). `confirm_guideline` bekleyen yüklemeyi cüzdan + CID + hash eşleşmesiyle bulur, sürüm 1'i yazar (tekrar çağrı aynı slug'ı döner), `revalidateTag("guidelines", { expire: 0 })`.
+- **Şüpheli içerik:** `listed_guidelines` artık `suspicious`'ı da listeler ve `scan_status` verir (site gösterir); MCP'nin filtrelemesi gerekiyor (⏳ Adım 5 ile).
+- **Doğrulama:** Arc testnet'te tek kullanımlık test cüzdanıyla gerçek UI üzerinden (headless Chrome + EIP-6963 enjekte cüzdan): iptal → mesaj, yayın → "Published", yenileme sonrası "Finish publishing" (yeni işlem yok). Zincir (`getGuideline`, `latestVersion`), IPFS (gateway içeriği = metin, sha256 = zincir hash'i), DB ve site API'si birbirini tutuyor. Ücret ≈0,0055 USDC/yayın. Test yönergeleri sonra zincirde gizlendi, IPFS'ten silindi.
+- **Testlerin yakaladığı hatalar:** (1) geliştirme tohum verisi id 1–18 kullanıyordu, ilk gerçek kayıt (id 1) çakıştı → tohumlar 900.000.001+; (2) "Finish publishing" yolu girişi atlıyordu (yeni oturumda 401) → önce giriş; (3) onayda Pinata dosya kimliği siliniyordu → `guideline_versions.pinata_id`.
+
 ### 7.2 Okuma (web)
 `/g/[slug]` → Supabase meta → IPFS içerik (cache) → `react-markdown` + `rehype-sanitize` ile render.
 Tarayıcı ayrıca içeriğin sha256'sını hesaplar, Arc'taki `contentHash` ile karşılaştırır → **"✓ Zincirde doğrulandı"** rozeti.
@@ -228,7 +236,8 @@ Tarayıcı ayrıca içeriğin sha256'sını hesaplar, Arc'taki `contentHash` ile
 ### 7.3 Okuma (MCP) — bkz. §8
 
 ### 7.4 Indexer
-- Vercel serverless uzun süre dinleyemez → **Vercel Cron (her dakika)** + viem `getLogs(fromBlock = son işlenen blok)`.
+- **Uygulama (2026-10-14, `lib/server/indexer.ts`, `lib/registry-events.ts`):** ⚠ **Vercel Hobby planında cron günde en fazla 1 kez** çalışır (vercel.com/docs/cron-jobs/usage-and-pricing; daha sık ifade deploy'u bozar), "her dakika" planı bu planda mümkün değil. Bu yüzden üç tetik: (1) **yayın kendi kendini anında indeksler** (`/api/guidelines/confirm`), (2) **Explore yüklenince** `/api/likes` yanıttan sonra `after()` ile arka planda senkron (en fazla 2 dakikada bir, `claim_indexer` kilidiyle), (3) **günlük cron** `vercel.json` → `GET /api/cron/indexer` (`Authorization: Bearer $CRON_SECRET`, Vercel'in gönderdiği başlık; production'da CRON_SECRET yoksa 401). Olaylar: GuidelineRegistered (onayı gelmemiş kayıt → bekleyen yüklemesi varsa indekslenir; bu sitede hazırlanmamış kayıtların adı/kart metni yok, indekslenmez), HiddenSet → `author_hidden`, ModeratorLockSet → `moderator_locked`, VersionPublished v>1 (yeni sürüm akışı yok, loglanır). **Arc testnet RPC getLogs sınırı tam 10.000 blok** (ikili aramayla ölçüldü, 10.001'de "requested range too large"), parça boyu bu (`ARC_LOGS_MAX_RANGE`). Deploy'dan beri 91.144 blok ≈9 sn'de tarandı; zincirde gizlenen iki test yönergesi DB'de gizlendi. İlerleme `indexer_state` (lease + asla geri gitmez).
+- (Eski taslak) Vercel serverless uzun süre dinleyemez → **Vercel Cron (her dakika)** + viem `getLogs(fromBlock = son işlenen blok)`.
   Son işlenen blok Supabase'de `indexer_state` tablosunda.
 - Idempotent yazım (upsert, `tx_hash + log_index` unique).
 - İleride ihtiyaç olursa Ponder / Envio gibi bir indexer'a geçilebilir.
