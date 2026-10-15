@@ -11,18 +11,32 @@ export const PENDING_TTL_S = 24 * 60 * 60;
 
 export const publishDatabase = () => supabase();
 
-/** True when no listed or hidden guideline and no other wallet's reservation uses the slug. */
-export async function slugIsFree(slug: string, wallet: string): Promise<boolean> {
-  const db = supabase()!;
-  const [taken, reserved] = await Promise.all([
-    db.from("guidelines").select("id").eq("slug", slug).limit(1),
-    db.from("pending_uploads").select("id").eq("slug", slug).neq("wallet_address", wallet.toLowerCase()).gt("expires_at", new Date().toISOString()).limit(1),
-  ]);
-  return (check(taken, "slug check") ?? []).length === 0 && (check(reserved, "slug check") ?? []).length === 0;
+/** Why a prepare can't go ahead, or "ok" (the database's limits, checked again when saving). */
+export type PrepareStatus = "ok" | "slug_taken" | "too_many" | "busy";
+
+const STATUSES: readonly PrepareStatus[] = ["ok", "slug_taken", "too_many", "busy"];
+const asStatus = (value: unknown, what: string): PrepareStatus => {
+  const status = STATUSES.find((s) => s === value);
+  if (!status) throw new Error(`Unexpected ${what} answer`);
+  return status;
+};
+
+/** Checked before the file is pinned: the name is free and this wallet and the site are under their limits. */
+export async function prepareCheck(wallet: string, input: PublishInput, contentHash: string): Promise<PrepareStatus> {
+  const result = check(
+    await supabase()!.rpc("prepare_check", {
+      p_wallet: wallet.toLowerCase(),
+      p_slug: input.slug,
+      p_content_hash: contentHash,
+      p_bytes: Buffer.byteLength(input.content, "utf8"),
+    }),
+    "prepare_check",
+  );
+  return asStatus(result, "prepare_check");
 }
 
-/** Reserves the slug and stores the scanned, pinned file. False if the slug was taken meanwhile. */
-export async function savePending(wallet: string, input: PublishInput, pin: { cid: string; id: string }, contentHash: string): Promise<boolean> {
+/** Reserves the slug and stores the scanned, pinned file, unless a limit was reached meanwhile. */
+export async function savePending(wallet: string, input: PublishInput, pin: { cid: string; id: string }, contentHash: string): Promise<PrepareStatus> {
   const result = check(
     await supabase()!.rpc("prepare_upload", {
       p_wallet: wallet.toLowerCase(),
@@ -38,7 +52,7 @@ export async function savePending(wallet: string, input: PublishInput, pin: { ci
     }),
     "prepare_upload",
   );
-  return result === "ok";
+  return asStatus(result, "prepare_upload");
 }
 
 /** Indexes a verified registration. The slug, or null when the wallet has no matching upload. */
@@ -55,5 +69,11 @@ export async function confirmRegistration(wallet: string, r: Registration): Prom
     p_log_index: r.logIndex,
   });
   if (res.error?.code === "P0002") return null;
+  // A constraint the stored upload can't meet will fail the same way every time: report it and move
+  // on, so one bad registration never stalls the indexer. Anything else is retried.
+  if (res.error?.code?.startsWith("23")) {
+    console.error(`[publish] registration #${r.id} can't be indexed: ${res.error.code} ${res.error.message}`);
+    return null;
+  }
   return check(res, "confirm_guideline") as string;
 }

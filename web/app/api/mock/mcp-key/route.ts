@@ -8,7 +8,7 @@ export async function POST(request: Request) {
   const rejected = mockGuard(request, { json: true });
   if (rejected) return rejected;
 
-  const body = await readJson(request);
+  const body = await readJson(request, 128 * 1024);
   const keyHash = body?.keyHash;
   if (typeof keyHash !== "string" || !/^[0-9a-f]{64}$/.test(keyHash)) {
     return Response.json({ error: "keyHash must be a SHA-256 hex digest" }, { status: 400 });

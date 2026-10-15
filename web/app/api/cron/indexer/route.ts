@@ -5,6 +5,9 @@ import { NO_STORE } from "@/lib/server/guard";
 // Daily catch-up for the registry index (vercel.json; Hobby plans allow one cron run per day).
 // Vercel sends `Authorization: Bearer $CRON_SECRET` (vercel.com/docs/cron-jobs/manage-cron-jobs).
 // Without CRON_SECRET it only runs in development.
+// The sync below stops itself after 50 s; this leaves it room without relying on the platform default
+export const maxDuration = 60;
+
 function authorized(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
   if (!secret) return process.env.NODE_ENV !== "production";

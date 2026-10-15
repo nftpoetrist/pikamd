@@ -17,6 +17,9 @@ const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export type ScanStatus = "clean" | "warning" | "suspicious";
 
+/** Findings kept in the stored scan report (the counts stay complete). */
+export const REPORT_FINDINGS_MAX = 200;
+
 export type PublishInput = {
   content: string;
   meta: { title: string; description: string; kind: GuidelineKind; tags: string[] };
@@ -68,6 +71,9 @@ export function validatePublish(body: unknown): PublishInput | { error: string }
     meta: { title, description, kind, tags: tags as string[] },
     slug,
     scanStatus,
-    scanReport: { counts: scan.counts, findings: scan.findings.map((f) => ({ rule: f.rule, severity: f.severity, line: f.line })) },
+    scanReport: {
+      counts: scan.counts,
+      findings: scan.findings.slice(0, REPORT_FINDINGS_MAX).map((f) => ({ rule: f.rule, severity: f.severity, line: f.line })),
+    },
   };
 }

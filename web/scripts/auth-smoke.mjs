@@ -7,7 +7,7 @@ import { readFile, rm, writeFile } from "node:fs/promises";
 import { privateKeyToAccount } from "viem/accounts";
 import { createSiweMessage } from "viem/siwe";
 
-import { clearTestLikes, devDatabase } from "./smoke-guard.mjs";
+import { clearRateLimits, clearTestLikes, devDatabase } from "./smoke-guard.mjs";
 
 // null = local dev store; otherwise the development Supabase project (never the live one)
 const db = await devDatabase("auth:smoke");
@@ -55,6 +55,7 @@ async function signIn(account) {
 
 const backup = await readFile(FILE, "utf8").catch(() => null);
 await clearTestLikes(db, [alice.address, bob.address]);
+await clearRateLimits(db);
 
 try {
   // ── Sign-in ──

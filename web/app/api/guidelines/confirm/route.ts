@@ -6,6 +6,7 @@ import { readRegistration } from "@/lib/publish/receipt";
 import { arcClient, sessionWallet } from "@/lib/server/auth";
 import { NO_STORE, readJson, sameOriginGuard } from "@/lib/server/guard";
 import { confirmRegistration, publishDatabase } from "@/lib/server/publish";
+import { rateLimited } from "@/lib/server/ratelimit";
 
 // Publish, step 2 (ARCHITECTURE §7.1): after the wallet's register transaction, read the receipt
 // from Arc and index the guideline. Only what the chain says counts (lib/publish/receipt.ts).
@@ -21,6 +22,8 @@ export async function POST(request: Request) {
 
   const wallet = await sessionWallet();
   if (!wallet) return fail(401, "Sign in with your wallet to publish");
+  const limited = await rateLimited("confirm", { request, wallet });
+  if (limited) return limited;
 
   const txHash = (await readJson(request))?.txHash;
   if (typeof txHash !== "string" || !TX_RE.test(txHash)) return fail(400, "Send the transaction hash");

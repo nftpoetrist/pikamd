@@ -30,7 +30,8 @@ const handler = createMcpHandler(
     });
   },
   // Reporting only. Never log request headers: they carry the user's key.
-  { onerror: (error) => console.error(`[mcp] ${error.message}`) },
+  // Tool calls are a few hundred bytes; the SDK's default body limit is 4 MiB.
+  { onerror: (error) => console.error(`[mcp] ${error.message}`), maxRequestBodySize: 64 * 1024 },
 );
 
 function bearerToken(header: string | null): string | null {

@@ -5,9 +5,10 @@ python3 - <<'PY'
 import re, subprocess, sys
 RULES = [
     ("Supabase secret key", r"sb_secret_[A-Za-z0-9_-]{8,}"),
+    ("Supabase access token", r"sbp_[A-Za-z0-9]{20,}"),
     ("JWT (e.g. Pinata)", r"eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}"),
     ("private key assignment", r"(?i)private_?key\s*[=:]\s*['\"]?(0x)?[0-9a-f]{64}"),
-    ("filled secret env var", r"^(PIKAMD_SESSION_SECRET|SUPABASE_SECRET_KEY|PINATA_JWT|PRIVATE_KEY)=\S+"),
+    ("filled secret env var", r"^(PIKAMD_SESSION_SECRET|SUPABASE_SECRET_KEY|SUPABASE_ACCESS_TOKEN_[A-Z]+|PINATA_JWT|PRIVATE_KEY|CRON_SECRET)=\S+"),
 ]
 staged = subprocess.run(["git", "diff", "--cached", "--name-only", "--diff-filter=ACMR"], capture_output=True, text=True).stdout.split()
 bad = []

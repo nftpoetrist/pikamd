@@ -1,9 +1,11 @@
-import { verifySiweMessage } from "viem/siwe";
+import { hashMessage } from "viem";
+import { verifyHash } from "viem/actions";
 import { readNonce } from "@/lib/auth/nonce";
 import { checkSiweMessage } from "@/lib/auth/siwe";
 import { CHAIN } from "@/lib/chain";
 import { arcClient, secret, startSession } from "@/lib/server/auth";
 import { NO_STORE, notConfigured, readJson, sameOriginGuard } from "@/lib/server/guard";
+import { rateLimited } from "@/lib/server/ratelimit";
 import { getStore } from "@/lib/server/store";
 
 const SIGNATURE_RE = /^0x[0-9a-fA-F]{130,20000}$/; // 65-byte ECDSA, or a longer smart-wallet signature
@@ -17,8 +19,10 @@ export async function POST(request: Request) {
   if (rejected) return rejected;
   const store = getStore();
   if (!store) return notConfigured();
+  const limited = await rateLimited("verify", { request });
+  if (limited) return limited;
 
-  const body = await readJson(request);
+  const body = await readJson(request, 32 * 1024); // the message (≤2,000 chars) and a signature (≤20,000 hex)
   const message = body?.message;
   const signature = body?.signature;
   if (typeof message !== "string" || typeof signature !== "string" || !SIGNATURE_RE.test(signature)) {
@@ -34,14 +38,17 @@ export async function POST(request: Request) {
     return Response.json({ error: "This sign-in request expired, try again" }, { status: 400, headers: NO_STORE });
   }
 
+  // checkSiweMessage already checked every field of the message (and the nonce its MAC), so only
+  // the signature is left. mode "eoa": a plain wallet's signature is recovered locally; only a
+  // smart-contract wallet's (ERC-1271 / ERC-6492) needs a call to Arc. viem's default ("auto")
+  // calls Arc for every signature first.
   let valid: boolean;
   try {
-    valid = await verifySiweMessage(arcClient, {
-      message,
-      signature: signature as `0x${string}`,
+    valid = await verifyHash(arcClient, {
       address: checked.address,
-      domain: url.host,
-      nonce: checked.nonce,
+      hash: hashMessage(message),
+      signature: signature as `0x${string}`,
+      mode: "eoa",
     });
   } catch {
     return Response.json({ error: "Couldn't check the signature right now, try again" }, { status: 502, headers: NO_STORE });

@@ -233,3 +233,51 @@ test("confirming keeps the Pinata file id for later unpinning", async () => {
   await confirm(B, 11, "bafyQ", hex64("6"));
   assert.equal((await db.query(`select pinata_id from guideline_versions where guideline_id = 11`)).rows[0].pinata_id, "pin-id");
 });
+
+// ── Publish hardening (security review 2026-10-15) ──
+
+const confirmWithParent = (wallet, id, cid, hash, parent) =>
+  db.query(`select confirm_guideline($1, $2, $3, $4, $5, 0::smallint, $6, 8, 1) as slug`, [wallet, id, cid, hash, parent, "0x" + String(id).padStart(64, "d")]).then((r) => r.rows[0].slug);
+
+test("a parent the index doesn't know can't fail a confirm (and stall the indexer)", async () => {
+  await prep(A, "child-of-unknown", "bafyC1", hex64("7"));
+  assert.equal(await confirmWithParent(A, 20, "bafyC1", hex64("7"), 777777), "child-of-unknown");
+  assert.equal((await db.query(`select parent_id from guidelines where id = 20`)).rows[0].parent_id, null, "unknown parent stored as none");
+  await prep(A, "child-of-known", "bafyC2", hex64("8"));
+  assert.equal(await confirmWithParent(A, 21, "bafyC2", hex64("8"), 20), "child-of-known");
+  assert.equal((await db.query(`select parent_id from guidelines where id = 21`)).rows[0].parent_id, 20, "a known parent is kept");
+});
+
+test("a wallet can hold at most 5 unfinished uploads; re-preparing its own doesn't count", async () => {
+  const W = "0x" + "c".repeat(40);
+  for (let i = 1; i <= 5; i++) assert.equal(await prep(W, `limit-${i}`, `bafyL${i}`, hex64(String(i))), "ok");
+  assert.equal(await prep(W, "limit-6", "bafyL6", hex64("6")), "too_many");
+  assert.equal(await prep(W, "limit-3", "bafyL3b", hex64("9")), "ok", "same name replaces its own upload");
+  assert.equal(await prep(W, "limit-x", "bafyL1", hex64("1")), "ok", "same file replaces its own upload");
+  const check = (bytes) => db.query(`select prepare_check($1, 'limit-7', $2, $3) as r`, [W, hex64("a"), bytes]).then((r) => r.rows[0].r);
+  assert.equal(await check(10), "too_many", "prepare_check answers the same before pinning");
+  await db.query(`update pending_uploads set expires_at = now() - interval '1 second' where wallet_address = $1`, [W]);
+  assert.equal(await check(10), "ok", "expired uploads don't count");
+  assert.equal(await check(101 * 1024 * 1024), "busy", "100 MB of unfinished uploads in all");
+  await db.query(`delete from pending_uploads`);
+});
+
+test("scan reports stay small", async () => {
+  const big = JSON.stringify({ findings: Array.from({ length: 3000 }, (_, i) => ({ rule: "email", severity: "personal", line: i })) });
+  await assert.rejects(
+    db.query(`select prepare_upload($1, 'big-report', 'bafyR', 'pin', $2, '# x', '{"title":"Big","description":"A sample summary","kind":"rules","tags":[]}'::jsonb, 'clean', $3::jsonb, 60)`, [A, hex64("b"), big]),
+    /scan_report_size/,
+  );
+  await assert.rejects(asRole("anon", `select prepare_check('a','b','c',1)`), /permission denied/);
+});
+
+test("rate_limit counts hits in a fixed window and starts over after it", async () => {
+  const hit = () => db.query(`select rate_limit('verify:abc', 3, 600) as ok`).then((r) => r.rows[0].ok);
+  assert.deepEqual([await hit(), await hit(), await hit(), await hit()], [true, true, true, false]);
+  await db.query(`update rate_limits set window_start = now() - interval '11 minutes' where key = 'verify:abc'`);
+  assert.equal(await hit(), true, "a new window");
+  assert.equal((await db.query(`select hits from rate_limits where key = 'verify:abc'`)).rows[0].hits, 1);
+  assert.equal(await db.query(`select rate_limit('verify:other', 3, 600) as ok`).then((r) => r.rows[0].ok), true, "keys are separate");
+  await assert.rejects(asRole("anon", `select rate_limit('x', 1, 1)`), /permission denied/);
+  await assert.rejects(asRole("anon", `select * from rate_limits`), /permission denied/);
+});

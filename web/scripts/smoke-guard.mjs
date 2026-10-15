@@ -47,6 +47,13 @@ function rest(db, method, path) {
   return fetch(db.url + path, { method, headers: { apikey: db.key, Authorization: `Bearer ${db.key}`, Prefer: "return=minimal" } });
 }
 
+/** Resets the rate-limit counters (development database only): smoke runs sign in many times from one IP. */
+export async function clearRateLimits(db) {
+  if (!db) return;
+  const res = await rest(db, "DELETE", "/rest/v1/rate_limits?key=neq.");
+  if (!res.ok && res.status !== 404) console.error(`clearRateLimits: HTTP ${res.status}`);
+}
+
 /** Deletes the test wallets' likes (development database only; the app itself never deletes like rows). */
 export async function clearTestLikes(db, wallets) {
   if (!db) return;

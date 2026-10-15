@@ -1,6 +1,7 @@
 import { decideLike } from "@/lib/likes/rules";
 import { sessionWallet } from "@/lib/server/auth";
 import { NO_STORE, notConfigured, sameOriginGuard } from "@/lib/server/guard";
+import { rateLimited } from "@/lib/server/ratelimit";
 import { getStore } from "@/lib/server/store";
 
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -22,6 +23,8 @@ async function change(request: Request, ctx: RouteContext<"/api/likes/[slug]">, 
   // The store is the judge of which guidelines exist; this only checks the session and the name's shape
   const decision = decideLike(wallet, slug, { has: (s: string) => SLUG_RE.test(s) && s.length <= 80 });
   if (!decision.ok) return Response.json({ error: decision.error }, { status: decision.status, headers: NO_STORE });
+  const limited = await rateLimited("like", { request, wallet });
+  if (limited) return limited;
 
   if (action === "like") {
     const result = await store.addLike(wallet!, slug);

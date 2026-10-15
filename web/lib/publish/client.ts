@@ -30,9 +30,12 @@ export type Published = { slug: string; txHash: `0x${string}`; id: string };
 
 const FAUCET = "https://faucet.circle.com";
 
+/** An error whose message is already written for the user. */
+class PublishError extends Error {}
+
 function messageFor(error: unknown): string {
   if (isUserRejection(error)) return "You cancelled in your wallet. Nothing was written to Arc";
-  if (error instanceof ApiError) return error.message;
+  if (error instanceof ApiError || error instanceof PublishError) return error.message;
   const text = String((error as { shortMessage?: string; message?: string })?.shortMessage ?? (error as Error)?.message ?? "");
   if (/insufficient funds/i.test(text)) return `Your wallet needs a little Arc testnet USDC for the network fee. Get some at ${FAUCET}`;
   if (/chain|network/i.test(text)) return "Switch your wallet to the Arc network and try again";
@@ -94,7 +97,7 @@ export function usePublish(draft: Draft, update: (patch: Partial<Draft>) => void
       const receipt = await waitForTransactionReceipt(wagmiConfig, { hash: txHash, chainId: prepared.chainId });
       if (receipt.status !== "success") {
         update({ publishTx: undefined });
-        throw new Error("The transaction failed on Arc");
+        throw new PublishError("The transaction failed on Arc, so nothing was published. Try again");
       }
       await confirm(txHash);
     } catch (e) {
