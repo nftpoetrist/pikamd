@@ -46,6 +46,7 @@
 - Bileşen stilleri **`@layer components`** içinde (yoksa Tailwind'in `hidden` / `md:hidden` gibi utility'lerini ezer).
 - Dinamik değerler inline `style={{}}` (CLAUDE.md kuralı); sabit stiller `globals.css` sınıflarında.
 - Kod yorumları İngilizce.
+- **İmleç (2026-10-15, kullanıcı isteği):** yazıların üstünde imleç değişmez. `body { cursor: default }` tüm sayfaya miras kalır; metin yine seçilip kopyalanabilir (`user-select` kapatılmaz). Linkler ve butonlar el imlecini korur. Yazı yazılan alanlar (`input`, `textarea`, `contenteditable`) metin imlecini `@layer base`'de korur; bileşenin kendi imleci (`not-allowed`, `wait`…) her zaman kazanır. Ölçüldü: 6 sayfada metin imleci gösteren yazı yok, seçim çalışıyor.
 
 ---
 

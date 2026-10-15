@@ -41,6 +41,19 @@ body {
   background: var(--bg0);
   color: var(--t0);
   overflow-x: hidden;
+  /* The normal arrow over text everywhere (user request 2026-10-15): text stays selectable and
+     copyable, it just doesn't turn the pointer into the I-beam. Links and buttons keep the hand. */
+  cursor: default;
+}
+
+/* Fields you type in keep the text cursor, so it shows where typing goes. In the base layer, so a
+   component's own cursor (not-allowed, wait…) still wins */
+@layer base {
+  input:not([type="button"], [type="submit"], [type="reset"], [type="checkbox"], [type="radio"], [type="file"], [type="range"], [type="color"]),
+  textarea,
+  [contenteditable]:not([contenteditable="false"]) {
+    cursor: text;
+  }
 }
 
 /* ══════════════════════════════════════════════
