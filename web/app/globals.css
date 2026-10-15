@@ -2552,9 +2552,123 @@ body {
   color: var(--y1);
 }
 
+/* Saved / Shared by me tabs: the navbar's button skeleton, 18px apart (two frames + 12px clear).
+   The selected tab is gold; its count badge turns dark so it doesn't vanish into the gold */
+.collection-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+
+.collection-tab .collection-count {
+  min-width: 26px;
+  padding: 1px 6px 2px;
+  font-size: 18px;
+}
+
+.btn-gold.collection-tab .collection-count {
+  color: var(--y1);
+  background: var(--ink);
+  box-shadow:
+    0 -2px 0 0 var(--g4),
+    0 2px 0 0 var(--g4),
+    -2px 0 0 0 var(--g4),
+    2px 0 0 0 var(--g4);
+}
+
+/* Disabled pixel buttons on the shelf: dim and flat, never pressable */
+.collection-panel .btn-gold:disabled,
+.collection-panel .btn-ghost:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: translateY(calc(var(--px-base) / -2));
+}
+
+/* Shared by me: what Hide does, the sign-in offer, errors */
+.shared-note,
+.shared-signin,
+.shared-error {
+  font-family: var(--font-vt323);
+  font-size: 19px;
+  line-height: 1.2;
+  padding: 8px 12px;
+}
+
+.shared-note {
+  margin: 0 0 18px;
+  color: var(--t1);
+  background: rgba(255, 203, 5, 0.08);
+  box-shadow: inset 3px 0 0 0 var(--y1);
+  text-wrap: pretty;
+}
+
+.shared-signin {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 0 0 24px;
+  color: var(--t1);
+}
+
+.shared-error {
+  margin: 0 0 18px;
+  color: var(--t0);
+  background: rgba(255, 107, 87, 0.14);
+  box-shadow: inset 3px 0 0 0 var(--red);
+}
+
+/* One shared guideline: its card, then its status and Hide / Show again. 22px between the card's
+   frame and the button's frame (two frames + 16px clear) */
+.shared-item {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  width: var(--card-w);
+}
+
+.shared-item .shared-error {
+  margin: 0;
+  font-size: 18px;
+}
+
+/* Hidden or locked: dimmed, and inert (nothing on it can be pressed) */
+.shared-off {
+  opacity: 0.5;
+}
+
+/* Top-aligned, so every card's button sits at the same height whether its status takes one line or two */
+.shared-bar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: var(--px-h);
+}
+
+.shared-status {
+  padding-top: 4px; /* a one-line status lines up with the button's text */
+  font-family: var(--font-vt323);
+  font-size: 18px;
+  line-height: 1.1;
+  color: var(--t1);
+}
+
+.shared-status.is-off {
+  color: var(--orange);
+}
+
+.shared-bar .btn-gold,
+.shared-bar .btn-ghost {
+  flex: none;
+  font-size: 20px;
+}
+
 @media (max-width: 639px) {
   .collection-panel { --card-w: 288px; --pad: 16px; }
   .collection-head { flex-direction: column; }
+  .collection-tabs { justify-content: center; }
+  .shared-signin { flex-direction: column; align-items: flex-start; }
 }
 
 /* Explore lanes: compact cards (user request 2026-10-12). Whole-pixel sizes only, so the pixel

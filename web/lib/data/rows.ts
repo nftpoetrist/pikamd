@@ -1,7 +1,7 @@
 // Supabase rows → domain types. Pure, so it runs in tests. The view is `listed_guidelines`
 // (web/supabase/migrations): one row per listed guideline with its latest version's content.
 import { getAddress, isAddress } from "viem";
-import type { Guideline, GuidelineKind, License } from "@/lib/types";
+import type { Guideline, GuidelineKind, License, OwnedGuideline } from "@/lib/types";
 
 /** The contract's license list (GuidelineRegistry.licenses), by id. Append only. */
 export const LICENSES: readonly License[] = ["CC-BY-4.0"];
@@ -63,3 +63,16 @@ export function rowToGuideline(row: GuidelineRow): Guideline | null {
 
 /** What agents may receive over MCP: never guidelines with unchecked flagged lines (ARCHITECTURE §8, §9.1). */
 export const forAgents = <G extends { flagged?: boolean }>(guidelines: G[]): G[] => guidelines.filter((g) => !g.flagged);
+
+/** A row of author_guidelines(wallet): the card fields plus both flags, no file content. */
+export type OwnedGuidelineRow = Omit<GuidelineRow, "content"> & { author_hidden: unknown; moderator_locked: unknown };
+
+/** The author's own guideline, or null when the row doesn't fit (flags must be real booleans: never guess "listed"). */
+export function rowToOwned(row: OwnedGuidelineRow): OwnedGuideline | null {
+  if (typeof row.author_hidden !== "boolean" || typeof row.moderator_locked !== "boolean") return null;
+  const g = rowToGuideline({ ...row, content: "" });
+  if (!g) return null;
+  const { content, ...card } = g;
+  void content;
+  return { ...card, hidden: row.author_hidden, locked: row.moderator_locked };
+}

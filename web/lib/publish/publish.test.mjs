@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { encodeAbiParameters, encodeEventTopics } from "viem";
 import { validatePublish } from "./validate.ts";
-import { readRegistration } from "./receipt.ts";
+import { readHiddenChange, readRegistration } from "./receipt.ts";
 import { REGISTRY_ABI } from "../registry-abi.ts";
 
 const meta = { title: "Secure Solidity", description: "Guides your agent to write safe contracts", kind: "rules", tags: ["solidity", "security"] };
@@ -119,4 +119,29 @@ test("registry logs become index actions in chain order, foreign contracts ignor
   assert.deepEqual(actions[1], { kind: "hidden", id: 1n, hidden: true });
   assert.deepEqual(actions[2], { kind: "locked", id: 3n, locked: true });
   assert.deepEqual(actions[3], { kind: "version", id: 1n, version: 2 });
+});
+
+function hiddenLog({ address = REGISTRY, id = 1n, hidden = true, logIndex = 0 } = {}) {
+  return {
+    address,
+    topics: encodeEventTopics({ abi: REGISTRY_ABI, eventName: "HiddenSet", args: { id } }),
+    data: encodeAbiParameters([{ type: "bool" }], [hidden]),
+    logIndex,
+    blockNumber: 67092500n,
+    transactionHash: TX,
+  };
+}
+
+test("a hide or show change in our registry is read back", () => {
+  assert.deepEqual(readHiddenChange(receipt([hiddenLog({ id: 9n, hidden: true })]), REGISTRY), { id: 9n, hidden: true, txHash: TX, blockNumber: 67092500n });
+  assert.equal(readHiddenChange(receipt([hiddenLog({ hidden: false })]), REGISTRY).hidden, false);
+});
+
+test("failed, foreign or ambiguous hide changes are refused", () => {
+  assert.match(readHiddenChange(receipt([hiddenLog()], "reverted"), REGISTRY).error, /failed/);
+  const fake = "0x000000000000000000000000000000000000bEEF";
+  assert.match(readHiddenChange(receipt([hiddenLog({ address: fake })]), REGISTRY).error, /No hide/, "same event from another contract");
+  assert.match(readHiddenChange(receipt([hiddenLog(), hiddenLog({ id: 2n, logIndex: 1 })]), REGISTRY).error, /No hide/);
+  assert.match(readHiddenChange(receipt([registeredLog()]), REGISTRY).error, /No hide/, "a registration is not a hide change");
+  assert.match(readHiddenChange(receipt([]), REGISTRY).error, /No hide/);
 });

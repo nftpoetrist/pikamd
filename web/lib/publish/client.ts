@@ -33,7 +33,8 @@ const FAUCET = "https://faucet.circle.com";
 /** An error whose message is already written for the user. */
 class PublishError extends Error {}
 
-function messageFor(error: unknown): string {
+/** A short message for a failed wallet, chain or API step (also used by Hide / Show again). */
+export function messageFor(error: unknown): string {
   if (isUserRejection(error)) return "You cancelled in your wallet. Nothing was written to Arc";
   if (error instanceof ApiError || error instanceof PublishError) return error.message;
   const text = String((error as { shortMessage?: string; message?: string })?.shortMessage ?? (error as Error)?.message ?? "");

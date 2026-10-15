@@ -52,3 +52,22 @@ export function readRegistration(receipt: ReceiptLike, registry: `0x${string}`, 
     logIndex: e.logIndex ?? 0,
   };
 }
+
+export type HiddenChange = { id: bigint; hidden: boolean; txHash: `0x${string}`; blockNumber: bigint };
+
+/**
+ * What a setHidden transaction changed (My Collection → Shared by me): the registry's own HiddenSet
+ * event, exactly one. The contract only lets a guideline's author call setHidden, and the server
+ * still checks the author on the chain before it changes the index.
+ */
+export function readHiddenChange(receipt: ReceiptLike, registry: `0x${string}`): HiddenChange | { error: string } {
+  if (receipt.status !== "success") return { error: "The transaction failed on Arc" };
+  const events = parseEventLogs({
+    abi: REGISTRY_ABI,
+    eventName: "HiddenSet",
+    logs: receipt.logs.filter((l) => same(l.address, registry)),
+  });
+  if (events.length !== 1) return { error: "No hide or show change found in this transaction" };
+  const [e] = events;
+  return { id: e.args.id, hidden: e.args.hidden, txHash: receipt.transactionHash, blockNumber: receipt.blockNumber };
+}

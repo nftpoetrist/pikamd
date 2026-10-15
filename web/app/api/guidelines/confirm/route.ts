@@ -1,9 +1,8 @@
 import { revalidateTag } from "next/cache";
-import { TransactionReceiptNotFoundError } from "viem";
 import { REGISTRY } from "@/lib/chain";
 import { GUIDELINES_TAG } from "@/lib/data/guidelines";
 import { readRegistration } from "@/lib/publish/receipt";
-import { arcClient, sessionWallet } from "@/lib/server/auth";
+import { fetchReceipt, sessionWallet } from "@/lib/server/auth";
 import { NO_STORE, readJson, sameOriginGuard } from "@/lib/server/guard";
 import { confirmRegistration, publishDatabase } from "@/lib/server/publish";
 import { rateLimited } from "@/lib/server/ratelimit";
@@ -13,7 +12,6 @@ import { rateLimited } from "@/lib/server/ratelimit";
 const TX_RE = /^0x[0-9a-fA-F]{64}$/;
 
 const fail = (status: number, error: string) => Response.json({ error }, { status, headers: NO_STORE });
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export async function POST(request: Request) {
   const rejected = sameOriginGuard(request, { json: true });
@@ -28,17 +26,8 @@ export async function POST(request: Request) {
   const txHash = (await readJson(request))?.txHash;
   if (typeof txHash !== "string" || !TX_RE.test(txHash)) return fail(400, "Send the transaction hash");
 
-  // Arc finalizes in under a second (ARC.md §1); a short wait covers an RPC that's a block behind
-  let receipt;
-  for (let attempt = 0; ; attempt++) {
-    try {
-      receipt = await arcClient.getTransactionReceipt({ hash: txHash as `0x${string}` });
-      break;
-    } catch (error) {
-      if (!(error instanceof TransactionReceiptNotFoundError) || attempt >= 5) return fail(502, "Couldn't read the transaction from Arc yet, try again");
-      await sleep(1000);
-    }
-  }
+  const receipt = await fetchReceipt(txHash as `0x${string}`);
+  if (!receipt) return fail(502, "Couldn't read the transaction from Arc yet, try again");
 
   const registration = readRegistration(receipt, REGISTRY.address, wallet);
   if ("error" in registration) return fail(400, registration.error);

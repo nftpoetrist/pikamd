@@ -16,6 +16,8 @@ const BASE = process.env.PIKAMD_URL ?? "http://localhost:3001";
 const ORIGIN = new URL(BASE).origin;
 const HOST = new URL(BASE).host;
 const CHAIN_ID = 5042002; // Arc testnet (ARC.md §2)
+// The registry's deploy transaction on Arc testnet (ARC.md §8): real, successful, no HiddenSet
+const DEPLOY_TX = "0xca4f410bf9e434edc542f6c2c118695458cdc197480a64e98b1190b51e04fb55";
 const STATEMENT = "Sign in to PikaMd. This is free: it doesn't send a transaction or cost gas.";
 const FILE = new URL("../.data/pikamd-dev.json", import.meta.url);
 
@@ -152,6 +154,21 @@ try {
   check(unknown.status === 404, "unknown guideline refused");
 
   check((await call("GET", "/api/profile/not-an-address")).status === 400, "bad profile address refused");
+
+  // ── Shared by me (needs the database; the local dev store has no publish tables) ──
+  if (db) {
+    check((await call("GET", "/api/me/guidelines")).status === 401, "shared list needs a session");
+    const mineA = await call("GET", "/api/me/guidelines", { cookie: a.cookie });
+    check(mineA.status === 200 && Array.isArray(mineA.json?.guidelines), "alice gets her shared list");
+    check((mineA.json?.guidelines ?? []).every((g) => g.author.address.toLowerCase() === alice.address.toLowerCase()), "it holds only alice's guidelines");
+    const mineB2 = await call("GET", "/api/me/guidelines", { cookie: b.cookie });
+    check((mineB2.json?.guidelines ?? []).every((g) => g.author.address.toLowerCase() === bob.address.toLowerCase()), "bob never sees alice's (hidden ones included)");
+    check((await call("POST", "/api/guidelines/visibility", { body: { txHash: DEPLOY_TX } })).status === 401, "hide sync needs a session");
+    check((await call("POST", "/api/guidelines/visibility", { cookie: a.cookie, origin: "https://evil.example", body: { txHash: DEPLOY_TX } })).status === 403, "hide sync from another site refused (CSRF)");
+    check((await call("POST", "/api/guidelines/visibility", { cookie: a.cookie, body: { txHash: "0x12" } })).status === 400, "malformed transaction hash refused");
+    const notHide = await call("POST", "/api/guidelines/visibility", { cookie: a.cookie, body: { txHash: DEPLOY_TX } });
+    check(notHide.status === 400 && /No hide/.test(notHide.json?.error ?? ""), "a real Arc transaction without HiddenSet changes nothing");
+  }
 
   // ── Logout ──
   const notMine = await call("POST", "/api/auth/logout", { cookie: a.cookie, body: { address: bob.address } });

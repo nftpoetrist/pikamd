@@ -14,6 +14,14 @@ export interface Author {
 /** What a card shows: everything but the file itself, which is loaded when a preview opens. */
 export type GuidelineCard = Omit<Guideline, "content">;
 
+/** One of the signed-in author's own guidelines ("Shared by me" on My Collection): hidden and locked ones too. */
+export type OwnedGuideline = GuidelineCard & {
+  /** The author hid it (GuidelineRegistry.setHidden): off Explore, search and MCP until shown again. */
+  hidden: boolean;
+  /** A moderator locked it: off the site whatever the author does. */
+  locked: boolean;
+};
+
 export interface Guideline {
   id: number; // on-chain id (GuidelineRegistry)
   slug: string;

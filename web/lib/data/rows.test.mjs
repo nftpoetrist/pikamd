@@ -46,3 +46,14 @@ test("the on-chain record comes along when the row has it", () => {
   assert.equal(rowToGuideline({ ...row, cid: "bafyX", content_hash: "0x12", tx_hash: tx }).record, undefined, "malformed hash: no record");
   assert.equal(rowToGuideline(row).record, undefined);
 });
+
+test("the author's own rows keep both flags and never carry the file", async () => {
+  const { rowToOwned } = await import("./rows.ts");
+  const { content, ...card } = row;
+  void content;
+  const g = rowToOwned({ ...card, author_hidden: true, moderator_locked: false });
+  assert.deepEqual([g.hidden, g.locked, g.slug, "content" in g], [true, false, "secure-solidity", false]);
+  assert.equal(rowToOwned({ ...card, author_hidden: null, moderator_locked: false }), null, "a missing flag is not read as listed");
+  assert.equal(rowToOwned({ ...card, author_hidden: false, moderator_locked: "no" }), null);
+  assert.equal(rowToOwned({ ...card, kind: "script", author_hidden: false, moderator_locked: false }), null);
+});

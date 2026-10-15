@@ -18,6 +18,8 @@ const RULES = {
   confirm: { max: 30, windowS: 10 * 60, by: "wallet" },
   /** Likes and unlikes. */
   like: { max: 120, windowS: 10 * 60, by: "wallet" },
+  /** Hide / show syncs read a receipt and the guideline from Arc. */
+  visibility: { max: 30, windowS: 10 * 60, by: "wallet" },
 } as const;
 
 export type LimitRule = keyof typeof RULES;

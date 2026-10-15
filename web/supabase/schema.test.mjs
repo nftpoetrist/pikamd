@@ -281,3 +281,21 @@ test("rate_limit counts hits in a fixed window and starts over after it", async 
   await assert.rejects(asRole("anon", `select rate_limit('x', 1, 1)`), /permission denied/);
   await assert.rejects(asRole("anon", `select * from rate_limits`), /permission denied/);
 });
+
+test("author_guidelines lists the wallet's own guidelines, hidden and locked ones too, and nobody else's", async () => {
+  const C = "0x" + "c".repeat(40);
+  await addGuideline(31, "c-listed", C);
+  await addGuideline(32, "c-hidden", C, { hidden: true });
+  await addGuideline(33, "c-locked", C, { locked: true, scan: "suspicious" });
+  await db.query(`update guidelines set block_number = id where id in (31, 32, 33)`);
+  const rows = (await asRole("service_role", `select * from author_guidelines($1)`, [C.toUpperCase().replace("0X", "0x")])).rows;
+  assert.deepEqual(rows.map((r) => r.slug), ["c-locked", "c-hidden", "c-listed"], "newest first, mixed-case wallet accepted");
+  assert.deepEqual(rows.map((r) => [r.author_hidden, r.moderator_locked]), [[false, true], [true, false], [false, false]]);
+  assert.equal(rows[0].scan_status, "suspicious");
+  assert.ok(!("content" in rows[0]), "no file content");
+  assert.equal((await db.query(`select * from author_guidelines($1)`, [A])).rows.every((r) => r.author_address === A), true);
+  const listed = (await db.query(`select slug from listed_guidelines where author_address = $1`, [C])).rows.map((r) => r.slug);
+  assert.deepEqual(listed, ["c-listed"], "the public list still hides them");
+  await assert.rejects(asRole("anon", `select * from author_guidelines($1)`, [C]), /permission denied/);
+  await assert.rejects(asRole("authenticated", `select * from author_guidelines($1)`, [C]), /permission denied/);
+});
