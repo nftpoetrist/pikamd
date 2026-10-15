@@ -4,7 +4,7 @@
    DESIGN TOKENS (PikaStake paletinden)
 ══════════════════════════════════════════════ */
 :root {
-  --y1: #FFCB05;   /* Pikachu yellow */
+  --y1: #FFCB05;   /* brand yellow */
   --y2: #FFD740;   /* light yellow   */
   --g1: #F0A500;   /* deep gold      */
   --g2: #E08A00;   /* amber          */
@@ -57,7 +57,8 @@ body {
 }
 
 /* ══════════════════════════════════════════════
-   BACKGROUND (matches PikaStake index.html 1:1)
+   BACKGROUND: PikaMd's own pile of collectible cards (public/bg/pikamd-cards.webp, made by
+   design/brand/background.mjs), with PikaStake's blur, scale and dark overlay
 ══════════════════════════════════════════════ */
 .scene {
   position: fixed;
@@ -210,13 +211,28 @@ body {
 }
 
 /* Logo */
-/* Pixel Pikachu sprite: 1:1 (25×37), exactly 2× on retina (always an integer scale) */
+/* The PikaMd pika (components/brand/PikaSprite.tsx): 32×32 at 1:1, exactly 2× on retina */
 .logo-sprite {
-  width: 25px;
-  height: 37px;
-  image-rendering: pixelated;
+  width: 32px;
+  height: 32px;
   filter: drop-shadow(0 0 10px rgba(255, 203, 5, 0.35));
   flex-shrink: 0;
+}
+
+/* Blink: the lids show for ~150 ms every 5.2 s (steps, like the rest of the pixel motion) */
+.pika-lids {
+  opacity: 0;
+  animation: pika-blink 5.2s steps(1, end) infinite;
+}
+
+@keyframes pika-blink {
+  0%   { opacity: 0; }
+  94%  { opacity: 1; }
+  97%  { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pika-lids { animation: none; }
 }
 
 .logo-text {
@@ -425,7 +441,7 @@ body {
   top: -32px;
 }
 
-/* ── Trading cards: platform features as collectible pixel cards ── */
+/* ── Feature cards: platform features as collectible pixel cards (TradingCard) ── */
 .tcg-row {
   margin: 0 20px 48px;
   display: flex;
@@ -434,8 +450,8 @@ body {
   gap: 40px; /* outer frames (7px each side) + clear space */
 }
 
-/* Theme: pixel purple ("psychic" type), framed in brand gold */
-.tcg-purple {
+/* Theme: violet, framed in brand gold */
+.tcg-violet {
   --frame: var(--y1);
   --frame-light: #FFE680;
   --frame-shade: var(--g3);
@@ -446,9 +462,6 @@ body {
   --strip-a: var(--g1);
   --strip-b: #FFE680;
   --strip-ink: var(--ink);
-  --energy-ring: var(--ink);
-  --energy-fill: var(--y1);
-  --energy-bolt: var(--ink);
   --tcg-1: #160A27; /* deepest */
   --tcg-2: #2C1650;
   --tcg-3: #4E2A8A;
@@ -456,8 +469,8 @@ body {
   --tcg-5: #E9DDFF; /* highlight */
 }
 
-/* Theme: Arc — deep navy with an off-white / silver frame */
-.tcg-arc {
+/* Theme: navy with an off-white / silver frame */
+.tcg-navy {
   --tcg-1: #050A1C; /* deepest */
   --tcg-2: #0C1A3E;
   --tcg-3: #1C3272;
@@ -473,23 +486,15 @@ body {
   --strip-a: #C9D3EE;
   --strip-b: #FFFFFF;
   --strip-ink: #0C1A3E;
-  --energy-ring: #050A1C;
-  --energy-fill: #EEF2FF;
-  --energy-bolt: #1C3272;
-  /* PixelArcLogo colors */
-  --arc-face: #E6EAF5;
-  --arc-light: #FFFFFF;
-  --arc-shade: #9FB3E6;
-  --arc-ink: #050A1C;
 }
 
-.tcg-chain {
+.tcg-blocks {
   filter: drop-shadow(0 0 12px rgba(140, 170, 255, 0.45));
   animation: coin-bob 0.9s steps(2) infinite alternate;
 }
 
-/* Theme: pixel emerald ("support" card), framed in brand gold, with a pink heart */
-.tcg-green {
+/* Theme: emerald, framed in brand gold, with a pink heart */
+.tcg-emerald {
   --tcg-1: #04180F; /* deepest */
   --tcg-2: #0B3322;
   --tcg-3: #17613F;
@@ -505,9 +510,6 @@ body {
   --strip-a: var(--g1);
   --strip-b: #FFE680;
   --strip-ink: var(--ink);
-  --energy-ring: var(--ink);
-  --energy-fill: var(--y1);
-  --energy-bolt: var(--ink);
   /* PixelHeart colors */
   --heart-face: #FF4F7E;
   --heart-light: #FF9DB8;
@@ -560,17 +562,18 @@ body {
   box-shadow: inset 0 0 0 2px var(--ink);
 }
 
-/* Header: stage · name · stat · type */
+/* Header: kicker chip over the name on the left, the stat plaque on the right */
 .tcg-head {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr auto;
   align-items: end;
-  column-gap: 6px;
-  row-gap: 3px;
+  column-gap: 10px;
+  row-gap: 4px;
 }
 
-.tcg-stage {
-  grid-column: 1 / -1;
+.tcg-kicker {
+  grid-column: 1;
+  grid-row: 1;
   justify-self: start;
   padding: 1px 5px 2px;
   font-family: var(--font-vt323);
@@ -583,6 +586,8 @@ body {
 }
 
 .tcg-name {
+  grid-column: 1;
+  grid-row: 2;
   font-family: var(--font-jersey);
   font-weight: 400;
   font-size: 23px;
@@ -592,30 +597,40 @@ body {
   white-space: nowrap;
 }
 
-.tcg-stat {
+/* Stat plaque: value over its label on a dark tile, in a 2px pixel frame (corners left open) */
+.tcg-plaque {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  margin: 2px 2px 2px 0; /* the frame sits outside the box */
+  min-width: 50px;
   display: flex;
-  align-items: baseline;
-  gap: 3px;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 6px 4px;
+  background: var(--tcg-1);
+  box-shadow:
+    0 -2px 0 0 var(--frame), 0 2px 0 0 var(--frame), -2px 0 0 0 var(--frame), 2px 0 0 0 var(--frame),
+    inset 0 2px 0 0 rgba(255, 255, 255, 0.08);
+}
+
+.tcg-plaque-value {
   font-family: var(--font-jersey);
-  font-size: 26px;
+  font-size: 24px;
   line-height: 0.9;
   color: var(--stat);
   text-shadow: 2px 2px 0 var(--stat-shadow);
 }
 
-.tcg-stat small {
+.tcg-plaque-label {
   white-space: nowrap;
   font-family: var(--font-vt323);
-  font-size: 13px;
+  font-size: 12px;
+  line-height: 1;
   letter-spacing: 1px;
   text-transform: uppercase;
-  text-shadow: none;
   color: var(--tcg-5);
-}
-
-.tcg-energy {
-  flex: none;
-  display: block;
 }
 
 /* Art window: the only place with sparkle and shine */
@@ -665,9 +680,16 @@ body {
   to   { transform: translateY(-5px); }
 }
 
-/* Info strip under the art */
-.tcg-strip {
-  margin: -3px 8px 0;
+/* Ribbon banner across the art window's lower edge, with forked pixel tails folded behind it.
+   The tails sit beside the ribbon, 3px lower; each is an ink silhouette (::before / ::after) with
+   its fill on top (span::before / span::after), cut by the same stepped notch (no smooth diagonals) */
+.tcg-ribbon {
+  --tail: 11px;
+  --notch: polygon(0 0, 100% 0, 100% 100%, 0 100%, 0 calc(50% + 4px), 2px calc(50% + 4px), 2px calc(50% + 2px), 4px calc(50% + 2px), 4px calc(50% - 2px), 2px calc(50% - 2px), 2px calc(50% - 4px), 0 calc(50% - 4px));
+  --notch-r: polygon(0 0, 100% 0, 100% calc(50% - 4px), calc(100% - 2px) calc(50% - 4px), calc(100% - 2px) calc(50% - 2px), calc(100% - 4px) calc(50% - 2px), calc(100% - 4px) calc(50% + 2px), calc(100% - 2px) calc(50% + 2px), calc(100% - 2px) calc(50% + 4px), 100% calc(50% + 4px), 100% 100%, 0 100%);
+  position: relative;
+  isolation: isolate; /* the tails' layer order stays inside the ribbon */
+  margin: -3px 14px 0;
   padding: 2px 6px 3px;
   text-align: center;
   font-family: var(--font-vt323);
@@ -678,8 +700,42 @@ body {
   box-shadow: 0 0 0 1px var(--ink);
 }
 
-/* Moves sit on a dark text panel, like the text box of a real card */
-.tcg-moves {
+.tcg-ribbon::before,
+.tcg-ribbon::after,
+.tcg-ribbon span::before,
+.tcg-ribbon span::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  bottom: -3px;
+  width: var(--tail);
+}
+
+/* Ink silhouettes, 1px larger on every side */
+.tcg-ribbon::before,
+.tcg-ribbon::after {
+  top: 2px;
+  bottom: -4px;
+  width: calc(var(--tail) + 1px);
+  background: var(--ink);
+}
+
+.tcg-ribbon::before { left: calc(-1 * var(--tail) - 2px); clip-path: var(--notch); }
+.tcg-ribbon::after  { right: calc(-1 * var(--tail) - 2px); clip-path: var(--notch-r); }
+
+/* Fills: the folded-back underside of the ribbon, above both silhouettes (the right silhouette
+   comes later in the tree and would otherwise cover its fill) */
+.tcg-ribbon span::before,
+.tcg-ribbon span::after {
+  z-index: 1;
+  background: var(--frame-shade);
+}
+
+.tcg-ribbon span::before { left: calc(-1 * var(--tail) - 1px); clip-path: var(--notch); }
+.tcg-ribbon span::after  { right: calc(-1 * var(--tail) - 1px); clip-path: var(--notch-r); }
+
+/* Perks on a dark text panel */
+.tcg-perks {
   flex: 1; /* fills the card down to the number row */
   justify-content: space-evenly;
   display: flex;
@@ -690,82 +746,43 @@ body {
   box-shadow: inset 0 0 0 1px rgba(233, 221, 255, 0.16);
 }
 
-.tcg-move {
+.tcg-perk {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
   column-gap: 7px;
 }
 
-.tcg-cost {
-  display: flex;
-  gap: 2px;
+.tcg-gem {
+  display: block;
+  flex: none;
 }
 
-.tcg-cost .tcg-energy {
-  width: 14px;
-  height: 14px;
-}
-
-.tcg-move-name {
+.tcg-perk-name {
   font-family: var(--font-jersey);
   font-size: 18px;
   line-height: 1;
   color: #FFFFFF;
 }
 
-.tcg-move-value {
+/* Value chip: a small dark tile with a 1px frame */
+.tcg-perk-value {
+  padding: 1px 5px 2px;
   font-family: var(--font-jersey);
-  font-size: 20px;
+  font-size: 17px;
   line-height: 1;
   color: var(--stat);
-  text-shadow: 1px 1px 0 var(--stat-shadow);
+  background: var(--tcg-1);
+  box-shadow: 0 0 0 1px var(--frame-shade);
 }
 
-.tcg-move-text {
+.tcg-perk-text {
   grid-column: 1 / -1;
   margin-top: 2px;
   font-family: var(--font-vt323);
   font-size: 16px;
   line-height: 1.1;
   color: var(--t0);
-}
-
-/* Weakness / resistance / retreat row → owner / cut / chain */
-.tcg-foot {
-  margin-top: auto;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  padding-top: 6px;
-  border-top: 2px dashed rgba(233, 221, 255, 0.3);
-  text-align: center;
-  font-family: var(--font-vt323);
-  line-height: 1;
-}
-
-.tcg-foot dt {
-  font-size: 12px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: var(--tcg-4);
-}
-
-.tcg-foot dd {
-  margin: 2px 0 0;
-  font-size: 16px;
-  color: #FFFFFF;
-}
-
-/* Flavor text */
-.tcg-flavor {
-  padding: 5px 8px 6px;
-  font-family: var(--font-vt323);
-  font-size: 16px;
-  line-height: 1.1;
-  font-style: italic;
-  color: var(--t0);
-  background: rgba(10, 4, 20, 0.62);
-  box-shadow: inset 0 0 0 1px rgba(233, 221, 255, 0.16);
 }
 
 .tcg-number {
@@ -782,12 +799,12 @@ body {
 .tcg-number span:last-child {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   color: var(--stat);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tcg-coin, .tcg-chain, .tcg-heart, .tcg-art::after { animation: none; }
+  .tcg-coin, .tcg-blocks, .tcg-heart, .tcg-art::after { animation: none; }
 }
 
 /* ── Explore: hero title ────────────────────────────────────── */
@@ -2991,11 +3008,6 @@ body {
   --px-gap: 10px;
   --px-h: 26px;
   --px-base: 3px;
-  /* Arc logo colors, same as the Build on Arc card */
-  --arc-face: #E6EAF5;
-  --arc-light: #FFFFFF;
-  --arc-shade: #9FB3E6;
-  --arc-ink: #050A1C;
   position: relative;
   z-index: 10;
   margin-top: 28px;
@@ -3075,7 +3087,7 @@ body {
 
 .footer-arc svg {
   flex-shrink: 0;
-  filter: drop-shadow(0 0 6px rgba(159, 179, 230, 0.35));
+  filter: drop-shadow(0 0 6px rgba(255, 203, 5, 0.35));
 }
 
 .footer-arc > span > span {
@@ -3109,11 +3121,12 @@ body {
   --halo: rgba(255, 255, 255, 0.18);
 }
 
+/* X's own mark, white on black; X's lockup rule: the handle's text as tall as the mark */
 .footer-x {
   fill: #FFFFFF;
   flex-shrink: 0;
-  width: 13.5px; /* 9-cell mark at 1.5px per cell */
-  height: 13.5px;
+  width: 11.75px; /* 477 × 487 mark */
+  height: 12px;
 }
 
 .footer-right {

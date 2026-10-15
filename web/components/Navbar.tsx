@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import PikaSprite from "@/components/brand/PikaSprite";
 import PikaGoldBox from "@/components/wallet/PikaGoldBox";
 import WalletButton from "@/components/wallet/WalletButton";
 
@@ -39,16 +39,8 @@ export default function Navbar() {
 
       <div className="nav-inner">
         <Link href="/" className="nav-left" aria-label="PikaMd home">
-          {/* 25×37 pixel sprite; unoptimized so resampling doesn't blur the pixels */}
-          <Image
-            src="/brand/pikamd-logo.png"
-            alt=""
-            width={25}
-            height={37}
-            unoptimized
-            preload
-            className="logo-sprite"
-          />
+          {/* The PikaMd pika, 32×32 pixels at 1:1 (2× on retina): inline SVG, sharp at every density */}
+          <PikaSprite className="logo-sprite" blink />
           <span className="logo-text">
             Pika<span>Md</span>
           </span>

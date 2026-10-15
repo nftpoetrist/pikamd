@@ -502,6 +502,23 @@ Diğer: `https://docs.arc.io/llms.txt` (tüm sayfaların indeksi) · https://doc
 
 ---
 
+## 13a. Marka kullanımı (2026-10-15'te resmi kaynaklardan okundu)
+
+Kaynaklar: https://www.arc.io/brand-guidelines-and-partner-toolkit · Circle Brand Kit: https://www.circle.com/pressroom#brandkit (Arc logoları zip'i ve Circle Brand Use Policy PDF'i oradan)
+
+| Kural | Ayrıntı |
+|---|---|
+| Logoyu kim kullanabilir | Arc üzerinde aktif geliştirenler veya Circle ile imzalı ortaklığı olanlar; ilişki, ortaklık veya onay ima edilemez |
+| Dosyalar | Yalnızca Circle Brand Kit'teki en güncel dosyalar ("approved logos as provided"; açık ve koyu zemin varyasyonları zip'te) |
+| **Yasak** | Logoyu değiştirmek/bozmak, **rengini değiştirmek**, öğe eklemek, üstüne yazı/grafik koymak, **yeniden çizmek veya yaklaşık kopyasını yapmak**, kendi logomuzla çok yakın eşleştirmek, kendi markamızdan daha belirgin yapmak |
+| Boyut | **Dijitalde en az 50 px yükseklik**; çevresinde boşluk korunmalı |
+| İfade | "Our product is built on Arc", "Available on Arc", "We are live on Arc"; Arc özel ad/sıfat ("Arc integration"). İlk anışta "Arc Network", sonra "Arc". Kaçın: "Arc by [Şirket]", "The Arc App", "Arc Payment App", çoğul/iyelik ("Arcs", "Arc's") |
+| Ad | "Arc"ı şirket/ürün adına niteleme olmadan koyma, uygulama ikonuna koyma |
+| Ticari marka notu | Mümkünse: "Arc is a trademark of Circle Internet Group, Inc. and/or its affiliates." ve ilk/en belirgin kullanımda ™ |
+| Denetim | Circle istediğinde örnek ister, 3 iş günü içinde değişiklik bekler; sorular trademarks@circle.com |
+
+**PikaMd'de uygulama (ARCHITECTURE K23):** sitede Arc logosu yok (46 px'lik footer 50 px kuralına sığmıyor; eski piksel kopya "yeniden çizim" sayılır). "Built on Arc" + özgün piksel blok; ana sayfa kartı 002 "Built on Arc" / "Recorded on Arc Network"; ticari marka notu kart 002 ve footer'da üzerine gelince başlıkta.
+
 ## 14. Kaynaklar
 
 - Resmi sosyal hesaplar (arc.io `sameAs`, 2026-10-10): X https://x.com/arc · Discord https://discord.com/invite/buildonarc · Topluluk https://community.arc.io

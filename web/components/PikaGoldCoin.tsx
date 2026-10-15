@@ -1,19 +1,20 @@
-// 15×15 PikaGold coin: a Pikachu face embossed on a gold coin, in the logo's palette
-// (ink outline, logo gold rim, yellow face, black ear tips, red cheeks). Drawn from an ASCII map
-// at an integer scale so every pixel stays crisp. Animations live in globals.css (.pg-*):
-// a light stripe sweeps across in 2-pixel steps, then a pixel sparkle blinks on the rim.
+// 15×15 PikaGold coin: the PikaMd pika's head (components/brand/pika-art.ts) embossed on a gold
+// coin, in the logo's palette (ink outline, gold rim, recessed face, raised head lit from the top
+// left with a drop shadow, peach inner ears). Drawn from an ASCII map at an integer scale so every
+// pixel stays crisp. Animations live in globals.css (.pg-*): a light stripe sweeps across in
+// 2-pixel steps, then a pixel sparkle blinks on the rim.
 const MAP = [
   ".....OOOOO.....",
   "...OOLLLLROO...",
   "..OLLRRRRRRSO..",
-  ".OLRkFFFFFkRSO.",
-  ".OLRkyFFFykRSO.",
-  "OLRFyyFFFyyFRSO",
-  "OLRFyyyyyyyFRSO",
-  "OLRFykyyykyFRSO",
-  "OLRFcyykyycFRSO",
-  "OLRFFyyyyyFFRSO",
-  ".OLRFFyyyFFRSO.",
+  ".OLRFFFFFFFRSO.",
+  ".OLRhyFFFhyRSO.",
+  "OLRFhpyyypgFRSO",
+  "OLRFhyyyyygFRSO",
+  "OLRFykyyykgFRSO",
+  "OLRFyyhkhygFRSO",
+  "OLRFFgyhygFFRSO",
+  ".OLRFFgggFFRSO.",
   ".OLRFFFFFFFRSO.",
   "..OSRRRRRRSSO..",
   "...OOSSSSSOO...",
@@ -26,9 +27,11 @@ const COLORS: Record<string, string> = {
   R: "#FFCB05", // rim (--y1)
   S: "#C47A00", // rim shade (--g3)
   F: "#E08A00", // recessed face (--g2)
-  y: "#FFCB05", // Pikachu yellow
-  k: "#1A0800", // ear tips, eyes, nose
-  c: "#E23A28", // cheeks (same red as the logo)
+  y: "#FFCB05", // raised head
+  h: "#FFE680", // head light (top left)
+  g: "#B86E00", // head shade and drop shadow
+  k: "#1A0800", // eyes, nose
+  p: "#F2A08A", // inner ears (same peach as the mascot)
 };
 
 const N = MAP.length;

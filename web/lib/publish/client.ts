@@ -39,7 +39,7 @@ export function messageFor(error: unknown): string {
   if (error instanceof ApiError || error instanceof PublishError) return error.message;
   const text = String((error as { shortMessage?: string; message?: string })?.shortMessage ?? (error as Error)?.message ?? "");
   if (/insufficient funds/i.test(text)) return `Your wallet needs a little Arc testnet USDC for the network fee. Get some at ${FAUCET}`;
-  if (/chain|network/i.test(text)) return "Switch your wallet to the Arc network and try again";
+  if (/chain|network/i.test(text)) return "Switch your wallet to the Arc Network and try again";
   return "Something went wrong, try again";
 }
 

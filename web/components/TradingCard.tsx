@@ -1,94 +1,107 @@
 import type { ReactNode } from "react";
 
-// Pixel trading card: a feature of the platform presented as a collectible card.
-// Layout follows the classic TCG format (name + stat, art window, moves, stat strip,
-// flavor text, card number). Colors come from a theme class, e.g. "tcg-purple".
+// PikaMd feature card: a platform feature presented as a collectible pixel card, in PikaMd's own
+// layout: a kicker chip and the name, a stat plaque, the art window, a ribbon banner, then perks
+// with a gem bullet and a value, and the card number with a sparkle. Colors come from a theme
+// class, e.g. "tcg-violet".
 
-export interface CardMove {
-  cost: number; // number of energy icons
+export interface CardPerk {
   name: string;
-  value: string; // the "damage" column
+  value: string;
   text: string;
 }
 
 export interface TradingCardProps {
-  theme: "purple" | "arc" | "green";
-  stage: string;
+  theme: "violet" | "navy" | "emerald";
+  kicker: string;
   name: string;
   stat: string;
   statLabel: string;
   art: ReactNode;
-  strip: string;
-  moves: CardMove[];
-  footer?: { label: string; value: string }[];
-  flavor?: string;
+  ribbon: string;
+  perks: CardPerk[];
   number: string;
+  /** Extra line for the hover title, e.g. a trademark notice. */
+  note?: string;
 }
 
-// Pixel lightning bolt inside a round energy token; token/bolt colors come from the card theme
-function Energy() {
+// 7×6 pixel gem (flat table on top, pointed below) with an ink outline; the body takes the card's
+// stat color, a light facet on the upper left
+const GEM = [
+  ".OOOOO.",
+  "OhhgggO",
+  "OgggggO",
+  ".OgggO.",
+  "..OgO..",
+  "...O...",
+];
+
+function Gem() {
   return (
-    <svg className="tcg-energy" width="18" height="18" viewBox="0 0 9 9" shapeRendering="crispEdges" aria-hidden="true">
-      <path d="M2 0h5v1h1v1h1v5H8v1H7v1H2V8H1V7H0V2h1V1h1z" style={{ fill: "var(--energy-ring)" }} />
-      <path d="M2 1h5v1h1v5H7v1H2V7H1V2h1z" style={{ fill: "var(--energy-fill)" }} />
-      <path d="M5 2h1v2h1v1H6v1H5v1H4V6h1V5H3V4h1V3h1z" style={{ fill: "var(--energy-bolt)" }} />
+    <svg className="tcg-gem" width="14" height="12" viewBox="0 0 7 6" shapeRendering="crispEdges" aria-hidden="true">
+      {GEM.flatMap((row, y) =>
+        [...row].map((c, x) =>
+          c === "." ? null : (
+            <rect
+              key={`${x}-${y}`}
+              x={x}
+              y={y}
+              width={1}
+              height={1}
+              style={{ fill: c === "O" ? "var(--ink)" : c === "h" ? "var(--frame-light)" : "var(--stat)" }}
+            />
+          ),
+        ),
+      )}
+    </svg>
+  );
+}
+
+// Four-point pixel sparkle after the card number
+function Sparkle() {
+  return (
+    <svg width="9" height="9" viewBox="0 0 9 9" fill="currentColor" shapeRendering="crispEdges" aria-hidden="true">
+      <path d="M4 0h1v3H4zM3 3h3v1H3zM0 4h9v1H0zM3 5h3v1H3zM4 6h1v3H4z" />
     </svg>
   );
 }
 
 export default function TradingCard(props: TradingCardProps) {
-  const { theme, stage, name, stat, statLabel, art, strip, moves, footer, flavor, number } = props;
+  const { theme, kicker, name, stat, statLabel, art, ribbon, perks, number, note } = props;
 
   return (
-    <article className={`tcg tcg-${theme}`} aria-label={`${name}: ${stat} ${statLabel}`}>
+    <article className={`tcg tcg-${theme}`} aria-label={`${name}: ${stat} ${statLabel}`} title={note}>
       <div className="tcg-inner">
         <header className="tcg-head">
-          <span className="tcg-stage">{stage}</span>
+          <span className="tcg-kicker">{kicker}</span>
           <h3 className="tcg-name">{name}</h3>
-          <p className="tcg-stat">
-            <small>{statLabel}</small>
-            {stat}
+          <p className="tcg-plaque">
+            <span className="tcg-plaque-value">{stat}</span>
+            <span className="tcg-plaque-label">{statLabel}</span>
           </p>
-          <Energy />
         </header>
 
         <div className="tcg-art">{art}</div>
-        <p className="tcg-strip">{strip}</p>
+        <p className="tcg-ribbon">
+          <span>{ribbon}</span>
+        </p>
 
-        <div className="tcg-moves">
-          {moves.map((move) => (
-            <div key={move.name} className="tcg-move">
-              <span className="tcg-cost" aria-label={`Cost ${move.cost}`}>
-                {Array.from({ length: move.cost }, (_, i) => (
-                  <Energy key={i} />
-                ))}
-              </span>
-              <span className="tcg-move-name">{move.name}</span>
-              <span className="tcg-move-value">{move.value}</span>
-              <p className="tcg-move-text">{move.text}</p>
+        <div className="tcg-perks">
+          {perks.map((perk) => (
+            <div key={perk.name} className="tcg-perk">
+              <Gem />
+              <span className="tcg-perk-name">{perk.name}</span>
+              <span className="tcg-perk-value">{perk.value}</span>
+              <p className="tcg-perk-text">{perk.text}</p>
             </div>
           ))}
         </div>
 
-        {footer && (
-          <dl className="tcg-foot">
-            {footer.map(({ label, value }) => (
-              <div key={label}>
-                <dt>{label}</dt>
-                <dd>{value}</dd>
-              </div>
-            ))}
-          </dl>
-        )}
-
-        {flavor && <p className="tcg-flavor">{flavor}</p>}
         <p className="tcg-number">
           <span>PikaMd</span>
           <span>
-            {number}
-            <svg width="9" height="9" viewBox="0 0 7 7" fill="currentColor" shapeRendering="crispEdges" aria-hidden="true">
-              <path d="M3 0h1v1H3zM2 1h3v1H2zM0 2h7v1H0zM1 3h5v1H1zM2 4h3v1H2zM1 5h2v1H1zM4 5h2v1H4zM0 6h2v1H0zM5 6h2v1H5z" />
-            </svg>
+            No. {number}
+            <Sparkle />
           </span>
         </p>
       </div>

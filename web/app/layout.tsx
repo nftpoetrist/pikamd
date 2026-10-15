@@ -4,7 +4,7 @@ import { Geist, Geist_Mono, Jersey_10, VT323 } from "next/font/google";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import WalletProvider from "@/components/wallet/WalletProvider";
-import bgImage from "@/public/bg/background1.png";
+import bgImage from "@/public/bg/pikamd-cards.webp";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -44,7 +44,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} ${vt323.variable} ${jersey.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        {/* Stays fixed during page transitions (globals.css → view-transition-name: site-bg) */}
+        {/* PikaMd's own card pile (design/brand/background.mjs). Stays fixed during page
+            transitions (globals.css → view-transition-name: site-bg) */}
         <div className="scene" aria-hidden="true">
           <div className="bg-strip">
             {/* placeholder="blur": tiny blurred preview until the image loads — no black flash */}
