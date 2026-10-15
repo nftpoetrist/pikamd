@@ -119,11 +119,24 @@ try {
   const like2 = await call("PUT", `/api/likes/${slug}`, { cookie: a.cookie });
   check(like2.status === 200 && like2.json?.created === false && like2.json?.count === before + 1, "alice's second like changes nothing");
 
-  const del = await call("DELETE", `/api/likes/${slug}`, { cookie: a.cookie });
-  check(del.status === 405, "likes can't be removed (no DELETE)");
-
   const mineA = (await call("GET", "/api/likes", { cookie: a.cookie })).json?.mine ?? [];
   check(mineA.includes(slug), "alice's liked list has it");
+
+  // Unlike: the count drops, the author keeps the PikaGold, liking again earns none
+  const goldNow = async () => (await call("GET", `/api/profile/${AUTHOR}`)).json?.pikagold;
+  check((await goldNow()) === profileBefore.json?.pikagold + 1, "author earned 1 PikaGold for alice's like");
+  check((await call("DELETE", `/api/likes/${slug}`)).status === 401, "unlike without signing in refused");
+  check((await call("DELETE", `/api/likes/${slug}`, { cookie: a.cookie, origin: "https://evil.example" })).status === 403, "unlike from another site refused (CSRF)");
+  const un1 = await call("DELETE", `/api/likes/${slug}`, { cookie: a.cookie });
+  check(un1.status === 200 && un1.json?.removed === true && un1.json?.count === before, "alice takes her like back (-1)");
+  const un2 = await call("DELETE", `/api/likes/${slug}`, { cookie: a.cookie });
+  check(un2.status === 200 && un2.json?.removed === false && un2.json?.count === before, "a second unlike changes nothing");
+  check(!((await call("GET", "/api/likes", { cookie: a.cookie })).json?.mine ?? []).includes(slug), "alice's liked list no longer has it");
+  check((await goldNow()) === profileBefore.json?.pikagold + 1, "the author keeps the PikaGold after the unlike");
+  const relike = await call("PUT", `/api/likes/${slug}`, { cookie: a.cookie });
+  check(relike.status === 200 && relike.json?.created === false && relike.json?.restored === true && relike.json?.count === before + 1, "alice likes again (+1 like, restored)");
+  check((await goldNow()) === profileBefore.json?.pikagold + 1, "liking again earns no second PikaGold");
+  check((await call("DELETE", "/api/likes/does-not-exist", { cookie: a.cookie })).status === 404, "unlike of an unknown guideline refused");
   const mineBob = (await call("GET", "/api/likes")).json?.mine ?? [];
   check(mineBob.length === 0, "signed-out visitor has no liked list");
 

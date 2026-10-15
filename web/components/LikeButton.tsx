@@ -10,7 +10,8 @@ import { openWalletModal, useWalletModalOpen } from "@/lib/wallet/modal";
 import { useSessionWallet, useSignIn } from "@/lib/wallet/session";
 
 // Like (heart) with the count (K22): needs a connected wallet and, once, a free sign-in
-// signature. One like per wallet per guideline, permanent, and 1 PikaGold to the author.
+// signature. One like per wallet per guideline; pressing again takes it back. The first like
+// earns the author 1 PikaGold, which stays when the like is taken back and isn't earned twice.
 // The server enforces all of it; this button only guides the user through the steps.
 export default function LikeButton({ slug, title, stars, focusable = true }: { slug: string; title: string; stars: number; focusable?: boolean }) {
   const { address, status } = useConnection();
@@ -40,7 +41,8 @@ export default function LikeButton({ slug, title, stars, focusable = true }: { s
       setBusy(true);
       try {
         if (!session.data || !sameWallet(session.data, wallet)) await signIn(wallet);
-        await like.mutateAsync(slug);
+        const result = await like.mutateAsync({ slug, like: true });
+        if (result.liked && result.restored) setNote("Liked again. PikaGold was already given");
       } catch (error) {
         setNote(describeError(error, "Signature cancelled, nothing was liked"));
       } finally {
@@ -49,6 +51,19 @@ export default function LikeButton({ slug, title, stars, focusable = true }: { s
     },
     [session.data, signIn, like, slug],
   );
+
+  // Signed in as this wallet already (that's how the button knows it's liked), so no signature
+  const unlike = async () => {
+    setBusy(true);
+    try {
+      const result = await like.mutateAsync({ slug, like: false });
+      if (!result.liked) setNote("Like removed. The author keeps the PikaGold");
+    } catch (error) {
+      setNote(describeError(error, "Nothing was changed"));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   useConnectionEffect({
     onConnect({ address: wallet }) {
@@ -66,7 +81,7 @@ export default function LikeButton({ slug, title, stars, focusable = true }: { s
   const onClick = () => {
     if (busy) return;
     if (unavailable) return setNote("Likes open with wallet sign-in. Coming soon");
-    if (liked) return setNote("You liked this. Likes are permanent");
+    if (liked) return void unlike();
     if (status !== "connected" || !address) {
       waitingForWallet.current = true;
       openWalletModal();
@@ -85,7 +100,7 @@ export default function LikeButton({ slug, title, stars, focusable = true }: { s
         aria-pressed={liked}
         aria-busy={busy || undefined}
         aria-label={label}
-        title={liked ? "You liked this" : "Like it (connect your wallet)"}
+        title={liked ? "You liked this. Press again to take it back" : "Like it (connect your wallet)"}
         tabIndex={focusable ? undefined : -1}
         onClick={onClick}
       >

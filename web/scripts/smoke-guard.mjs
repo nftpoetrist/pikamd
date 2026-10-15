@@ -1,5 +1,5 @@
 // Smoke tests drive the dev server, which uses Supabase when web/.env.local sets SUPABASE_URL.
-// They need the sample guidelines and write likes, which are permanent in the app. So:
+// They need the sample guidelines and write likes, whose rows the app never deletes. So:
 // - local dev store (no SUPABASE_URL): run as before
 // - the LIVE project: never run (it would leave test likes on the real site)
 // - any other project (the development one): run, after `npm run db:seed`, and clear the test
@@ -47,7 +47,7 @@ function rest(db, method, path) {
   return fetch(db.url + path, { method, headers: { apikey: db.key, Authorization: `Bearer ${db.key}`, Prefer: "return=minimal" } });
 }
 
-/** Deletes the test wallets' likes (development database only; the app itself never deletes likes). */
+/** Deletes the test wallets' likes (development database only; the app itself never deletes like rows). */
 export async function clearTestLikes(db, wallets) {
   if (!db) return;
   const list = wallets.map((w) => w.toLowerCase()).join(",");

@@ -1,6 +1,6 @@
 // Runs the Supabase migration on a real Postgres (PGlite, WASM) and checks the rules it enforces:
-// public roles get nothing, nonces are single use, likes are one per wallet and permanent,
-// hidden guidelines don't count, PikaGold is computed from likes.
+// public roles get nothing, nonces are single use, a wallet's first like on a guideline earns its
+// author 1 PikaGold that unliking never takes back, hidden guidelines don't count.
 import { test, before } from "node:test";
 import assert from "node:assert/strict";
 import { readdir, readFile } from "node:fs/promises";
@@ -61,6 +61,7 @@ test("public roles can't read tables or views", async () => {
 
 test("public roles can't call the functions (no /rpc writes with the publishable key)", async () => {
   await assert.rejects(asRole("anon", `select * from add_like($1, 'secure-solidity')`, [A]), /permission denied/);
+  await assert.rejects(asRole("anon", `select * from remove_like($1, 'secure-solidity')`, [A]), /permission denied/);
   await assert.rejects(asRole("authenticated", `select use_nonce('${"0".repeat(48)}', now() + interval '5 minutes')`), /permission denied/);
   await assert.rejects(asRole("anon", `select * from wallet_profile($1)`, [A]), /permission denied/);
 });
@@ -96,11 +97,11 @@ test("the old store-on-issue nonce functions are gone", async () => {
   await assert.rejects(db.query(`insert into auth_nonces values ($1, now())`, ["1".repeat(32)]), /check constraint/, "old 32-hex format");
 });
 
-test("one permanent like per wallet per guideline, wallet stored lowercase", async () => {
+test("one like per wallet per guideline, wallet stored lowercase", async () => {
   const first = (await db.query(`select * from add_like($1, 'secure-solidity')`, [B.toUpperCase().replace("0X", "0x")])).rows[0];
-  assert.deepEqual(first, { created: true, like_count: 1 });
+  assert.deepEqual(first, { created: true, restored: false, like_count: 1 });
   const again = (await db.query(`select * from add_like($1, 'secure-solidity')`, [B])).rows[0];
-  assert.deepEqual(again, { created: false, like_count: 1 });
+  assert.deepEqual(again, { created: false, restored: false, like_count: 1 });
   const mine = (await db.query(`select * from liked_slugs($1)`, [B])).rows.map((r) => r.liked_slugs);
   assert.deepEqual(mine, ["secure-solidity"]);
 });
@@ -125,6 +126,31 @@ test("unknown, hidden and locked guidelines can't be liked and don't count", asy
   assert.deepEqual(p, { pikagold: 2, guidelines: 1 }, "hidden guideline's likes don't count");
   const slugs = (await db.query(`select slug from like_counts()`)).rows.map((r) => r.slug).sort();
   assert.deepEqual(slugs, ["secure-solidity", "tailwind-v4"]);
+});
+
+test("unliking keeps the author's PikaGold, and liking again earns none", async () => {
+  const gold = async () => (await db.query(`select * from wallet_profile($1)`, [A])).rows[0].pikagold;
+  const count = async () => (await db.query(`select * from like_counts()`)).rows.find((r) => r.slug === "secure-solidity").like_count;
+  const mine = async () => (await db.query(`select * from liked_slugs($1)`, [B])).rows.map((r) => r.liked_slugs);
+  assert.equal(await gold(), 2);
+
+  const removed = (await db.query(`select * from remove_like($1, 'secure-solidity')`, [B.toUpperCase().replace("0X", "0x")])).rows[0];
+  assert.deepEqual(removed, { removed: true, like_count: 1 });
+  assert.equal(await count(), 1, "the shown count drops");
+  assert.deepEqual(await mine(), [], "no longer in my likes");
+  assert.equal(await gold(), 2, "the author keeps the PikaGold");
+  const twice = (await db.query(`select * from remove_like($1, 'secure-solidity')`, [B])).rows[0];
+  assert.deepEqual(twice, { removed: false, like_count: 1 });
+
+  const back = (await db.query(`select * from add_like($1, 'secure-solidity')`, [B])).rows[0];
+  assert.deepEqual(back, { created: false, restored: true, like_count: 2 });
+  assert.deepEqual(await mine(), ["secure-solidity"]);
+  assert.equal(await gold(), 2, "liking again earns no second PikaGold");
+
+  const never = (await db.query(`select * from remove_like($1, 'tailwind-v4')`, [B])).rows[0];
+  assert.deepEqual(never, { removed: false, like_count: 0 }, "nothing to take back");
+  await assert.rejects(db.query(`select * from remove_like($1, 'nope')`, [B]), /unknown guideline/);
+  assert.equal((await db.query(`select count(*)::int as n from stars where wallet_address = $1`, [B])).rows[0].n, 2, "rows are never deleted");
 });
 
 test("flagged (suspicious) guidelines stay listed with their scan status, for the site; MCP filters them", async () => {
