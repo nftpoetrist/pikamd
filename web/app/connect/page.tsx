@@ -12,7 +12,7 @@ export default function ConnectPage() {
   return (
     <PageTransition>
       <main className="flex flex-1 flex-col">
-        <div className="page-center page-center-high">
+        <div className="page-center page-center-high hero-compact">
           <h1 className="hero-title">
             Connect your agent
             <br />

@@ -29,7 +29,7 @@ export default async function ExplorePage() {
   return (
     <PageTransition>
       <main className="flex flex-1 flex-col">
-        <div className="page-center page-center-high explore-hero">
+        <div className="page-center page-center-high hero-compact explore-hero">
           <h1 className="hero-title">
             Give your agent
             <br />

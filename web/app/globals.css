@@ -824,12 +824,13 @@ body {
    the gap from the search frame to the card frames is 24px (two 3px frames + 18px clear) */
 .explore-hero .md-lanes { margin-top: -18px; }
 
-/* Explore on short screens: smaller hero, slimmer search bar and lanes pulled up so both lanes,
-   buttons included, fit the first screen (measured: 1280×720, 1366×768) */
+/* Short screens: Explore, My Collection and Connect share one smaller hero (same title size and
+   spacing, user request 2026-10-15). On Explore it also lets both lanes, buttons included, fit the
+   first screen together with the slimmer search bar (measured: 1280×720, 1366×768) */
 @media (max-height: 820px) {
-  .explore-hero.page-center-high { padding-top: 22px; }
-  .explore-hero .hero-title { font-size: clamp(38px, min(6vw, 6svh), 76px); margin-bottom: 10px; }
-  .explore-hero .hero-sub { margin-bottom: 12px; }
+  .hero-compact.page-center-high { padding-top: 22px; }
+  .hero-compact .hero-title { font-size: clamp(38px, min(6vw, 6svh), 76px); margin-bottom: 10px; }
+  .hero-compact .hero-sub { margin-bottom: 12px; }
   .explore-hero .srch-box { height: 48px; }
   .explore-hero .srch-input { font-size: 23px; }
   .explore-hero .md-lanes { gap: 4px; }
