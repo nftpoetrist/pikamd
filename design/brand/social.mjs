@@ -1,6 +1,7 @@
 // PikaMd's X images, drawn from the site's own pixel maps (no third-party logos):
 //   design/brand/pikamd-x-profile.png  1000×1000, safe for X's circle crop
-//   design/brand/pikamd-x-header.png   1500×500, the pika catching .md pages, coins and sparkles
+//   design/brand/pikamd-x-header.png   1500×500, the pika chasing the four guideline kinds (Rules,
+//                                      Skills, Prompts, Agents), the layout of PikaMd's first X header
 //
 //   node --experimental-strip-types design/brand/social.mjs
 import { spawn } from "node:child_process";
@@ -12,6 +13,7 @@ import { fileURLToPath } from "node:url";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const WEB = join(HERE, "../../web");
 const { PIKA, PIKA_PALETTE } = await import(join(WEB, "components/brand/pika-art.ts"));
+const { RULES, SKILLS, PROMPTS, AGENTS, ICON_PALETTE } = await import(join(HERE, "social-icons.mjs"));
 const coinSrc = readFileSync(join(WEB, "components/PikaGoldCoin.tsx"), "utf8");
 const arrayIn = (text, name) => [...text.match(new RegExp(`const ${name}\\s*=\\s*\\[([\\s\\S]*?)\\];`))[1].matchAll(/"([^"]*)"/g)].map((x) => x[1]);
 const colorsIn = (text, name) => Object.fromEntries([...text.match(new RegExp(`const ${name}[^=]*=\\s*\\{([\\s\\S]*?)\\};`))[1].matchAll(/(\w)\s*:\s*"(#[0-9A-Fa-f]{6})"/g)].map((x) => [x[1], x[2]]));
@@ -69,37 +71,44 @@ const profile = `<!doctype html><html><head><meta charset="utf-8">${FONTS}<style
   <div class="pika">${svg(PIKA, PIKA_PALETTE, 20)}</div>
 </body></html>`;
 
-const page = (kind, rot) => `<div class="page" style="transform: rotate(${rot}deg)"><b>${kind}</b><i style="width:78%"></i><i style="width:92%"></i><i style="width:64%"></i><i style="width:84%"></i></div>`;
-const speed = (n) => `<span class="speed">${Array.from({ length: n }, (_, i) => `<i style="width:${36 + ((i * 17) % 40)}px"></i>`).join("")}</span>`;
+// Exclamation mark, 3×9 pixels, gold with an ink outline
+const BANG = ["OOO", "OYO", "OYO", "OYO", "OYO", "OOO", "...", "OOO", "OYO", "OOO"];
+const speed = (widths) => `<span class="speed">${widths.map((w) => `<i style="width:${w}px"></i>`).join("")}</span>`;
+const item = (x, y, icon, label, glow, lines) =>
+  `<div class="item" style="left:${x}px;top:${y}px">${speed(lines)}<div class="icon" style="filter:drop-shadow(0 0 16px ${glow})">${icon}<small>${label}</small></div></div>`;
 const header = `<!doctype html><html><head><meta charset="utf-8">${FONTS}<style>${BASE}
   html, body { width: 1500px; height: 500px; }
-  body { --gx: 34%; --gy: 62%; }
-  .pika { position: absolute; left: 330px; top: 150px; filter: drop-shadow(0 0 34px rgba(255,203,5,.55)); }
-  .ghost { position: absolute; top: 150px; filter: grayscale(.2); }
-  .word { position: absolute; right: 64px; top: 52px; text-align: right; }
-  .word h1 { font: 400 92px/0.9 "Jersey 10", monospace; color: #FFF8E7; text-shadow: 4px 4px 0 rgba(0,0,0,.75); letter-spacing: 1px; }
+  body { --gx: 34%; --gy: 66%; }
+  .grid { position: absolute; inset: 0; background-image:
+      linear-gradient(rgba(255,203,5,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,203,5,.035) 1px, transparent 1px);
+    background-size: 40px 40px; }
+  /* X's avatar covers the header's lower left (to about x = 390): the pika starts right of it, like the first header */
+  .pika { position: absolute; left: 432px; top: 246px; filter: drop-shadow(0 0 30px rgba(255,203,5,.55)); }
+  .ghost { position: absolute; top: 246px; }
+  .trail { position: absolute; left: 236px; top: 300px; display: flex; flex-direction: column; gap: 22px; align-items: flex-end; width: 120px; }
+  .trail i, .speed i { display: block; height: 6px; background: rgba(214,203,181,.45); }
+  .word { position: absolute; right: 64px; top: 50px; text-align: right; }
+  .word h1 { font: 400 96px/0.9 "Jersey 10", monospace; color: #FFF8E7; text-shadow: 4px 4px 0 rgba(0,0,0,.75); letter-spacing: 1px; }
   .word h1 span { color: #FFCB05; text-shadow: 4px 4px 0 #7A4200; }
-  .word p { margin-top: 14px; font: 34px/1 VT323, monospace; color: #FFF8E7; text-shadow: 2px 2px 0 #000; }
+  .word p { margin-top: 16px; font: 34px/1 VT323, monospace; color: #FFF8E7; text-shadow: 2px 2px 0 #000; }
   .word small { display: block; margin-top: 10px; font: 24px/1 VT323, monospace; color: #FFCB05; }
   .item { position: absolute; display: flex; align-items: center; gap: 14px; }
-  .speed { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; order: 2; }
-  .speed i { display: block; height: 5px; background: rgba(255,215,64,.28); }
-  .page { width: 74px; height: 94px; padding: 9px 9px 0; background: #FFF8E7; box-shadow: 0 0 0 3px #1A0800, 0 0 0 7px #FFCB05, 0 0 0 10px #1A0800, 0 10px 24px rgba(0,0,0,.6), 0 0 30px rgba(255,203,5,.35);
-    display: flex; flex-direction: column; gap: 7px; }
-  .page b { align-self: flex-start; padding: 1px 5px; font: 15px/1 VT323, monospace; letter-spacing: 1px; color: #FFF8E7; background: #1A0800; }
-  .page i { display: block; height: 5px; background: #B08A4A; }
-  .floor { position: absolute; left: 80px; right: 40px; top: 460px; height: 4px; background: repeating-linear-gradient(90deg, rgba(255,203,5,.55) 0 14px, transparent 14px 26px); }
-  .glow { filter: drop-shadow(0 0 16px rgba(255,203,5,.55)); }
-</style></head><body><div class="bg"></div>${dust(1500, 500, 70)}
-  <div class="ghost" style="left:250px;opacity:.10">${svg(PIKA, PIKA_PALETTE, 9)}</div>
-  <div class="ghost" style="left:280px;opacity:.18">${svg(PIKA, PIKA_PALETTE, 9)}</div>
-  <div class="ghost" style="left:305px;opacity:.28">${svg(PIKA, PIKA_PALETTE, 9)}</div>
-  <div class="pika">${svg(PIKA, PIKA_PALETTE, 9)}</div>
-  <div class="item" style="left:690px;top:300px">${page("RULES", -8)}${speed(3)}</div>
-  <div class="item glow" style="left:860px;top:236px">${svg(COIN, COIN_COLORS, 5)}${speed(3)}</div>
-  <div class="item" style="left:1010px;top:318px">${page("SKILL", 7)}${speed(3)}</div>
-  <div class="item glow" style="left:1190px;top:262px">${svg(SPARK.rows, SPARK.palette, 4)}${speed(2)}</div>
-  <div class="item" style="left:1330px;top:330px">${page("AGENT", -5)}</div>
+  .speed { display: flex; flex-direction: column; gap: 12px; align-items: flex-end; width: 56px; }
+  .icon { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .icon small { font: 22px/1 VT323, monospace; color: #D6CBB5; text-shadow: 2px 2px 0 #000; letter-spacing: 1px; }
+  .bang { position: absolute; left: 778px; top: 278px; filter: drop-shadow(0 0 10px rgba(255,203,5,.6)); }
+  .floor { position: absolute; left: 80px; right: 40px; top: 472px; height: 4px; background: repeating-linear-gradient(90deg, rgba(255,203,5,.6) 0 14px, transparent 14px 26px); }
+</style></head><body><div class="bg"></div><div class="grid"></div>${dust(1500, 500, 70)}
+  <div class="trail"><i style="width:64px"></i><i style="width:100px"></i><i style="width:46px"></i><i style="width:84px"></i><i style="width:58px"></i></div>
+  <div class="ghost" style="left:350px;opacity:.10">${svg(PIKA, PIKA_PALETTE, 7)}</div>
+  <div class="ghost" style="left:376px;opacity:.17">${svg(PIKA, PIKA_PALETTE, 7)}</div>
+  <div class="ghost" style="left:402px;opacity:.27">${svg(PIKA, PIKA_PALETTE, 7)}</div>
+  <div class="pika">${svg(PIKA, PIKA_PALETTE, 7)}</div>
+  ${item(652, 318, svg(RULES, ICON_PALETTE, 4), "Rules", "rgba(255,241,214,.35)", [34, 52, 26])}
+  <div class="bang">${svg(BANG, { O: "#1A0800", Y: "#FFCB05" }, 4)}</div>
+  ${item(818, 270, svg(SKILLS, ICON_PALETTE, 4), "Skills", "rgba(63,191,127,.45)", [40, 24, 48])}
+  ${item(984, 336, svg(PROMPTS, ICON_PALETTE, 4), "Prompts", "rgba(155,123,224,.5)", [30, 50, 36])}
+  ${item(1160, 284, svg(AGENTS, ICON_PALETTE, 4), "Agents", "rgba(159,179,230,.45)", [46, 28, 40])}
   <div class="word"><h1>Pika<span>Md</span></h1><p>Catch the best AI guidelines</p><small>Markdown guidelines · MCP for any agent</small></div>
   <div class="floor"></div>
 </body></html>`;
