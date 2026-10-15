@@ -71,16 +71,17 @@ export default function PublishFlow({ takenSlugs }: { takenSlugs: string[] }) {
   };
 
   const label = STEPS.find((s) => s.step === step)?.label;
+  const finished = step === 4 && publish.phase >= DONE;
 
   return (
     // Working on a file: the panel becomes a screen-sized window (DESIGN §3.2) so the
     // step bar and Back / Continue stay visible; long content scrolls inside it.
     <section
       ref={panelRef}
-      className={ready && draft.content ? "pub-panel pixel-panel is-working" : "pub-panel pixel-panel"}
+      className={`pub-panel pixel-panel${ready && draft.content ? " is-working" : ""}${finished ? " is-finished" : ""}`}
       aria-label="Publish a guideline"
     >
-      <StepBar current={step} reachable={reachable} onSelect={go} />
+      <StepBar current={step} reachable={reachable} onSelect={go} finished={finished} />
 
       {!ready ? null : (
         <>
@@ -97,7 +98,7 @@ export default function PublishFlow({ takenSlugs }: { takenSlugs: string[] }) {
           </div>
 
           {/* Step 1 with no file yet, and the finished publish, have their own calls to action */}
-          {!(step === 1 && !draft.content) && !(step === 4 && publish.phase >= DONE) && (
+          {!(step === 1 && !draft.content) && !finished && (
             <footer className="pub-nav">
               {step > 1 ? (
                 <button type="button" className="btn-ghost" disabled={busy || !!publish.pendingTx} onClick={() => go((step - 1) as Step)}>

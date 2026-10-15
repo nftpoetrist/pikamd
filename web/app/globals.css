@@ -1152,6 +1152,76 @@ body {
   clip-path: polygon(0 0, 100% 0, 50% 100%);
 }
 
+/* Wrappers that only carry `inert` for Shared by me (MdCard `off`): no box of their own, so the
+   row lays out exactly as before */
+.md-act { display: contents; }
+
+/* Shared by me (My Collection): Hide / Show take the Tip button's place, on that page only.
+   Hide is solid red, Show is solid gold; same skeleton as the other card buttons */
+.md-hide {
+  --frame: #B8322A;
+  --base: #6E1A14;
+  --bevel-top: #FF9C8E;
+  --bevel-bottom: #C93B30;
+  color: var(--ink);
+  background: var(--red);
+}
+
+.md-hide:hover { background: #FF8573; --frame: #D8402F; --base: #8A221A; }
+
+.md-show {
+  --frame: var(--g1);
+  --base: var(--g4);
+  --bevel-top: #FFE680;
+  --bevel-bottom: var(--g3);
+  color: var(--ink);
+  background: var(--y1);
+}
+
+.md-show:hover { background: var(--y2); --frame: var(--g1); --base: var(--g4); }
+
+.md-hide:disabled,
+.md-show:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+/* The balloon turns red for an error (it stays a few seconds longer than a notice) */
+.md-tip-note.is-error {
+  color: var(--ink);
+  background: var(--red);
+  box-shadow:
+    0 -2px 0 0 #B8322A,
+    0 2px 0 0 #B8322A,
+    -2px 0 0 0 #B8322A,
+    2px 0 0 0 #B8322A,
+    0 8px 16px rgba(0, 0, 0, 0.5);
+}
+
+.md-tip-note.is-error::after { background: var(--red); }
+
+/* Hidden or locked: the card dims except its badge and the owner's Show / Hide button */
+.md-card.is-off .md-file,
+.md-card.is-off .md-version,
+.md-card.is-off .md-badge:not(.md-badge-off),
+.md-card.is-off .md-title,
+.md-card.is-off .md-summary,
+.md-card.is-off .md-card-foot,
+.md-card.is-off .md-tip-wrap[inert],
+.md-card.is-off .md-act > * {
+  opacity: 0.45;
+}
+
+.md-badge-off {
+  color: var(--orange);
+  background: rgba(255, 159, 67, 0.12);
+  box-shadow:
+    0 -2px 0 0 rgba(255, 159, 67, 0.55),
+    0 2px 0 0 rgba(255, 159, 67, 0.55),
+    -2px 0 0 0 rgba(255, 159, 67, 0.55),
+    2px 0 0 0 rgba(255, 159, 67, 0.55);
+}
+
 /* In the big preview the row sits on its own, with the long collect label */
 .mdp-actions {
   margin-top: 4px;
@@ -1444,7 +1514,7 @@ body {
 }
 
 .pub-step.is-done .pub-step-label { color: var(--t1); }
-.pub-step.is-done .pub-step-btn:hover .pub-step-label { color: var(--y1); }
+.pub-step.is-done .pub-step-btn:hover:not(:disabled) .pub-step-label { color: var(--y1); }
 
 .pub-step.is-current .pub-step-num {
   color: var(--y1);
@@ -2415,8 +2485,11 @@ body {
 
   .pub-body.step-4 > * { flex: none; }
 
-  /* Finished publish: centred in the window both ways (auto margins never clip if it overflows) */
-  .pub-body.step-4 > .pub-done { margin: auto; }
+  /* Finished publish: the step bar and the message are one block, centred in the window
+     (user request 2026-10-15). Auto margins on the block never clip if the window is short */
+  .pub-panel.is-finished .pub-steps { margin-top: auto; }
+  .pub-panel.is-finished .pub-body.step-4 { flex: none; margin-bottom: auto; }
+  .pub-body.step-4 > .pub-done { margin: 28px auto 0; }
 }
 
 @media (max-width: 1023px) {
@@ -2618,51 +2691,6 @@ body {
   box-shadow: inset 3px 0 0 0 var(--red);
 }
 
-/* One shared guideline: its card, then its status and Hide / Show again. 22px between the card's
-   frame and the button's frame (two frames + 16px clear) */
-.shared-item {
-  display: flex;
-  flex-direction: column;
-  gap: 22px;
-  width: var(--card-w);
-}
-
-.shared-item .shared-error {
-  margin: 0;
-  font-size: 18px;
-}
-
-/* Hidden or locked: dimmed, and inert (nothing on it can be pressed) */
-.shared-off {
-  opacity: 0.5;
-}
-
-/* Top-aligned, so every card's button sits at the same height whether its status takes one line or two */
-.shared-bar {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  min-height: var(--px-h);
-}
-
-.shared-status {
-  padding-top: 4px; /* a one-line status lines up with the button's text */
-  font-family: var(--font-vt323);
-  font-size: 18px;
-  line-height: 1.1;
-  color: var(--t1);
-}
-
-.shared-status.is-off {
-  color: var(--orange);
-}
-
-.shared-bar .btn-gold,
-.shared-bar .btn-ghost {
-  flex: none;
-  font-size: 20px;
-}
 
 @media (max-width: 639px) {
   .collection-panel { --card-w: 288px; --pad: 16px; }

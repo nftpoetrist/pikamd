@@ -8,21 +8,32 @@ export const STEPS: { step: Step; label: string }[] = [
 ];
 
 // Quest-style progress: done steps are gold and clickable, the current one blinks,
-// later ones stay locked until the earlier steps are complete.
-export default function StepBar({ current, reachable, onSelect }: { current: Step; reachable: Step; onSelect: (s: Step) => void }) {
+// later ones stay locked until the earlier steps are complete. `finished` (the guideline is
+// published): every step is done and nothing is clickable, there is no step to go back to.
+export default function StepBar({
+  current,
+  reachable,
+  onSelect,
+  finished = false,
+}: {
+  current: Step;
+  reachable: Step;
+  onSelect: (s: Step) => void;
+  finished?: boolean;
+}) {
   return (
     <nav className="pub-steps" aria-label="Publishing steps">
       <ol>
         {STEPS.map(({ step, label }) => {
-          const state = step < current ? "done" : step === current ? "current" : "todo";
-          const locked = step > reachable;
+          const state = finished || step < current ? "done" : step === current ? "current" : "todo";
+          const locked = finished || step > reachable;
           return (
             <li key={step} className={`pub-step is-${state}`}>
               <button
                 type="button"
                 className="pub-step-btn"
                 disabled={locked || step === current}
-                aria-current={step === current ? "step" : undefined}
+                aria-current={!finished && step === current ? "step" : undefined}
                 onClick={() => onSelect(step)}
               >
                 <span className="pub-step-num" aria-hidden="true">

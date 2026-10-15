@@ -6,19 +6,25 @@ import CollectButton from "@/components/CollectButton";
 import LikeButton from "@/components/LikeButton";
 import { KIND_LABEL, shortAddress } from "@/components/md-format";
 import MdPreview from "@/components/MdPreview";
-import TipButton from "@/components/TipButton";
-import type { Guideline, GuidelineCard } from "@/lib/types";
+import AuthorAction from "@/components/AuthorAction";
+import type { Guideline, GuidelineCard, OwnedGuideline } from "@/lib/types";
 import { api } from "@/lib/wallet/api";
 
 type PreviewState = "closed" | "open" | "closing";
 
 const hasContent = (g: GuidelineCard | Guideline): g is Guideline => typeof (g as Guideline).content === "string";
+const isOwned = (g: GuidelineCard | Guideline | OwnedGuideline): g is OwnedGuideline => typeof (g as OwnedGuideline).hidden === "boolean";
 
 // focusable=false: duplicate cards in an endless lane stay out of the tab order.
+// The third button is Tip, or Hide / Show on the connected wallet's own guidelines (AuthorAction).
+// An OwnedGuideline (My Collection → Shared by me) that is hidden or locked is dimmed with a badge
+// saying which, and OPEN, like and Add are inert (none of them works off the site); Show stays live.
 // Pages send cards without the file (lib/data/guidelines.ts → listGuidelineCards); OPEN loads it
 // once from /api/guidelines/[slug] (fetched ahead on hover or focus), the same query a search
 // result uses. A card built in the browser (Publish's live preview) already has it.
-export default function MdCard({ guideline, focusable = true }: { guideline: GuidelineCard | Guideline; focusable?: boolean }) {
+export default function MdCard({ guideline, focusable = true }: { guideline: GuidelineCard | Guideline | OwnedGuideline; focusable?: boolean }) {
+  const owned = isOwned(guideline) ? guideline : null;
+  const off = owned?.locked ? "locked" : owned?.hidden ? "hidden" : undefined;
   const { slug, title, description, kind, tags, author, latestVersion, stars } = guideline;
   const authorName = author.handle ? `@${author.handle}` : shortAddress(author.address);
   const cardRef = useRef<HTMLElement>(null);
@@ -68,11 +74,16 @@ export default function MdCard({ guideline, focusable = true }: { guideline: Gui
     <>
       <article
         ref={cardRef}
-        className="md-card pixel-panel"
-        aria-label={`${title} by ${authorName}`}
+        className={off ? "md-card pixel-panel is-off" : "md-card pixel-panel"}
+        aria-label={`${title} by ${authorName}${off === "hidden" ? " (hidden)" : off === "locked" ? " (locked by a moderator)" : ""}`}
       >
         <header className="md-card-head">
           <span className="md-file">{slug}.md</span>
+          {off && (
+            <span className="md-badge md-badge-off" title={off === "hidden" ? "Hidden: not on Explore, search or MCP" : "Locked by a moderator: off PikaMd"}>
+              {off === "hidden" ? "HIDDEN" : "LOCKED"}
+            </span>
+          )}
           <span className="md-badge">{KIND_LABEL[kind]}</span>
           <span className="md-version">v{latestVersion}</span>
         </header>
@@ -93,7 +104,7 @@ export default function MdCard({ guideline, focusable = true }: { guideline: Gui
         </footer>
 
         <div className="md-card-actions">
-          <span className="md-tip-wrap">
+          <span className="md-tip-wrap" inert={!!off}>
             <button
               ref={viewRef}
               type="button"
@@ -115,9 +126,13 @@ export default function MdCard({ guideline, focusable = true }: { guideline: Gui
               </span>
             )}
           </span>
-          <LikeButton slug={slug} title={title} stars={stars} focusable={focusable} />
-          <TipButton author={authorName} focusable={focusable} />
-          <CollectButton slug={slug} title={title} focusable={focusable} />
+          <span className="md-act" inert={!!off}>
+            <LikeButton slug={slug} title={title} stars={stars} focusable={focusable} />
+          </span>
+          <AuthorAction guideline={guideline} authorName={authorName} hidden={owned?.hidden} focusable={focusable} />
+          <span className="md-act md-act-grow" inert={!!off}>
+            <CollectButton slug={slug} title={title} focusable={focusable} />
+          </span>
         </div>
       </article>
 

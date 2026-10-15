@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import CollectButton from "@/components/CollectButton";
 import LikeButton from "@/components/LikeButton";
 import { KIND_LABEL, shortAddress } from "@/components/md-format";
-import TipButton from "@/components/TipButton";
+import AuthorAction from "@/components/AuthorAction";
 import type { Guideline } from "@/lib/types";
 
 const OPEN_MS = 240;
@@ -157,7 +157,7 @@ export default function MdPreview({ guideline, card, focusLine, closing, onClose
 
         <div className="md-card-actions mdp-actions">
           <LikeButton slug={slug} title={title} stars={stars} />
-          <TipButton author={authorName} />
+          <AuthorAction guideline={guideline} authorName={authorName} />
           <CollectButton slug={slug} title={title} long />
         </div>
       </div>

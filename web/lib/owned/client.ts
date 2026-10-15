@@ -2,10 +2,11 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useCallback, useState, useSyncExternalStore } from "react";
+import { useCallback, useState } from "react";
 import { useConnection } from "wagmi";
 import { getChainId, switchChain, waitForTransactionReceipt, writeContract } from "wagmi/actions";
 import { CHAIN, REGISTRY } from "@/lib/chain";
+import { useHydrated } from "@/lib/hydrated";
 import { sameWallet } from "@/lib/likes/rules";
 import { messageFor } from "@/lib/publish/client";
 import { REGISTRY_ABI } from "@/lib/registry-abi";
@@ -28,12 +29,10 @@ export type SharedList =
   | { mode: "disconnected" }
   | { mode: "public" | "signed"; wallet: `0x${string}`; guidelines: OwnedGuideline[]; signedIn: boolean; error: string | null };
 
-const noSubscribe = () => () => {};
-
 /** The connected wallet's guidelines: from the server once signed in, else from the public list. */
 export function useSharedList(listed: GuidelineCard[]): SharedList {
   // The server can't see the wallet: until hydration ends, render exactly what it rendered
-  const hydrated = useSyncExternalStore(noSubscribe, () => true, () => false);
+  const hydrated = useHydrated();
   const { address, status } = useConnection();
   const session = useSessionWallet();
   const signed = status === "connected" && !!address && !!session.data && sameWallet(session.data, address);
@@ -126,5 +125,7 @@ export function useVisibility() {
     [address, status, session.data, signIn, pendingTx, sync],
   );
 
-  return { phase, busy: phase >= 0, error, pendingTx, run };
+  const clearError = useCallback(() => setError(null), []);
+
+  return { phase, busy: phase >= 0, error, pendingTx, run, clearError };
 }

@@ -6,8 +6,8 @@ import { Suspense, useRef, useState, type KeyboardEvent } from "react";
 import { useConnection } from "wagmi";
 import MdCard from "@/components/MdCard";
 import { useCollection } from "@/lib/collection/store";
-import { VISIBILITY_PHASES, useSharedList, useVisibility, type SharedList } from "@/lib/owned/client";
-import type { GuidelineCard, OwnedGuideline } from "@/lib/types";
+import { useSharedList, type SharedList } from "@/lib/owned/client";
+import type { GuidelineCard } from "@/lib/types";
 import { openWalletModal } from "@/lib/wallet/modal";
 import { useSignIn } from "@/lib/wallet/session";
 
@@ -188,57 +188,10 @@ function SharedShelf({ shared }: { shared: SharedList }) {
       ) : (
         <div className="collection-grid">
           {guidelines.map((g) => (
-            <SharedItem key={g.id} guideline={g} />
+            <MdCard key={g.id} guideline={g} />
           ))}
         </div>
       )}
     </>
-  );
-}
-
-function statusText(g: OwnedGuideline): string {
-  if (g.hidden && g.locked) return "Hidden, and locked by a moderator";
-  if (g.hidden) return "Hidden: not on Explore, search or MCP";
-  if (g.locked) return "Locked by a moderator: off PikaMd";
-  if (g.flagged) return "On Explore. Agents get it once a moderator checks it";
-  return "On Explore, search and MCP";
-}
-
-function SharedItem({ guideline: g }: { guideline: OwnedGuideline }) {
-  const { phase, busy, error, pendingTx, run } = useVisibility();
-  const off = g.hidden || g.locked;
-  const action = g.hidden ? "Show again" : "Hide";
-  const label = busy ? VISIBILITY_PHASES[phase] : pendingTx ? "Try again" : action;
-
-  return (
-    <div className="shared-item">
-      {/* Off-site guidelines can't be opened, liked or collected: shown dimmed and inert */}
-      {off ? (
-        <div className="shared-off" inert>
-          <MdCard guideline={g} focusable={false} />
-        </div>
-      ) : (
-        <MdCard guideline={g} />
-      )}
-      <div className="shared-bar">
-        <span className={off ? "shared-status is-off" : "shared-status"}>{statusText(g)}</span>
-        <button
-          type="button"
-          className={g.hidden ? "btn-gold" : "btn-ghost"}
-          disabled={busy}
-          aria-busy={busy || undefined}
-          aria-label={busy ? `${label} ${g.title}` : `${pendingTx ? "Finish: " + action : action} ${g.title}`}
-          onClick={() => void run(g.id, !g.hidden)}
-        >
-          {label}
-        </button>
-      </div>
-      {error && (
-        <p className="shared-error" role="alert">
-          {error}
-          {pendingTx ? ". Your change is on Arc; press Try again to update PikaMd" : ""}
-        </p>
-      )}
-    </div>
   );
 }
