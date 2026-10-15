@@ -2400,6 +2400,9 @@ body {
   }
 
   .pub-body.step-4 > * { flex: none; }
+
+  /* Finished publish: centred in the window both ways (auto margins never clip if it overflows) */
+  .pub-body.step-4 > .pub-done { margin: auto; }
 }
 
 @media (max-width: 1023px) {
