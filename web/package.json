@@ -10,7 +10,8 @@
     "test": "node --experimental-strip-types --no-warnings --test lib/scan.test.mjs lib/mcp/connect.test.mjs lib/mcp/tools.test.mjs lib/auth/auth.test.mjs lib/likes/rules.test.mjs lib/search/search.test.mjs lib/data/rows.test.mjs lib/publish/publish.test.mjs supabase/schema.test.mjs",
     "mcp:smoke": "node scripts/mcp-smoke.mjs",
     "auth:smoke": "node scripts/auth-smoke.mjs",
-    "db:seed": "node --experimental-strip-types --no-warnings scripts/db-seed-dev.mjs"
+    "db:seed": "node --experimental-strip-types --no-warnings scripts/db-seed-dev.mjs",
+    "db:migrate": "node scripts/db-migrate.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/server": "^2.3.1",
