@@ -42,27 +42,34 @@ type Rule = {
   /** Which capture group is the sensitive part (default: whole match). */
   group?: number;
   /** Return false to skip an obvious false positive. */
-  accept?: (match: string, line: string) => boolean;
+  accept?: (match: string) => boolean;
 };
+
+// Every pattern must run in linear time on a 512 KB file: the server scans whatever a signed-in
+// wallet sends (/api/guidelines/prepare). So no unbounded run that can restart inside itself:
+// a lookbehind pins where a token may start, repetitions are capped, and "A and B on one line"
+// checks the line once instead of backtracking (scan.test.mjs times adversarial inputs).
 
 // Values that are clearly examples, not real data.
 const PLACEHOLDER_HINT = /^[<{[]|your|example|sample|dummy|placeholder|changeme|x{4,}|\*{4,}|\.{3}|…/i;
 const isRealValue = (v: string) => !PLACEHOLDER_HINT.test(v);
+
+const SENDS = /\b(?:curl|wget|fetch|POST|upload|send|webhook)\b/i;
 
 const EXAMPLE_EMAIL = /@(example\.(com|org|net)|test\.com|localhost)$|^(no-?reply|noreply\+?[\w.-]*)@/i;
 
 const RULES: Rule[] = [
   // ── Secrets (block) ──────────────────────────────────────────
   { rule: "private-key-block", severity: "block", pattern: /-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?(?:-----END [A-Z ]*PRIVATE KEY-----|$)/g, message: "Private key block", placeholder: "{{PRIVATE_KEY}}" },
-  { rule: "anthropic-openai-key", severity: "block", pattern: /\bsk-(?:ant-|proj-)?[A-Za-z0-9_-]{20,}/g, message: "API key (Anthropic / OpenAI style)", placeholder: "{{API_KEY}}" },
+  { rule: "anthropic-openai-key", severity: "block", pattern: /(?<![A-Za-z0-9_-])sk-(?:ant-|proj-)?[A-Za-z0-9_-]{20,}/g, message: "API key (Anthropic / OpenAI style)", placeholder: "{{API_KEY}}" },
   { rule: "github-token", severity: "block", pattern: /\b(?:gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{22,})/g, message: "GitHub token", placeholder: "{{GITHUB_TOKEN}}" },
   { rule: "aws-key", severity: "block", pattern: /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/g, message: "AWS access key", placeholder: "{{AWS_ACCESS_KEY}}" },
-  { rule: "slack-token", severity: "block", pattern: /\bxox[abprs]-[A-Za-z0-9-]{10,}/g, message: "Slack token", placeholder: "{{SLACK_TOKEN}}" },
+  { rule: "slack-token", severity: "block", pattern: /(?<![A-Za-z0-9-])xox[abprs]-[A-Za-z0-9-]{10,}/g, message: "Slack token", placeholder: "{{SLACK_TOKEN}}" },
   { rule: "google-key", severity: "block", pattern: /\bAIza[0-9A-Za-z_-]{35}\b/g, message: "Google API key", placeholder: "{{GOOGLE_API_KEY}}" },
   { rule: "stripe-key", severity: "block", pattern: /\b(?:sk|rk)_(?:live|test)_[A-Za-z0-9]{16,}/g, message: "Stripe secret key", placeholder: "{{STRIPE_KEY}}" },
   { rule: "pikamd-key", severity: "block", pattern: /\bpmd_[a-f0-9]{40}\b/g, message: "PikaMd MCP key", placeholder: "{{PIKAMD_KEY}}" },
   { rule: "hex-private-key", severity: "block", pattern: /\b0x[a-fA-F0-9]{64}\b/g, message: "Looks like a wallet private key (or a transaction hash)", placeholder: "{{PRIVATE_KEY}}" },
-  { rule: "jwt", severity: "block", pattern: /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g, message: "JWT / session token", placeholder: "{{TOKEN}}" },
+  { rule: "jwt", severity: "block", pattern: /(?<![A-Za-z0-9_-])eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g, message: "JWT / session token", placeholder: "{{TOKEN}}" },
   { rule: "bearer-token", severity: "block", pattern: /\bBearer\s+([A-Za-z0-9._~+/-]{20,}=*)/g, group: 1, message: "Bearer token", placeholder: "{{TOKEN}}", accept: isRealValue },
   {
     rule: "secret-assignment",
@@ -85,30 +92,32 @@ const RULES: Rule[] = [
   },
 
   // ── Personal / project data (replace or keep) ────────────────
-  { rule: "email", severity: "personal", pattern: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g, message: "Email address", placeholder: "{{EMAIL}}", accept: (v) => !EXAMPLE_EMAIL.test(v) },
+  { rule: "email", severity: "personal", pattern: /(?<![A-Za-z0-9._%+-])[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9-]{1,63}(?:\.[A-Za-z0-9-]{1,63}){0,16}\.[A-Za-z]{2,24}\b/g, message: "Email address", placeholder: "{{EMAIL}}", accept: (v) => !EXAMPLE_EMAIL.test(v) },
   { rule: "phone", severity: "personal", pattern: /(?<![\w.+])(?:\+\d{1,3}[ -]?\(?\d{2,4}\)?(?:[ -]?\d{2,4}){2,4}|\b0 ?5\d{2}[ -]?\d{3}[ -]?\d{2}[ -]?\d{2})(?!\w|\.\d)/g, message: "Phone number", placeholder: "{{PHONE}}" },
   { rule: "local-path", severity: "personal", pattern: /(?:\/Users\/|\/home\/|[A-Za-z]:\\Users\\)([^\s/\\`'"<>)\]]+)[^\s`'"<>)\]]*/g, message: "Local file path (shows your user name)", placeholder: "{{PROJECT_PATH}}", accept: (v) => !/^(?:\/Users\/|\/home\/|[A-Za-z]:\\Users\\)(?:<|\{|…|\.\.\.|\*|(?:you|your|username|user|me|name)\b)/i.test(v) },
   { rule: "wallet-address", severity: "personal", pattern: /\b0x[a-fA-F0-9]{40}\b/g, message: "Wallet or contract address (public contract addresses are fine to keep)", placeholder: "{{WALLET_ADDRESS}}" },
   { rule: "private-ip", severity: "personal", pattern: /\b(?:10\.\d{1,3}|192\.168|172\.(?:1[6-9]|2\d|3[01]))\.\d{1,3}\.\d{1,3}(?::\d+)?\b/g, message: "Private network address", placeholder: "{{INTERNAL_URL}}" },
-  { rule: "internal-host", severity: "personal", pattern: /\b(?:https?:\/\/)?[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.(?:internal|corp|lan|intranet)\b(?::\d+)?(?:\/[^\s)\]`'"]*)?|\b(?:https?:\/\/)?[A-Za-z0-9-]+-internal(?:\.[A-Za-z0-9-]+)+\b(?:\/[^\s)\]`'"]*)?/gi, message: "Internal host name", placeholder: "{{INTERNAL_URL}}" },
+  { rule: "internal-host", severity: "personal", pattern: /(?<![A-Za-z0-9.-])(?:https?:\/\/)?[A-Za-z0-9-]{1,63}(?:\.[A-Za-z0-9-]{1,63}){0,16}\.(?:internal|corp|lan|intranet)\b(?::\d+)?(?:\/[^\s)\]`'"]*)?|(?<![A-Za-z0-9.-])(?:https?:\/\/)?[A-Za-z0-9-]{1,63}-internal(?:\.[A-Za-z0-9-]{1,63}){1,16}\b(?:\/[^\s)\]`'"]*)?/gi, message: "Internal host name", placeholder: "{{INTERNAL_URL}}" },
 
   // ── Possible harmful instructions (review) ───────────────────
   { rule: "override-instructions", severity: "review", pattern: /\b(?:ignore|disregard|forget|override)\s+(?:all\s+|any\s+|the\s+|your\s+)*(?:previous|prior|above|earlier|system|other)\s+(?:instructions|rules|prompts?|messages|guidelines)\b/gi, message: "Tries to override the agent's other instructions" },
   { rule: "override-instructions-tr", severity: "review", pattern: /önceki\s+(?:tüm\s+)?(?:talimatları|kuralları|yönergeleri)\s+(?:unut|yok\s+say|görmezden\s+gel)/gi, message: "Tries to override the agent's other instructions" },
   { rule: "system-prompt", severity: "review", pattern: /\b(?:new|override|replace|reveal|print)\s+(?:the\s+|your\s+)?system\s+prompt\b/gi, message: "Tries to change or reveal the system prompt" },
   { rule: "hide-from-user", severity: "review", pattern: /\b(?:without\s+(?:telling|asking|informing|notifying)\s+the\s+user|(?:don't|do\s+not|never)\s+(?:tell|inform|show|mention\s+(?:this\s+)?to)\s+the\s+user)\b/gi, message: "Asks the agent to hide something from the user" },
-  { rule: "pipe-to-shell", severity: "review", pattern: /\b(?:curl|wget)\b[^\n|]*\|\s*(?:sudo\s+)?(?:ba|z)?sh\b/g, message: "Downloads and runs a script in one step" },
-  { rule: "destructive-command", severity: "review", pattern: /\brm\s+-[a-z]*r[a-z]*f?[a-z]*\s+(?:\/|~|\$HOME)(?=\s|$|\/\*)/g, message: "Deletes the home or root folder" },
+  { rule: "pipe-to-shell", severity: "review", pattern: /\b(?:curl|wget)\b(?:(?!\b(?:curl|wget)\b)[^\n|])*\|\s*(?:sudo\s+)?(?:ba|z)?sh\b/g, message: "Downloads and runs a script in one step" },
+  { rule: "destructive-command", severity: "review", pattern: /\brm\s+-[a-z]*\s+(?:\/|~|\$HOME)(?=\s|$|\/\*)/g, message: "Deletes the home or root folder", accept: (v) => /^rm\s+-[a-z]*r/.test(v) },
   {
+    // A line that names a secret file and a way to send it, in either order
     rule: "exfiltration",
     severity: "review",
-    pattern: /^.*(?:\.env\b|id_rsa|id_ed25519|\.ssh\/|\.aws\/credentials|keychain|wallet\.dat).*\b(?:curl|wget|fetch|POST|upload|send|webhook)\b.*$|^.*\b(?:curl|wget|fetch|POST|upload|send|webhook)\b.*(?:\.env\b|id_rsa|id_ed25519|\.ssh\/|\.aws\/credentials|keychain|wallet\.dat).*$/gim,
+    pattern: /^.*(?:\.env\b|id_rsa|id_ed25519|\.ssh\/|\.aws\/credentials|keychain|wallet\.dat).*$/gim,
     message: "Reads secrets and sends them somewhere",
+    accept: (line) => SENDS.test(line),
   },
-  { rule: "encoded-blob", severity: "review", pattern: /[A-Za-z0-9+/]{200,}={0,2}/g, message: "Long encoded block: hidden instructions can live here" },
+  { rule: "encoded-blob", severity: "review", pattern: /(?<![A-Za-z0-9+/])[A-Za-z0-9+/]{200,}={0,2}/g, message: "Long encoded block: hidden instructions can live here" },
 
   // ── Transparency (info) ──────────────────────────────────────
-  { rule: "html-script", severity: "info", pattern: /<script\b[^>]*>|\bjavascript:/gi, message: "Script or javascript: link (removed when displayed)" },
+  { rule: "html-script", severity: "info", pattern: /<script\b[^>\n]{0,500}>|\bjavascript:/gi, message: "Script or javascript: link (removed when displayed)" },
 ];
 
 const URL_PATTERN = /\bhttps?:\/\/[^\s<>()\]`'"]+/g;
@@ -130,12 +139,6 @@ function lineOf(starts: number[], offset: number) {
   return lo + 1;
 }
 
-function lineText(text: string, starts: number[], line: number) {
-  const s = starts[line - 1];
-  const e = line < starts.length ? starts[line] - 1 : text.length;
-  return text.slice(s, e);
-}
-
 const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /**
@@ -149,16 +152,20 @@ export function scanGuideline(text: string, privateTerms: string[] = []): ScanRe
   // Harmful-instruction checks get their own lane: a personal finding inside a risky
   // line (say, a private word in a curl URL) must never hide that line from review.
   type Lane = "data" | "review" | "info";
-  const taken: Record<Lane, [number, number][]> = { data: [], review: [], info: [] };
+  const taken: Record<Lane, Uint8Array> = { data: new Uint8Array(text.length), review: new Uint8Array(text.length), info: new Uint8Array(text.length) };
   const laneOf = (sev: Severity): Lane => (sev === "review" ? "review" : sev === "info" ? "info" : "data");
-  const hits = (lane: Lane, s: number, e: number) => taken[lane].some(([a, b]) => s < b && e > a);
+  const hits = (lane: Lane, s: number, e: number) => {
+    const covered = taken[lane];
+    for (let i = s; i < e; i++) if (covered[i]) return true;
+    return false;
+  };
 
   const add = (rule: string, severity: Severity, start: number, end: number, message: string, placeholder?: string) => {
     const lane = laneOf(severity);
     // Links are only listed when nothing else already covers them.
     const blocked = lane === "info" ? hits("data", start, end) || hits("review", start, end) || hits("info", start, end) : hits(lane, start, end);
     if (end <= start || blocked) return;
-    taken[lane].push([start, end]);
+    taken[lane].fill(1, start, end);
     const line = lineOf(starts, start);
     findings.push({ id: `${rule}:${start}`, rule, severity, start, end, line, match: text.slice(start, end), message, placeholder });
   };
@@ -182,7 +189,7 @@ export function scanGuideline(text: string, privateTerms: string[] = []): ScanRe
       // Sentence punctuation after a path or URL isn't part of it ("…/app." or "…/x,").
       const trimmed = r.severity === "personal" ? part.replace(/[.,;:!?]+$/, "") || part : part;
       const end = start + trimmed.length;
-      if (r.accept && !r.accept(trimmed, lineText(text, starts, lineOf(starts, start)))) continue;
+      if (r.accept && !r.accept(trimmed)) continue;
       add(r.rule, r.severity, start, end, r.message, r.placeholder);
     }
   }
