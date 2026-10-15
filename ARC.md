@@ -179,7 +179,7 @@ Eski adresler çalışıyor ama resmi yeni adres `rpc.testnet.arc.io`. Testnet't
 
 **Cüzdan kütüphaneleri ile ilgili notlar (docs'tan):**
 - **RainbowKit / wagmi:** viem zincirlerini kullandığı için `arc` doğrudan verilebilir. **2026-10-12:** RainbowKit'in son sürümü (2.2.11) sadece wagmi 2'yi destekliyor; PikaMd wagmi 3 + kendi seçicisini kullanıyor (ARCHITECTURE §9.3). viem'in `arc`/`arcTestnet` tanımlarında zincir ikonu yok.
-- **SIWE (viem 2.57.4, kaynak okundu):** `generateSiweNonce` `Math.random` kullanıyor (kriptografik değil) → nonce'u `crypto.getRandomValues` ile üret. `verifySiweMessage` chainId/uri/version/issuedAt'i kontrol etmiyor → kendin kontrol et. Akıllı cüzdan imzaları (ERC-6492/1271) deployless `eth_call` ile doğrulanır; Arc Studio Arc'ta çalıştığını söyledi (doğrulanmamış, gerçek akıllı cüzdanla henüz denenmedi).
+- **SIWE (viem 2.57.4, kaynak okundu):** `generateSiweNonce` `Math.random` kullanıyor (kriptografik değil) → nonce'u `crypto.getRandomValues` ile üret. `verifySiweMessage` chainId/uri/version/issuedAt'i kontrol etmiyor → kendin kontrol et. Akıllı cüzdan imzaları (ERC-6492/1271) deployless `eth_call` ile doğrulanır; Arc Studio Arc'ta çalıştığını söyledi (doğrulanmamış, gerçek akıllı cüzdanla henüz denenmedi). ⚠ **2026-10-15 (kaynak okundu):** viem'in `verifyHash`'i varsayılan `mode: "auto"`da **her imza için önce** RPC'ye `eth_call` (ERC-6492 doğrulayıcı) yapar, ECDSA'yı ancak o hata verirse yerelde dener; yani normal cüzdanla giriş bile Arc RPC'sine bağımlı olur ve sahte imzalar RPC kotası harcatır. PikaMd `verifyHash(…, { mode: "eoa" })` kullanır: normal imza yerelde çözülür, sadece akıllı cüzdanlar RPC'ye gider. (`verifySiweMessage`'ın tipi `mode`'u kabul etmiyor; mesaj alanlarını zaten kendimiz doğruladığımız için doğrudan `verifyHash` çağrılıyor.)
 - **ConnectKit:** `chains` içinde Ethereum `mainnet` yoksa CORS'u engelleyen bir ENS endpoint'ine düşer. `mainnet`'i CORS-güvenli bir transport ile ekle.
 - **Reown AppKit:** `defineChain`'i `viem`'den değil `@reown/appkit/networks`'ten import et (`caipNetworkId` ve `chainNamespace` gerekiyor).
 - **WalletConnect:** Arc (en azından testnet) WalletConnect zincir kayıtlarında yok. İlk bağlantıda kullanıcıya `wallet_addEthereumChain` gösterilir.
@@ -468,6 +468,7 @@ Diğer: `https://docs.arc.io/llms.txt` (tüm sayfaların indeksi) · https://doc
 16. Birden fazla gateway yedeği kullanıldı (`ipfs.io`, `dweb.link`, `gateway.pinata.cloud`…). Public gateway'ler yavaş ve kararsız.
     → PikaMd: pinning servisinin **dedicated gateway'i** + sunucu tarafı önbellek (ARCHITECTURE §6).
 17. `<img>` için `onload`/`onerror` handler'larını `src`'den **önce** ata, yoksa önbellekteki görsel olayı kaçırır. Yavaş IPFS için zaman aşımı yedeği ekle.
+18. **Pinata v3 aynı içeriğe aynı dosya kimliğini döndürür** (yanıtta `is_duplicate: true`; PikaMd'de 2026-10-15'te gerçek hesapta iki kez yüklenip denendi). Bir dosya kimliğini silmek (unpin) aynı içeriği yükleyen **herkesin** dosyasını siler → başka kayıt kullanıyor mu bakmadan asla unpin etme (PikaMd ARCHITECTURE §9.4).
 
 ---
 
