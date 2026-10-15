@@ -38,3 +38,11 @@ test("flagged guidelines are marked, and agents never get them", () => {
   assert.equal(warned.flagged, false, "kept personal data is not a moderation flag");
   assert.deepEqual(forAgents([flagged, warned, clean]).map((g) => g.slug), ["warned", "secure-solidity"]);
 });
+
+test("the on-chain record comes along when the row has it", () => {
+  const tx = "0x" + "a".repeat(64);
+  const hash = "0x" + "b".repeat(64);
+  assert.deepEqual(rowToGuideline({ ...row, cid: "bafyX", content_hash: hash, tx_hash: tx }).record, { txHash: tx, cid: "bafyX", contentHash: hash });
+  assert.equal(rowToGuideline({ ...row, cid: "bafyX", content_hash: "0x12", tx_hash: tx }).record, undefined, "malformed hash: no record");
+  assert.equal(rowToGuideline(row).record, undefined);
+});

@@ -1,10 +1,12 @@
 import "server-only";
 import { McpServer } from "@modelcontextprotocol/server";
 import * as z from "zod/v4";
+import { CHAIN } from "@/lib/chain";
 import { listGuidelinesForAgents } from "@/lib/data/guidelines";
 import {
   SEARCH_LIMIT_MAX,
   SERVER_INSTRUCTIONS,
+  checkContent,
   formatCollection,
   formatGuideline,
   formatSearchResults,
@@ -68,8 +70,12 @@ export function buildMcpServer({ collection, connectUrl }: { collection: string[
           true,
         );
       }
+      if (checkContent(g) === "mismatch") {
+        console.error(`[mcp] ${g.slug}: stored text doesn't match its on-chain hash, not served`);
+        return text(`${g.slug} can't be served right now: its stored text doesn't match the hash recorded on Arc.`, true);
+      }
       const nonce = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
-      return text(formatGuideline(g, nonce));
+      return text(formatGuideline(g, nonce, { name: CHAIN.name, explorer: CHAIN.blockExplorers?.default.url }));
     },
   );
 

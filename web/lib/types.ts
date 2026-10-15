@@ -11,6 +11,9 @@ export interface Author {
   handle?: string;
 }
 
+/** What a card shows: everything but the file itself, which is loaded when a preview opens. */
+export type GuidelineCard = Omit<Guideline, "content">;
+
 export interface Guideline {
   id: number; // on-chain id (GuidelineRegistry)
   slug: string;
@@ -27,4 +30,7 @@ export interface Guideline {
   content: string;
   /** The scan flagged lines a moderator hasn't checked yet: shown on the site, never served over MCP. */
   flagged?: boolean;
+  /** Where the latest version is recorded: Arc transaction, IPFS CID and the sha256 the chain holds.
+   * Absent for the sample data used in development. */
+  record?: { txHash: `0x${string}`; cid: string; contentHash: `0x${string}` };
 }

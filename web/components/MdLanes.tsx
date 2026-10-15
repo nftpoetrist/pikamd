@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import MdCard from "@/components/MdCard";
-import type { Guideline } from "@/lib/types";
+import type { GuidelineCard } from "@/lib/types";
 
 type Direction = "left" | "right";
 
@@ -12,7 +12,7 @@ const LANES: { direction: Direction; seconds: number }[] = [
   { direction: "right", seconds: 140 },
 ];
 
-function Lane({ items, direction, seconds }: { items: Guideline[]; direction: Direction; seconds: number }) {
+function Lane({ items, direction, seconds }: { items: GuidelineCard[]; direction: Direction; seconds: number }) {
   const style = { "--lane-duration": `${seconds}s` } as CSSProperties;
   return (
     <div className={`md-lane md-lane-${direction}`} style={style}>
@@ -31,7 +31,7 @@ function Lane({ items, direction, seconds }: { items: Guideline[]; direction: Di
   );
 }
 
-export default function MdLanes({ guidelines }: { guidelines: Guideline[] }) {
+export default function MdLanes({ guidelines }: { guidelines: GuidelineCard[] }) {
   // Deal cards round-robin so each lane gets a varied mix.
   const lanes = LANES.map((_, i) => guidelines.filter((_, j) => j % LANES.length === i));
 

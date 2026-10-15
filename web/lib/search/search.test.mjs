@@ -157,3 +157,13 @@ test("long lines are cut around the hit and ranges still point at it", () => {
   assert.ok(l.text.startsWith("…") && l.text.endsWith("…") && l.text.length <= 113);
   assert.deepEqual(marked(l.text, l.ranges), ["needle"]);
 });
+
+test("search reads the first 100 KB of a file", async () => {
+  const { SEARCH_CONTENT_MAX } = await import("./engine.ts");
+  const filler = "lorem ipsum dolor\n".repeat(Math.ceil(SEARCH_CONTENT_MAX / 18));
+  const g = { ...MOCK_GUIDELINES[0], id: 4242, slug: "huge-file", content: `early-marker\n${filler}late-marker\n` };
+  assert.equal(searchGuidelines([g], "early-marker").total, 1);
+  assert.equal(searchGuidelines([g], "late-marker").total, 0, "past the limit");
+  // A fresh copy of the same guideline (as each request gets) still finds the same things
+  assert.equal(searchGuidelines([{ ...g }], "early-marker").total, 1);
+});

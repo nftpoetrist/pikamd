@@ -5,8 +5,7 @@
 // Format: 48 lowercase hex = 16 random + 8 expiry (unix seconds) + 24 MAC (96-bit HMAC-SHA256).
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { assertSecret } from "./session.ts";
-
-export const NONCE_RE = /^[0-9a-f]{48}$/;
+import { NONCE_RE } from "./siwe.ts";
 
 // Domain separation: the session secret also signs session cookies
 const LABEL = "pikamd:siwe-nonce:v1:";

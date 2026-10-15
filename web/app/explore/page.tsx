@@ -3,8 +3,8 @@ import { Suspense } from "react";
 import MdLanes from "@/components/MdLanes";
 import PageTransition from "@/components/PageTransition";
 import ExploreSearch, { SearchBoxShell } from "@/components/search/ExploreSearch";
-import { listGuidelines } from "@/lib/data/guidelines";
-import type { Guideline } from "@/lib/types";
+import { listGuidelineCards } from "@/lib/data/guidelines";
+import type { GuidelineCard } from "@/lib/types";
 
 export const metadata: Metadata = {
   title: "Explore · PikaMd",
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 const TOP_TAGS = 8;
 
 /** Most used tags first (ties alphabetical), for the search filter buttons. */
-function topTags(guidelines: Guideline[]): string[] {
+function topTags(guidelines: GuidelineCard[]): string[] {
   const counts = new Map<string, number>();
   for (const g of guidelines) for (const t of g.tags) counts.set(t, (counts.get(t) ?? 0) + 1);
   return [...counts.entries()]
@@ -24,7 +24,7 @@ function topTags(guidelines: Guideline[]): string[] {
 }
 
 export default async function ExplorePage() {
-  const guidelines = await listGuidelines();
+  const guidelines = await listGuidelineCards();
 
   return (
     <PageTransition>

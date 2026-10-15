@@ -44,11 +44,28 @@ const field = (name: FieldName, text: string, line?: number): Field => {
   return { name, text, tokens, whole: words(tokens), line };
 };
 
-// Built once per guideline object (the list is immutable per request / per mock load)
-const cache = new WeakMap<Guideline, Indexed>();
+/** Search reads the first 100 KB of a file: one huge file can't make every search slow. */
+export const SEARCH_CONTENT_MAX = 100 * 1024;
+/** Indexes kept between searches, by total characters (~30 bytes of index per character). */
+const CACHE_CHARS_MAX = 4_000_000;
+
+// Kept by what the guideline is, not by object: the data layer hands out fresh objects on every
+// request (`use cache` stores a serialized copy), so an object-keyed cache would never hit.
+// A guideline's id + version fix its text; the card fields are part of the key too.
+const cache = new Map<string, { ix: Indexed; chars: number }>();
+let cachedChars = 0;
+const cacheKey = (g: Guideline) =>
+  [g.id, g.latestVersion, g.slug, g.title, g.description, g.kind, g.tags.join(","), g.author.handle ?? "", g.author.address, g.content.length, g.record?.contentHash ?? ""].join("\u0000");
+
 function index(g: Guideline): Indexed {
-  let ix = cache.get(g);
-  if (ix) return ix;
+  const key = cacheKey(g);
+  const hit = cache.get(key);
+  if (hit) {
+    cache.delete(key); // most recently used goes last
+    cache.set(key, hit);
+    return hit.ix;
+  }
+  const content = g.content.length > SEARCH_CONTENT_MAX ? g.content.slice(0, SEARCH_CONTENT_MAX) : g.content;
   const fields: Field[] = [
     field("title", g.title),
     field("slug", g.slug),
@@ -56,10 +73,17 @@ function index(g: Guideline): Indexed {
     field("kind", g.kind),
     field("description", g.description),
     field("author", [g.author.handle ? `@${g.author.handle}` : "", g.author.address].join(" ")),
-    ...g.content.split("\n").map((text, i) => field(/^#{1,6}\s/.test(text) ? "heading" : "content", text, i + 1)),
+    ...content.split("\n").map((text, i) => field(/^#{1,6}\s/.test(text) ? "heading" : "content", text, i + 1)),
   ];
-  ix = { fields, tags: g.tags.map(fold), handle: fold(g.author.handle ?? ""), address: g.author.address.toLowerCase() };
-  cache.set(g, ix);
+  const ix = { fields, tags: g.tags.map(fold), handle: fold(g.author.handle ?? ""), address: g.author.address.toLowerCase() };
+  const chars = content.length + key.length;
+  cache.set(key, { ix, chars });
+  cachedChars += chars;
+  for (const [k, v] of cache) {
+    if (cachedChars <= CACHE_CHARS_MAX || k === key) break;
+    cache.delete(k);
+    cachedChars -= v.chars;
+  }
   return ix;
 }
 

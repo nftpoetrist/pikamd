@@ -1,22 +1,60 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useRef, useState } from "react";
 import CollectButton from "@/components/CollectButton";
 import LikeButton from "@/components/LikeButton";
 import { KIND_LABEL, shortAddress } from "@/components/md-format";
 import MdPreview from "@/components/MdPreview";
 import TipButton from "@/components/TipButton";
-import type { Guideline } from "@/lib/types";
+import type { Guideline, GuidelineCard } from "@/lib/types";
+import { api } from "@/lib/wallet/api";
 
 type PreviewState = "closed" | "open" | "closing";
 
+const hasContent = (g: GuidelineCard | Guideline): g is Guideline => typeof (g as Guideline).content === "string";
+
 // focusable=false: duplicate cards in an endless lane stay out of the tab order.
-export default function MdCard({ guideline, focusable = true }: { guideline: Guideline; focusable?: boolean }) {
+// Pages send cards without the file (lib/data/guidelines.ts → listGuidelineCards); OPEN loads it
+// once from /api/guidelines/[slug] (fetched ahead on hover or focus), the same query a search
+// result uses. A card built in the browser (Publish's live preview) already has it.
+export default function MdCard({ guideline, focusable = true }: { guideline: GuidelineCard | Guideline; focusable?: boolean }) {
   const { slug, title, description, kind, tags, author, latestVersion, stars } = guideline;
   const authorName = author.handle ? `@${author.handle}` : shortAddress(author.address);
   const cardRef = useRef<HTMLElement>(null);
   const viewRef = useRef<HTMLButtonElement>(null);
   const [preview, setPreview] = useState<PreviewState>("closed");
+  const [full, setFull] = useState<Guideline | null>(hasContent(guideline) ? guideline : null);
+  const [loading, setLoading] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const client = useQueryClient();
+
+  const fileQuery = { queryKey: ["guideline", slug], queryFn: () => api<Guideline>(`/api/guidelines/${encodeURIComponent(slug)}`), staleTime: 60_000 };
+  const prefetch = () => {
+    if (!hasContent(guideline)) void client.prefetchQuery(fileQuery);
+  };
+  const open = async () => {
+    if (loading) return;
+    if (hasContent(guideline)) {
+      setFull(guideline);
+      return setPreview("open");
+    }
+    setLoading(true);
+    try {
+      setFull(await client.fetchQuery(fileQuery));
+      setPreview("open");
+    } catch {
+      setNote("Couldn't open this guideline, try again");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!note) return;
+    const t = window.setTimeout(() => setNote(null), 2600);
+    return () => window.clearTimeout(t);
+  }, [note]);
 
   const close = useCallback(() => setPreview((p) => (p === "open" ? "closing" : p)), []);
   // Focus goes back to the button that opened the preview.
@@ -55,27 +93,37 @@ export default function MdCard({ guideline, focusable = true }: { guideline: Gui
         </footer>
 
         <div className="md-card-actions">
-          <button
-            ref={viewRef}
-            type="button"
-            className="md-view"
-            title="Open full file"
-            aria-label={`Open ${title}`}
-            aria-haspopup="dialog"
-            tabIndex={focusable ? undefined : -1}
-            onClick={() => setPreview("open")}
-          >
-            OPEN
-          </button>
+          <span className="md-tip-wrap">
+            <button
+              ref={viewRef}
+              type="button"
+              className="md-view"
+              title="Open full file"
+              aria-label={`Open ${title}`}
+              aria-haspopup="dialog"
+              aria-busy={loading || undefined}
+              tabIndex={focusable ? undefined : -1}
+              onPointerEnter={prefetch}
+              onFocus={prefetch}
+              onClick={() => void open()}
+            >
+              OPEN
+            </button>
+            {note && (
+              <span className="md-tip-note md-note-start" role="status">
+                {note}
+              </span>
+            )}
+          </span>
           <LikeButton slug={slug} title={title} stars={stars} focusable={focusable} />
           <TipButton author={authorName} focusable={focusable} />
           <CollectButton slug={slug} title={title} focusable={focusable} />
         </div>
       </article>
 
-      {preview !== "closed" && (
+      {preview !== "closed" && full && (
         <MdPreview
-          guideline={guideline}
+          guideline={full}
           card={cardRef}
           closing={preview === "closing"}
           onClose={close}

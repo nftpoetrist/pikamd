@@ -3,10 +3,10 @@
 import Link from "next/link";
 import MdCard from "@/components/MdCard";
 import { useCollection } from "@/lib/collection/store";
-import type { Guideline } from "@/lib/types";
+import type { GuidelineCard } from "@/lib/types";
 
 // My Collection shelf: the guidelines saved on Explore, newest first, on a centered grid.
-export default function CollectionPanel({ guidelines }: { guidelines: Guideline[] }) {
+export default function CollectionPanel({ guidelines }: { guidelines: GuidelineCard[] }) {
   const slugs = useCollection();
   const bySlug = new Map(guidelines.map((g) => [g.slug, g]));
   const saved = (slugs ?? []).flatMap((slug) => bySlug.get(slug) ?? []);

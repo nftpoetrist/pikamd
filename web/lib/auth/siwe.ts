@@ -2,7 +2,13 @@
 // Pure and I/O-free so it runs in tests; the routes under app/api/auth wire it to the store.
 import { getAddress, isAddress } from "viem";
 import { createSiweMessage, parseSiweMessage } from "viem/siwe";
-import { NONCE_RE } from "./nonce.ts";
+
+// No Node imports here: the browser builds the sign-in message from this file
+// (lib/wallet/session.ts). Importing nonce.ts (node:crypto) would ship a crypto polyfill
+// of ~500 KB to every page.
+
+/** Sign-in nonce format (lib/auth/nonce.ts): 48 lowercase hex. */
+export const NONCE_RE = /^[0-9a-f]{48}$/;
 
 /** Shown in the wallet's signing prompt. Signing is free: no transaction, no gas. */
 export const SIWE_STATEMENT = "Sign in to PikaMd. This is free: it doesn't send a transaction or cost gas.";

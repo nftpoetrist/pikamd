@@ -103,8 +103,9 @@ export default function ConnectPanel() {
         </p>
       ) : (
         <p className="pub-demo">
-          <strong>Demo mode.</strong> The PikaMd MCP server and wallet sign-in aren&apos;t live yet. Keys made here are
-          samples created in your browser and won&apos;t connect to anything until launch
+          <strong>Demo mode.</strong> Searching and reading guidelines over MCP already work, no key needed. Keys and
+          collections aren&apos;t linked to wallets yet: a key made here is a sample from your browser, so my_collection
+          won&apos;t accept it until they are
         </p>
       )}
 

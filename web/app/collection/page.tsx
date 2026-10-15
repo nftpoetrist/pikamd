@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import CollectionPanel from "@/components/CollectionPanel";
 import PageTransition from "@/components/PageTransition";
-import { listGuidelines } from "@/lib/data/guidelines";
+import { listGuidelineCards } from "@/lib/data/guidelines";
 
 export const metadata: Metadata = {
   title: "My Collection · PikaMd",
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 // My Collection: hero in the same layout as Home and Explore, then the saved guidelines.
 export default async function CollectionPage() {
-  const guidelines = await listGuidelines();
+  const guidelines = await listGuidelineCards();
 
   return (
     <PageTransition>

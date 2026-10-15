@@ -22,11 +22,16 @@ export type GuidelineRow = {
   stars_count: number;
   content: string;
   scan_status?: string;
+  cid?: string | null;
+  content_hash?: string | null;
+  tx_hash?: string | null;
 };
 
 /** The columns `rowToGuideline` reads, for .select(). */
 export const GUIDELINE_COLUMNS =
-  "id, slug, author_address, title, description, kind, tags, license, latest_version, uses_count, stars_count, content, scan_status";
+  "id, slug, author_address, title, description, kind, tags, license, latest_version, uses_count, stars_count, content, scan_status, cid, content_hash, tx_hash";
+
+const HASH_RE = /^0x[0-9a-f]{64}$/;
 
 /** A guideline, or null when the row doesn't fit (the caller logs and skips it). */
 export function rowToGuideline(row: GuidelineRow): Guideline | null {
@@ -50,6 +55,9 @@ export function rowToGuideline(row: GuidelineRow): Guideline | null {
     uses: Number(row.uses_count) || 0,
     content: row.content,
     flagged: row.scan_status === "suspicious",
+    ...(typeof row.cid === "string" && row.cid && HASH_RE.test(row.content_hash ?? "") && HASH_RE.test(row.tx_hash ?? "")
+      ? { record: { txHash: row.tx_hash as `0x${string}`, cid: row.cid, contentHash: row.content_hash as `0x${string}` } }
+      : {}),
   };
 }
 

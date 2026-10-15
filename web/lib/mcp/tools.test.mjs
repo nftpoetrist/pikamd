@@ -5,6 +5,7 @@ import {
   SEARCH_LIMIT_MAX,
   formatCollection,
   formatGuideline,
+  checkContent,
   formatSearchResults,
   missingKeyMessage,
   parseGuidelineRef,
@@ -78,4 +79,19 @@ test("the missing-key message says where to get a key", () => {
 
 test("key hashes are standard SHA-256 hex", async () => {
   assert.equal(await hashKey("abc"), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+});
+
+test("the served text is checked against the on-chain hash", async () => {
+  const { createHash } = await import("node:crypto");
+  const content = "# Rules\n- one";
+  const sha = "0x" + createHash("sha256").update(content, "utf8").digest("hex");
+  const record = { txHash: "0x" + "c".repeat(64), cid: "bafyZ", contentHash: sha };
+  const g = { ...bySlug("secure-solidity"), content, record };
+  assert.equal(checkContent(g), "verified");
+  assert.equal(checkContent({ ...g, content: content + " changed" }), "mismatch");
+  assert.equal(checkContent(bySlug("secure-solidity")), "unregistered", "sample data has no record");
+  const out = formatGuideline(g, "n0nce", { name: "Arc Testnet", explorer: "https://explorer.testnet.arc.io" });
+  assert.ok(out.includes(`guideline #${g.id} on Arc Testnet, registered in tx ${record.txHash} (https://explorer.testnet.arc.io/tx/${record.txHash})`));
+  assert.ok(out.includes("IPFS CID bafyZ"));
+  assert.ok(formatGuideline(bySlug("secure-solidity"), "n0nce").includes("Arc record: none (sample data"));
 });
