@@ -37,3 +37,26 @@ arc-forge verify-contract <ADDRESS> src/GuidelineRegistry.sol:GuidelineRegistry 
 `PIKAMD_ADMIN` gets `DEFAULT_ADMIN_ROLE` and `MODERATOR_ROLE`. The script checks both on-chain
 after deploying. Record the address and the deploy block (from the receipt) in `../ARC.md` and the
 web app's env.
+
+## Tips (`GuidelineTips`)
+
+`GuidelineTips` sends a tip in USDC straight from the tipper to the guideline's author, as the
+registry records them (`../ARCHITECTURE.md` K21). It holds no funds, takes no fee and has no owner,
+so nothing about it depends on who deploys it.
+
+```bash
+arc-forge test --match-contract GuidelineTipsTest                            # unit + fuzz, mock USDC
+arc-forge test --match-contract GuidelineTipsForkTest --fork-url arc_testnet # Arc's real USDC + registry
+
+# simulate, then deploy (testnet: the registry address is built into the script)
+arc-forge script script/DeployTips.s.sol --rpc-url arc_testnet --account pikamd-deployer
+arc-forge script script/DeployTips.s.sol --rpc-url arc_testnet --account pikamd-deployer --broadcast
+
+arc-forge verify-contract <ADDRESS> src/GuidelineTips.sol:GuidelineTips \
+  --verifier sourcify --chain 5042002 --watch \
+  --constructor-args $(arc-cast abi-encode "constructor(address,address)" \
+    0x3600000000000000000000000000000000000000 0x27cf926771B0A311A9574543ea29dc5e3ea59986)
+```
+
+Then put the address and the deploy block in `web/lib/chain.ts` (`TIPS`) and `../ARC.md` §8, and
+regenerate the web ABIs: `cd ../web && npm run abi`.
