@@ -23,9 +23,15 @@ export interface AppStore {
   likedSlugs(wallet: string): Promise<string[]>;
   /** Active like count per listed guideline. */
   likeCounts(): Promise<Map<string, number>>;
-  /** PikaGold (first likes on the wallet's listed guidelines, taken back or not, K22) and how many it published. */
-  profile(wallet: string): Promise<{ pikagold: number; guidelines: number }>;
+  /**
+   * PikaGold (first likes on the wallet's listed guidelines, taken back or not, K22), how many it
+   * published, and the tips it received through GuidelineTips (K21): the total in USDC units as a
+   * decimal string (exact, any size) and how many.
+   */
+  profile(wallet: string): Promise<Profile>;
 }
+
+export type Profile = { pikagold: number; guidelines: number; tipsReceived: string; tipsCount: number };
 
 // ── Supabase ───────────────────────────────────────────────────────────────────────────────
 
@@ -57,8 +63,16 @@ function supabaseStore(db: SupabaseClient): AppStore {
       const [row] = check(await db.rpc("wallet_profile", { p_wallet: wallet.toLowerCase() }), "wallet_profile") as {
         pikagold: number;
         guidelines: number;
+        tips_received: string;
+        tips_count: number;
       }[];
-      return { pikagold: Number(row?.pikagold ?? 0), guidelines: Number(row?.guidelines ?? 0) };
+      const tips = typeof row?.tips_received === "string" && /^\d+$/.test(row.tips_received) ? row.tips_received : "0";
+      return {
+        pikagold: Number(row?.pikagold ?? 0),
+        guidelines: Number(row?.guidelines ?? 0),
+        tipsReceived: tips,
+        tipsCount: Number(row?.tips_count ?? 0),
+      };
     },
   };
 }
@@ -140,6 +154,9 @@ const devStore: AppStore = {
     return {
       pikagold: pikagoldFor(wallet, guidelines, counts),
       guidelines: guidelines.filter((g) => sameWallet(g.author.address, wallet)).length,
+      // Tips are indexed in Supabase only (they're real Arc transactions); none in the local file
+      tipsReceived: "0",
+      tipsCount: 0,
     };
   },
 };

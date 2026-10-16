@@ -27,6 +27,6 @@ export default function AuthorAction({
   const hydrated = useHydrated();
   const { address, status } = useConnection();
   const mine = hydrated && status === "connected" && !!address && guideline.id >= 1 && sameWallet(address, guideline.author.address);
-  if (!mine) return <TipButton author={authorName} focusable={focusable} />;
+  if (!mine) return <TipButton guideline={guideline} authorName={authorName} focusable={focusable} />;
   return <HideButton id={guideline.id} title={guideline.title} hidden={hidden} focusable={focusable} />;
 }

@@ -168,6 +168,21 @@ try {
     check((await call("POST", "/api/guidelines/visibility", { cookie: a.cookie, body: { txHash: "0x12" } })).status === 400, "malformed transaction hash refused");
     const notHide = await call("POST", "/api/guidelines/visibility", { cookie: a.cookie, body: { txHash: DEPLOY_TX } });
     check(notHide.status === 400 && /No hide/.test(notHide.json?.error ?? ""), "a real Arc transaction without HiddenSet changes nothing");
+
+    // ── Tip records (K21): no sign-in, but only Tipped events of our contract on Arc count ──
+    check((await call("POST", "/api/tips/record", { origin: "https://evil.example", body: { txHash: DEPLOY_TX } })).status === 403, "tip record from another site refused (CSRF)");
+    const text = await fetch(new URL("/api/tips/record", BASE), { method: "POST", headers: { Origin: ORIGIN, "Content-Type": "text/plain" }, body: DEPLOY_TX });
+    check(text.status === 415, "tip record must be JSON");
+    const badHash = await call("POST", "/api/tips/record", { body: { txHash: "0x12" } });
+    if (badHash.status === 503) {
+      check(/aren't recorded/.test(badHash.json?.error ?? ""), "no tips contract on this network: the record endpoint says so (503)");
+    } else {
+      check(badHash.status === 400, "malformed transaction hash refused");
+      const notTip = await call("POST", "/api/tips/record", { body: { txHash: DEPLOY_TX } });
+      check(notTip.status === 400 && /No tip found/.test(notTip.json?.error ?? ""), "a real Arc transaction without a tip records nothing");
+    }
+    const tipsProfile = (await call("GET", `/api/profile/${alice.address}`)).json;
+    check(tipsProfile?.tipsReceived === "0" && tipsProfile?.tipsCount === 0, "profile carries tips received (none for a test wallet)");
   }
 
   // ── Logout ──

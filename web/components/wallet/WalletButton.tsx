@@ -4,7 +4,9 @@ import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react"
 import { useConnection, useDisconnect } from "wagmi";
 import CopyButton from "@/components/CopyButton";
 import PikaGoldCoin from "@/components/PikaGoldCoin";
+import { PixelStar } from "@/components/md-format";
 import { useProfile } from "@/lib/likes/client";
+import { formatUsdc } from "@/lib/tips/amount";
 import { openWalletModal } from "@/lib/wallet/modal";
 
 const shortAddress = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
@@ -36,6 +38,8 @@ function ConnectedWallet({ address, className }: { address: `0x${string}`; class
   const profile = useProfile(address);
   const { mutate: disconnect } = useDisconnect();
   const gold = profile.data?.pikagold;
+  const tips = profile.data && /^\d+$/.test(profile.data.tipsReceived ?? "") ? BigInt(profile.data.tipsReceived) : undefined;
+  const tipCount = profile.data?.tipsCount ?? 0;
 
   // Close on Esc or a click outside
   useEffect(() => {
@@ -83,6 +87,20 @@ function ConnectedWallet({ address, className }: { address: `0x${string}`; class
             <span>{goldLabel}</span>
           </p>
           <p className="wallet-menu-note">You earn 1 PikaGold for every like on guidelines you share</p>
+
+          {tips !== undefined && (
+            <>
+              <p className="wallet-menu-tips">
+                <PixelStar size={21} />
+                <span>{formatUsdc(tips)} USDC in tips</span>
+              </p>
+              <p className="wallet-menu-note">
+                {tipCount === 0
+                  ? "Tips for your guidelines go straight to this wallet, in USDC"
+                  : `From ${tipCount.toLocaleString("en-US")} ${tipCount === 1 ? "tip" : "tips"}, sent straight to this wallet`}
+              </p>
+            </>
+          )}
 
           <button
             type="button"

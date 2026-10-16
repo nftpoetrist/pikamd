@@ -28,5 +28,16 @@ const REGISTRIES: Record<number, { address: `0x${string}`; deployBlock: bigint }
 /** The registry on the configured network, or undefined where it isn't deployed. */
 export const REGISTRY = REGISTRIES[CHAIN.id];
 
+/** USDC's ERC-20 interface: 6 decimals, the same address on Arc testnet and mainnet (ARC.md §3, §8). */
+export const USDC = { address: "0x3600000000000000000000000000000000000000", decimals: 6 } as const;
+
+// GuidelineTips deployments (contracts/script/DeployTips.s.sol, ARC.md §8): tips go through it
+// straight to the registry's author (K21). Where it isn't deployed the Tip button says so instead
+// of sending anything. The indexer reads its Tipped events from deployBlock.
+const TIPS_CONTRACTS: Record<number, { address: `0x${string}`; deployBlock: bigint } | undefined> = {};
+
+/** The tips contract on the configured network, or undefined where it isn't deployed. */
+export const TIPS = TIPS_CONTRACTS[CHAIN.id];
+
 /** Optional provider RPC (API key, domain-restricted); falls back to the chain's public RPC. */
 export const RPC_URL: string = process.env.NEXT_PUBLIC_ARC_RPC_URL || CHAIN.rpcUrls.default.http[0];

@@ -72,6 +72,8 @@ export default function WalletModal() {
       onClose={closeWalletModal}
       // A click on the dimmed area (the dialog box itself, outside the panel) closes it
       onClick={(e) => e.target === ref.current && closeWalletModal()}
+      // Esc closes this picker only, not a guideline preview or the tip dialog underneath
+      onKeyDown={(e) => e.key === "Escape" && e.stopPropagation()}
     >
       {open && (
         <div className="wallet-panel pixel-panel">

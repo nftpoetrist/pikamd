@@ -4095,6 +4095,24 @@ body {
   line-height: 1.2;
   color: var(--t1);
 }
+/* Tips received (K21): same row as PikaGold, a gold pixel star instead of the coin */
+.wallet-menu-tips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 3px dashed rgba(255, 203, 5, 0.18);
+  font-family: var(--font-jersey);
+  font-size: 24px;
+  line-height: 1;
+  color: var(--y1);
+  text-shadow: 2px 2px 0 var(--g4);
+}
+.wallet-menu-tips svg {
+  flex: none;
+  margin: 0 4px 0 5px; /* centered under the 30px PikaGold coin */
+  filter: drop-shadow(2px 2px 0 var(--g4));
+}
 .wallet-disconnect {
   align-self: flex-start;
   margin-top: 6px;
@@ -4234,6 +4252,322 @@ body {
     animation: none;
   }
   .pg-gain { opacity: 0; }
+}
+
+/* ── Tip dialog (K21): components/tips/TipDialog.tsx ──
+   The wallet picker's dialog and panel; buttons on the navbar's pixel skeleton. Amount chips are
+   real radio buttons (arrow keys move between them), drawn as pixel tiles. */
+.tip-panel {
+  --px-b: 3px;
+  --px-gap: 12px;
+  --px-h: 40px;
+  --px-base: 4px;
+  width: min(440px, 100%);
+  gap: 18px;
+}
+
+.tip-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.tip-title svg {
+  flex: none;
+  color: var(--y1);
+  filter: drop-shadow(2px 2px 0 var(--g4));
+}
+
+.tip-for {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tip-for-title {
+  font-family: var(--font-jersey);
+  font-size: 26px;
+  line-height: 1;
+  color: var(--y1);
+  text-shadow: 2px 2px 0 var(--g4);
+  overflow-wrap: anywhere;
+}
+.tip-for-author {
+  font-family: var(--font-vt323);
+  font-size: 19px;
+  line-height: 1.1;
+  color: var(--t2);
+}
+.tip-for-author span {
+  color: var(--t1);
+}
+
+.tip-amounts {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.tip-amounts legend {
+  float: left; /* keeps the legend in the flex flow, so the gap applies */
+  width: 100%;
+  padding: 0;
+  font-family: var(--font-vt323);
+  font-size: 17px;
+  line-height: 1;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--t2);
+}
+
+.tip-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px; /* two 2px frames + 10px clear space */
+  padding: 2px;
+}
+.tip-chip {
+  position: relative;
+  display: flex;
+}
+/* The native radio stays (keyboard, screen readers), invisible over its tile */
+.tip-chip input {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.tip-chip span {
+  --frame: rgba(255, 203, 5, 0.38);
+  min-width: 62px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  padding: 1px 14px 0;
+  font-family: var(--font-jersey);
+  font-size: 26px;
+  line-height: 1;
+  color: var(--y1);
+  background: rgba(255, 203, 5, 0.06);
+  box-shadow:
+    0 -2px 0 0 var(--frame),
+    0 2px 0 0 var(--frame),
+    -2px 0 0 0 var(--frame),
+    2px 0 0 0 var(--frame),
+    inset 0 2px 0 0 rgba(255, 255, 255, 0.05);
+  transition: background 0.12s steps(2);
+}
+.tip-chip:hover span {
+  --frame: rgba(255, 203, 5, 0.7);
+  background: rgba(255, 203, 5, 0.14);
+}
+.tip-chip input:checked + span {
+  --frame: var(--g1);
+  color: var(--ink);
+  background: var(--y1);
+  box-shadow:
+    0 -2px 0 0 var(--frame),
+    0 2px 0 0 var(--frame),
+    -2px 0 0 0 var(--frame),
+    2px 0 0 0 var(--frame),
+    inset 0 2px 0 0 #FFE680,
+    inset 0 -2px 0 0 var(--g3);
+}
+.tip-chip input:focus-visible + span {
+  outline: 3px solid var(--y1);
+  outline-offset: 5px;
+}
+.tip-amounts:disabled .tip-chip span {
+  opacity: 0.55;
+}
+.tip-amounts:disabled .tip-chip input {
+  cursor: progress;
+}
+
+.tip-other {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(220px, 100%);
+  height: 44px;
+  margin: 2px;
+  padding: 0 12px;
+  background: rgba(0, 0, 0, 0.35);
+  box-shadow:
+    0 -2px 0 0 rgba(255, 203, 5, 0.45),
+    0 2px 0 0 rgba(255, 203, 5, 0.45),
+    -2px 0 0 0 rgba(255, 203, 5, 0.45),
+    2px 0 0 0 rgba(255, 203, 5, 0.45);
+}
+.tip-other:focus-within {
+  box-shadow:
+    0 -2px 0 0 var(--y1),
+    0 2px 0 0 var(--y1),
+    -2px 0 0 0 var(--y1),
+    2px 0 0 0 var(--y1),
+    0 0 14px rgba(255, 203, 5, 0.3);
+}
+.tip-other:has(input[aria-invalid="true"]) {
+  box-shadow:
+    0 -2px 0 0 var(--orange),
+    0 2px 0 0 var(--orange),
+    -2px 0 0 0 var(--orange),
+    2px 0 0 0 var(--orange);
+}
+.tip-other input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  font-family: var(--font-vt323);
+  font-size: 26px;
+  color: var(--t0);
+  background: transparent;
+  border: 0;
+  outline: none;
+}
+.tip-other input::placeholder {
+  color: var(--t2);
+}
+.tip-other > span:last-child {
+  font-family: var(--font-vt323);
+  font-size: 20px;
+  color: var(--t2);
+}
+
+.tip-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 12px 14px;
+  font-family: var(--font-vt323);
+  font-size: 19px;
+  line-height: 1.15;
+  background: rgba(0, 0, 0, 0.3);
+}
+.tip-facts > div {
+  display: grid;
+  grid-template-columns: 108px 1fr;
+  gap: 10px;
+}
+.tip-facts dt {
+  color: var(--t2);
+}
+.tip-facts dd {
+  margin: 0;
+  color: var(--t1);
+}
+.tip-facts code,
+.tip-done-text code {
+  font-family: var(--font-vt323);
+  font-size: inherit;
+  color: var(--t0);
+}
+
+.tip-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 6px; /* the gold button's frame clears the facts box */
+}
+.tip-send {
+  width: 100%;
+  font-size: 24px;
+}
+.tip-send:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: translateY(calc(var(--px-base) / -2));
+}
+.tip-send[aria-busy="true"] {
+  cursor: progress;
+}
+.tip-hint {
+  font-family: var(--font-vt323);
+  font-size: 17px;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--t2);
+}
+
+.tip-warn,
+.tip-error {
+  font-family: var(--font-vt323);
+  font-size: 18px;
+  line-height: 1.2;
+}
+.tip-warn {
+  color: var(--orange);
+}
+.tip-error {
+  padding: 8px 12px;
+  color: var(--red);
+  background: rgba(255, 107, 87, 0.08);
+  box-shadow: inset 3px 0 0 0 var(--red);
+}
+.tip-warn a,
+.tip-error a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.tip-steps {
+  font-size: 19px;
+}
+.tip-step-wait {
+  color: var(--t2);
+}
+
+.tip-done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 4px 6px;
+  text-align: center;
+}
+.tip-done-title {
+  font-family: var(--font-jersey);
+  font-size: 46px;
+  line-height: 1;
+  color: var(--green);
+  text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.6);
+}
+.tip-done-text {
+  font-family: var(--font-vt323);
+  font-size: 20px;
+  line-height: 1.2;
+  color: var(--t1);
+}
+.tip-done-text strong {
+  font-weight: 400;
+  color: var(--y1);
+}
+.tip-done-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 18px 28px;
+  margin-top: 12px;
+}
+
+@media (max-width: 479px) {
+  .tip-panel {
+    padding: 16px 16px 18px;
+  }
+  .tip-facts > div {
+    grid-template-columns: 92px 1fr;
+  }
+  .tip-chip span {
+    min-width: 56px;
+  }
 }
 }
 

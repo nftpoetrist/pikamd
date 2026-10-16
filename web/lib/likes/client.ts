@@ -48,11 +48,15 @@ export function useLike() {
   });
 }
 
-/** Public PikaGold and guideline count for a wallet (no sign-in needed). */
+/**
+ * Public profile numbers for a wallet (no sign-in needed): PikaGold, guideline count and the tips
+ * it received (USDC units as a decimal string, exact; K21).
+ */
 export function useProfile(address: `0x${string}` | undefined) {
   return useQuery({
     queryKey: ["profile", address],
-    queryFn: () => api<{ address: string; pikagold: number; guidelines: number }>(`/api/profile/${address}`),
+    queryFn: () =>
+      api<{ address: string; pikagold: number; guidelines: number; tipsReceived: string; tipsCount: number }>(`/api/profile/${address}`),
     enabled: !!address,
     staleTime: 30_000,
     retry: false,

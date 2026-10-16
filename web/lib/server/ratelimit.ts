@@ -20,6 +20,8 @@ const RULES = {
   like: { max: 120, windowS: 10 * 60, by: "wallet" },
   /** Hide / show syncs read a receipt and the guideline from Arc. */
   visibility: { max: 30, windowS: 10 * 60, by: "wallet" },
+  /** Tip records read a receipt from Arc. No sign-in for a tip, so per IP. */
+  tipRecord: { max: 30, windowS: 10 * 60, by: "ip" },
 } as const;
 
 export type LimitRule = keyof typeof RULES;

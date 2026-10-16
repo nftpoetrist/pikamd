@@ -2,35 +2,53 @@
 
 import { useEffect, useState } from "react";
 import { PixelStar } from "@/components/md-format";
+import { TIPS } from "@/lib/chain";
+import { openTipDialog } from "@/lib/tips/dialog";
+import type { GuidelineCard } from "@/lib/types";
 
-// Tips to the author (K21) arrive in roadmap phase 6. Until then the button explains
-// what it will do instead of pretending to send anything.
-export default function TipButton({ author, focusable = true }: { author: string; focusable?: boolean }) {
-  const [open, setOpen] = useState(false);
+// ★ Tip (K21): opens the tip dialog for this guideline's author (components/tips/TipDialog.tsx).
+// Where it can't tip, it says why in a balloon instead of pretending: no tips contract on this
+// network, or a card that isn't on Arc yet (the Publish page's preview, id 0).
+export default function TipButton({
+  guideline,
+  authorName,
+  focusable = true,
+}: {
+  guideline: Pick<GuidelineCard, "id" | "title" | "author">;
+  authorName: string;
+  focusable?: boolean;
+}) {
+  const [note, setNote] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!open) return;
-    const t = window.setTimeout(() => setOpen(false), 2600);
+    if (!note) return;
+    const t = window.setTimeout(() => setNote(null), 2600);
     return () => window.clearTimeout(t);
-  }, [open]);
+  }, [note]);
+
+  const onClick = () => {
+    if (guideline.id < 1) return setNote("Tips open once the guideline is published on Arc");
+    if (!TIPS) return setNote(`Tips go wallet to wallet in USDC, 100% to ${authorName}. Not live on this network yet`);
+    openTipDialog({ id: guideline.id, title: guideline.title, author: guideline.author.address as `0x${string}`, authorName });
+  };
 
   return (
     <span className="md-tip-wrap">
       <button
         type="button"
         className="md-tip"
-        aria-label={`Tip ${author} in USDC (coming soon)`}
-        aria-expanded={open}
-        title="Tip the author"
+        aria-label={`Tip ${authorName} in USDC`}
+        aria-haspopup="dialog"
+        title="Tip the author in USDC"
         tabIndex={focusable ? undefined : -1}
-        onClick={() => setOpen((o) => !o)}
+        onClick={onClick}
       >
         <PixelStar size={13} />
         Tip
       </button>
-      {open && (
+      {note && (
         <span className="md-tip-note" role="status">
-          Tips go wallet to wallet in USDC, 100% to {author}. Coming soon
+          {note}
         </span>
       )}
     </span>

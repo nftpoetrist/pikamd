@@ -109,7 +109,7 @@ test("one like per wallet per guideline, wallet stored lowercase", async () => {
 test("authors can like their own guideline and earn PikaGold for it", async () => {
   await db.query(`select * from add_like($1, 'secure-solidity')`, [A]);
   const p = (await db.query(`select * from wallet_profile($1)`, [A])).rows[0];
-  assert.deepEqual(p, { pikagold: 2, guidelines: 1 });
+  assert.deepEqual(p, { pikagold: 2, guidelines: 1, tips_received: "0", tips_count: 0 });
   const counts = Object.fromEntries((await db.query(`select * from like_counts()`)).rows.map((r) => [r.slug, r.like_count]));
   assert.equal(counts["secure-solidity"], 2);
   assert.equal(counts["tailwind-v4"], 0);
@@ -123,7 +123,7 @@ test("unknown, hidden and locked guidelines can't be liked and don't count", asy
   }
   await db.query(`insert into stars (wallet_address, guideline_id) values ($1, 3)`, [B]); // liked before it was hidden
   const p = (await db.query(`select * from wallet_profile($1)`, [A])).rows[0];
-  assert.deepEqual(p, { pikagold: 2, guidelines: 1 }, "hidden guideline's likes don't count");
+  assert.deepEqual(p, { pikagold: 2, guidelines: 1, tips_received: "0", tips_count: 0 }, "hidden guideline's likes don't count");
   const slugs = (await db.query(`select slug from like_counts()`)).rows.map((r) => r.slug).sort();
   assert.deepEqual(slugs, ["secure-solidity", "tailwind-v4"]);
 });
@@ -298,4 +298,60 @@ test("author_guidelines lists the wallet's own guidelines, hidden and locked one
   assert.deepEqual(listed, ["c-listed"], "the public list still hides them");
   await assert.rejects(asRole("anon", `select * from author_guidelines($1)`, [C]), /permission denied/);
   await assert.rejects(asRole("authenticated", `select * from author_guidelines($1)`, [C]), /permission denied/);
+});
+
+// ── Tips (K21): the index's copy of GuidelineTips' Tipped events ──
+
+const tip = (tx, logIndex, { guideline = 1, from = B, author = A, amount = "3000000", block = 5 } = {}) =>
+  db.query(
+    `insert into tips (tx_hash, log_index, block_number, guideline_id, from_address, author_address, amount)
+     values ($1, $2, $3, $4, $5, $6, $7) on conflict do nothing`,
+    [hex64(tx), logIndex, block, guideline, from, author, amount],
+  );
+
+test("each Tipped event is stored once; malformed rows are refused", async () => {
+  await tip("1", 0);
+  await tip("1", 0, { amount: "999000000" }); // the same event again (a retry, the indexer): no change
+  const rows = (await db.query(`select amount::text from tips where tx_hash = $1`, [hex64("1")])).rows;
+  assert.deepEqual(rows, [{ amount: "3000000" }]);
+  for (const bad of [
+    { amount: "9999" }, // under GuidelineTips.MIN_TIP
+    { from: A, author: A }, // the contract refuses self tips
+    { from: "0xABC" },
+    { author: B.toUpperCase().replace("0X", "0x") }, // stored lowercase only
+    { guideline: 0 },
+    { block: 0 },
+  ]) {
+    await assert.rejects(tip("2", 9, bad), /violates check constraint/, JSON.stringify(bad));
+  }
+  await assert.rejects(tip("2", -1), /violates check constraint/);
+  await assert.rejects(db.query(`insert into tips (tx_hash, log_index, block_number, guideline_id, from_address, author_address, amount) values ('0x12', 0, 1, 1, $1, $2, 10000)`, [B, A]), /violates check constraint/);
+});
+
+test("wallet_profile adds up the tips a wallet received, exactly, and no one else's", async () => {
+  const C = "0x" + "c".repeat(40);
+  const D = "0x" + "d".repeat(40);
+  await tip("3", 0, { author: C, from: A, amount: "1000000" });
+  await tip("3", 1, { author: C, from: B, amount: "2500000", guideline: 77 }); // a guideline the index doesn't know
+  await tip("4", 0, { author: C, from: D, amount: "123456789012345678901" }); // far beyond 2^53
+  await tip("4", 1, { author: D, from: C, amount: "10000" });
+  const [row] = (await asRole("service_role", `select * from wallet_profile($1)`, [C.toUpperCase().replace("0X", "0x")])).rows;
+  assert.equal(row.tips_received, "123456789012349178901", "1 + 2.5 USDC + the huge one, no rounding");
+  assert.equal(row.tips_count, 3);
+  const [none] = (await db.query(`select * from wallet_profile($1)`, ["0x" + "e".repeat(40)])).rows;
+  assert.deepEqual([none.tips_received, none.tips_count, none.pikagold, none.guidelines], ["0", 0, 0, 0]);
+  const [author] = (await db.query(`select * from wallet_profile($1)`, [A])).rows;
+  assert.equal(typeof author.pikagold, "number", "PikaGold still there");
+});
+
+test("public roles can't read or write tips", async () => {
+  for (const role of ["anon", "authenticated"]) {
+    await assert.rejects(asRole(role, `select * from tips`), /permission denied/);
+    await assert.rejects(
+      asRole(role, `insert into tips (tx_hash, log_index, block_number, guideline_id, from_address, author_address, amount) values ($1, 0, 1, 1, $2, $3, 10000)`, [hex64("9"), B, A]),
+      /permission denied/,
+    );
+  }
+  const r = await asRole("service_role", `select count(*)::int as n from tips`);
+  assert.ok(r.rows[0].n >= 1);
 });
