@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import PikaSprite from "@/components/brand/PikaSprite";
 import PikaGoldBox from "@/components/wallet/PikaGoldBox";
 import WalletButton from "@/components/wallet/WalletButton";
@@ -13,25 +13,30 @@ const LINKS = [
   { href: "/connect", label: "Connect your agent" },
 ];
 
-export default function Navbar() {
-  const pathname = usePathname();
-  const [open, setOpen] = useState(false);
-
-  const isActive = (href: string) =>
-    href === "/" ? pathname === "/" : pathname.startsWith(href);
-
-  const links = LINKS.map(({ href, label }) => (
-    <Link
-      key={href}
-      href={href}
-      className="nav-link"
-      aria-current={isActive(href) ? "page" : undefined}
-      onClick={() => setOpen(false)}
-    >
+function NavLinks({ pathname, onNavigate }: { pathname: string | null; onNavigate: () => void }) {
+  const isActive = (href: string) => pathname !== null && (href === "/" ? pathname === "/" : pathname.startsWith(href));
+  return LINKS.map(({ href, label }) => (
+    <Link key={href} href={href} className="nav-link" aria-current={isActive(href) ? "page" : undefined} onClick={onNavigate}>
       {isActive(href) && <span className="nav-dot" />}
       {label}
     </Link>
   ));
+}
+
+// The current path is runtime data on dynamic routes (/g/[slug]): read inside Suspense so those
+// routes still prerender their shell; the fallback is the same links without the active marker.
+function ActiveNavLinks({ onNavigate }: { onNavigate: () => void }) {
+  return <NavLinks pathname={usePathname()} onNavigate={onNavigate} />;
+}
+
+export default function Navbar() {
+  const [open, setOpen] = useState(false);
+  const close = () => setOpen(false);
+  const links = (
+    <Suspense fallback={<NavLinks pathname={null} onNavigate={close} />}>
+      <ActiveNavLinks onNavigate={close} />
+    </Suspense>
+  );
 
   return (
     <nav className="navbar" aria-label="Main menu">

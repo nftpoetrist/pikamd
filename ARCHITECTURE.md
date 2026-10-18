@@ -234,6 +234,8 @@ Tarayıcı                         Sunucu (Next.js)                 IPFS      Ar
 `/g/[slug]` → Supabase meta → IPFS içerik (cache) → `react-markdown` + `rehype-sanitize` ile render.
 Tarayıcı ayrıca içeriğin sha256'sını hesaplar, Arc'taki `contentHash` ile karşılaştırır → **"✓ Zincirde doğrulandı"** rozeti.
 
+**Uygulama (2026-10-18, dal `feat/real-collection`):** `app/g/[slug]/page.tsx`: statik iskelet + `Suspense` içinde yönerge (`cacheComponents`: `generateStaticParams` boş liste döndüremez ve canlı site boş başlar → kurulu Next rehberindeki "generateStaticParams olmadan" yolu; bilinmeyen slug `notFound()`, akış başladığı için durum kodu 200 ama 404 ekranı). Başlık: `slug.md` · tür · sürüm, büyük başlık, özet, yazar (explorer adres linki) · lisans · etiketler (Explore aramasına `tag:`), ♥ / Tip-Hide (`AuthorAction`) / Add. Gövde: **Copy file · Download slug.md · Copy link**, içerik **Rendered / Markdown** (satır numaralı, `rehype-sanitize`). Yan panel: **On Arc**: `ArcVerified`: sha256 **ziyaretçinin tarayıcısında** hesaplanır ve registry'nin `getVersion(id, sürüm).contentHash`'i **doğrudan Arc'tan** okunur (sunucuya ve veritabanına güvenilmez): ✓ "Verified on Arc" / ✕ "doesn't match… Don't use it" / ✕ "Arc has no record of this guideline" (revert) / "Couldn't reach Arc" (ağ); kimlik, tx linki, CID. **Use it with your agent**: örnek cümle + ham dosya adresi + Copy (işaretli yönergede "not served to agents"). İşaretli (suspicious) yönergede turuncu not. Explore'daki büyük önizlemeden "Open its page →". Ham dosya `app/raw/[file]/route.ts`: `/raw/<slug>.md` → `text/markdown; charset=utf-8`, MCP ile aynı kurallar (işaretli → 404, metnin sha256'sı zincirdeki hash'i tutmazsa **409, hiç servis edilmez**), `X-Content-SHA256`, `Cache-Control: public, max-age=300`. Navbar'ın aktif bağlantı işareti (`usePathname`) dinamik rotalarda iskeleti bozmasın diye `Suspense` içinde. **Doğrulama:** tarayıcıda 15 kontrol: gerçek #4 için zincirden ✓, sahte tx'li örnek veride "no record", Markdown görünümü, indirme, 404, önizlemeden geçiş, 390 px; **geliştirme veritabanında metin bilerek bozuldu → sayfa kırmızı uyarı, `/raw` 409**, sonra birebir geri alındı.
+
 ### 7.3 Okuma (MCP) — bkz. §8
 
 ### 7.4 Indexer
@@ -428,7 +430,7 @@ indexer_state    (key PK, last_block BIGINT)
 ```
 /                       Ana sayfa (Home): vizyon başlığı + alt yazı + vizyon kartları (logo buraya gider)
 /explore                Explore: akan yönerge şeritleri; ileride arama, etiket filtreleri, popüler / yeni
-/g/[slug]               Yönerge detay (EN ÖNEMLİ SAYFA)
+/g/[slug]               Yönerge detay (EN ÖNEMLİ SAYFA) ✅ 2026-10-18 (§7.2)
 /g/[slug]/v/[n]         Belirli sürüm
 /g/[slug]/diff?a=&b=    Sürüm karşılaştırma
 /g/[slug]/edit          Yeni sürüm yayınla (sadece yazar)
@@ -437,7 +439,7 @@ indexer_state    (key PK, last_block BIGINT)
 /u/[address|handle]     Profil: yönergeleri, fork'ları
 /collection             My Collection
 /connect                Connect your agent (MCP key + her ajan için komut + durum, K19)
-/raw/[slug].md          Ham metin (+ /raw/[slug]@v3.md)
+/raw/[slug].md          Ham metin ✅ 2026-10-18 (+ /raw/[slug]@v3.md: sürüm akışıyla)
 /mod                    Moderasyon paneli (rol gerekli)
 ```
 

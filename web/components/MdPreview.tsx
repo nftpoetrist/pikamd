@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, type RefObject } from "react";
+import Link from "next/link";
 import { createPortal } from "react-dom";
 import CollectButton from "@/components/CollectButton";
 import LikeButton from "@/components/LikeButton";
@@ -134,7 +135,12 @@ export default function MdPreview({ guideline, card, focusLine, closing, onClose
           </button>
         </header>
 
-        <h3 className="mdp-title">{title}</h3>
+        <h3 className="mdp-title">
+          {title}
+          <Link href={`/g/${slug}`} className="mdp-page" onClick={onClose}>
+            Open its page →
+          </Link>
+        </h3>
         <p className="mdp-summary">{description}</p>
 
         <pre ref={sourceRef} className="mdp-source" tabIndex={0} aria-label={`${slug}.md`}>

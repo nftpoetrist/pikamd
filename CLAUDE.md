@@ -51,7 +51,7 @@ Yeni oturum buradan devam eder. **Hedef (kullanıcı isteği): projeyi adım ad�
 
 **Yol haritası (kullanıcıya gösterilen sıra):**
 1. ✅ Gerçek yayın + indexer (Explore sonrası `after()` ≤2 dk'da bir + günlük cron [Vercel Hobby: günde 1] + yayında anında; Arc testnet getLogs sınırı 10.000 blok)
-2. ⏳ **Sırada:** yönerge detay sayfası `/g/[slug]` (+ `/raw`, "zincirde doğrulandı" rozeti) ve Explore'un boş liste görünümü → **önce kullanıcıya tasarımı sor**
+2. ✅ Yönerge sayfası `/g/[slug]` (tarayıcıda zincirden "Verified on Arc"), ham dosya `/raw/<slug>.md`, Explore'un boş (davet paneli) ve az kartlı (sabit raf) görünümü (2026-10-18, ARCHITECTURE §7.2, DESIGN §3)
 3. ✅ Koleksiyon ve MCP anahtarı cüzdana bağlı (2026-10-18, dal `feat/real-collection`, ARCHITECTURE §8.0; demo kodu kaldırıldı)
 4. 🟡 Kötüye kullanım koruması: ✅ yazma uçlarında hız sınırı (veritabanı, Upstash gerekmedi) + yükleme sınırları (ARCHITECTURE §9.4); ⏳ okumalar için Vercel WAF kuralı (yayına almada) · ⏳ rapor/moderasyon ekranı (`setModeratorLock` + güvenli unpin)
 5. ⏳ Yayına alma: `gh auth login` (nftpoetrist; şu an gh `pierrenode`), repo, Vercel projesi + env (canlı Supabase anahtarı, Pinata, yeni `PIKAMD_SESSION_SECRET`, `CRON_SECRET`, `PIKAMD_ALLOWED_HOSTS` — yoksa MCP canlıda 403), **Firewall → 1 rate limit kuralı** (`/api/` VEYA `/mcp`, IP başına, Fixed Window **10 dk / 1500 istek** → 429; kullanıcı kararı 2026-10-15, ARCHITECTURE §9.4), fonksiyon bölgesi (Supabase Europe → Vercel `fra1`?), canlıda smoke

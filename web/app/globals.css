@@ -4344,6 +4344,285 @@ body {
   .pg-gain { opacity: 0; }
 }
 
+/* Big preview → the guideline's own page */
+.mdp-page {
+  margin-left: 14px;
+  font-family: var(--font-vt323);
+  font-size: 18px;
+  color: var(--y1);
+  text-shadow: none;
+  white-space: nowrap;
+}
+.mdp-page:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ── Guideline page (/g/[slug], app/g/[slug]/page.tsx) ──
+   One pixel panel: header, the file on the left, facts on the right (one column on phones) */
+.gl-page-wrap {
+  padding-bottom: 48px;
+}
+.gl-page {
+  --px-b: 3px;
+  --px-gap: 12px;
+  --px-h: 34px;
+  --px-base: 4px;
+  width: min(1180px, calc(100% - 40px));
+  min-height: 420px;
+  margin: 0 auto;
+  padding: 18px 28px 30px;
+  font-family: var(--font-vt323);
+  color: var(--t1);
+}
+.gl-crumbs a {
+  font-size: 19px;
+  color: var(--t2);
+}
+.gl-crumbs a:hover {
+  color: var(--y1);
+}
+
+.gl-head {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+  padding-bottom: 22px;
+  background: repeating-linear-gradient(90deg, rgba(255, 203, 5, 0.3) 0 6px, transparent 6px 12px) bottom / 100% 3px no-repeat;
+}
+.gl-file {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 18px;
+  color: var(--y1);
+}
+.gl-file .md-badge {
+  margin: 2px;
+}
+.gl-title {
+  font-family: var(--font-jersey);
+  font-weight: 400;
+  font-size: 52px;
+  line-height: 0.95;
+  color: var(--t0);
+  text-shadow: 4px 4px 0 rgba(0, 0, 0, 0.7);
+  overflow-wrap: anywhere;
+}
+.gl-desc {
+  max-width: 760px;
+  font-size: 23px;
+  line-height: 1.2;
+  color: var(--t1);
+}
+.gl-by {
+  font-size: 18px;
+  color: var(--t2);
+}
+.gl-by a {
+  color: var(--y1);
+}
+.gl-by a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.gl-tag {
+  margin-right: 8px;
+  color: var(--t1) !important;
+}
+.gl-actions {
+  justify-content: flex-start;
+  margin: 10px 3px 6px;
+}
+.gl-actions .md-collect-wrap {
+  flex: none;
+}
+
+.gl-flag {
+  margin-top: 18px;
+  padding: 10px 14px;
+  font-size: 19px;
+  line-height: 1.2;
+  color: var(--t1);
+  background: rgba(255, 159, 67, 0.1);
+  box-shadow: inset 3px 0 0 0 var(--orange);
+}
+
+.gl-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 28px;
+  margin-top: 24px;
+}
+.gl-main {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+.gl-file-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 22px; /* frames + base + clear space */
+  padding: 3px;
+}
+
+.gl-content {
+  background: rgba(0, 0, 0, 0.32);
+  box-shadow:
+    0 -2px 0 0 rgba(255, 203, 5, 0.22),
+    0 2px 0 0 rgba(255, 203, 5, 0.22),
+    -2px 0 0 0 rgba(255, 203, 5, 0.22),
+    2px 0 0 0 rgba(255, 203, 5, 0.22);
+}
+.gl-view-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 10px 0;
+  border-bottom: 2px solid rgba(255, 203, 5, 0.18);
+}
+.gl-view-tabs button {
+  padding: 4px 12px 6px;
+  font-family: var(--font-vt323);
+  font-size: 19px;
+  color: var(--t2);
+  cursor: pointer;
+}
+.gl-view-tabs button.is-on {
+  color: var(--ink);
+  background: var(--y1);
+}
+.gl-view-tabs button:focus-visible {
+  outline: 3px solid var(--y1);
+  outline-offset: 2px;
+}
+.gl-content-body .md-render {
+  padding: 18px 22px 22px;
+}
+.gl-source {
+  margin: 0;
+  padding: 14px 0 18px;
+  overflow-x: auto;
+  font-family: var(--font-vt323);
+  font-size: 19px;
+  line-height: 1.25;
+  color: var(--t1);
+}
+.gl-source-line {
+  display: block;
+  padding-right: 18px;
+  white-space: pre;
+}
+.gl-source-n {
+  display: inline-block;
+  width: 52px;
+  margin-right: 14px;
+  padding-right: 10px;
+  text-align: right;
+  color: var(--t2);
+  user-select: none;
+  box-shadow: inset -2px 0 0 0 rgba(255, 203, 5, 0.15);
+}
+
+.gl-side {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.gl-side section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px 16px;
+  background: rgba(255, 203, 5, 0.05);
+  box-shadow: inset 3px 0 0 0 rgba(255, 203, 5, 0.4);
+}
+.gl-side h2 {
+  font-family: var(--font-jersey);
+  font-weight: 400;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--y1);
+  text-shadow: 2px 2px 0 var(--g4);
+}
+.gl-verify {
+  display: flex;
+  gap: 8px;
+  font-size: 19px;
+  line-height: 1.15;
+}
+.gl-verify span {
+  flex: none;
+  font-family: var(--font-jersey);
+  font-size: 22px;
+  line-height: 0.9;
+}
+.gl-verify.is-verified { color: var(--green); }
+.gl-verify.is-mismatch,
+.gl-verify.is-unrecorded { color: var(--red); }
+.gl-verify.is-checking,
+.gl-verify.is-unavailable { color: var(--t2); }
+.gl-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  font-size: 18px;
+}
+.gl-facts > div {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 8px;
+}
+.gl-facts dt { color: var(--t2); }
+.gl-facts dd { margin: 0; color: var(--t1); min-width: 0; overflow-wrap: anywhere; }
+.gl-facts a { color: var(--y1); }
+.gl-facts code { font-family: var(--font-vt323); font-size: inherit; }
+.gl-note {
+  font-size: 18px;
+  line-height: 1.2;
+  color: var(--t1);
+}
+.gl-note a {
+  color: var(--y1);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.gl-ask {
+  padding: 8px 10px;
+  font-size: 18px;
+  color: var(--t0);
+  background: rgba(0, 0, 0, 0.4);
+}
+.gl-ask span { color: var(--green); }
+.gl-raw {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+.gl-raw a {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-size: 17px;
+  color: var(--y1);
+}
+.gl-raw code { font-family: var(--font-vt323); font-size: inherit; }
+
+@media (max-width: 1023px) {
+  .gl-body { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 639px) {
+  .gl-page { padding: 14px 16px 22px; }
+  .gl-title { font-size: 40px; }
+  .gl-desc { font-size: 20px; }
+  .gl-content-body .md-render { padding: 14px 14px 18px; }
+  .gl-source-n { width: 36px; margin-right: 10px; padding-right: 6px; }
+}
+
 /* ── Tip dialog (K21): components/tips/TipDialog.tsx ──
    The wallet picker's dialog and panel; buttons on the navbar's pixel skeleton. Amount chips are
    real radio buttons (arrow keys move between them), drawn as pixel tiles. */
