@@ -5,7 +5,9 @@ import { useConnection, useDisconnect } from "wagmi";
 import CopyButton from "@/components/CopyButton";
 import PikaGoldCoin from "@/components/PikaGoldCoin";
 import { PixelStar } from "@/components/md-format";
+import Link from "next/link";
 import { useProfile } from "@/lib/likes/client";
+import { useIsModerator } from "@/lib/moderation/client";
 import { formatUsdc } from "@/lib/tips/amount";
 import { openWalletModal } from "@/lib/wallet/modal";
 
@@ -36,6 +38,7 @@ function ConnectedWallet({ address, className }: { address: `0x${string}`; class
   const wrapRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
   const profile = useProfile(address);
+  const moderator = useIsModerator().data === true;
   const { mutate: disconnect } = useDisconnect();
   const gold = profile.data?.pikagold;
   const tips = profile.data && /^\d+$/.test(profile.data.tipsReceived ?? "") ? BigInt(profile.data.tipsReceived) : undefined;
@@ -100,6 +103,12 @@ function ConnectedWallet({ address, className }: { address: `0x${string}`; class
                   : `From ${tipCount.toLocaleString("en-US")} ${tipCount === 1 ? "tip" : "tips"}, sent straight to this wallet`}
               </p>
             </>
+          )}
+
+          {moderator && (
+            <Link href="/mod" className="wallet-mod" onClick={() => setOpen(false)}>
+              Moderation desk →
+            </Link>
           )}
 
           <button

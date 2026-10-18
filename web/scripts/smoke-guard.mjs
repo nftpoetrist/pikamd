@@ -74,12 +74,13 @@ export async function rpc(db, fn, args) {
   return body;
 }
 
-/** Deletes the test wallets' collections and MCP keys (development database only). */
+/** Deletes the test wallets' collections, MCP keys and reports (development database only). */
 export async function clearTestCollections(db, wallets) {
   if (!db) return;
   const list = wallets.map((w) => w.toLowerCase()).join(",");
-  for (const table of ["collections", "mcp_keys"]) {
-    const res = await rest(db, "DELETE", `/rest/v1/${table}?wallet_address=in.(${list})`);
+  for (const table of ["collections", "mcp_keys", "reports"]) {
+    const column = table === "reports" ? "reporter_address" : "wallet_address";
+    const res = await rest(db, "DELETE", `/rest/v1/${table}?${column}=in.(${list})`);
     if (!res.ok) throw new Error(`clearing test ${table} failed (HTTP ${res.status})`);
   }
 }

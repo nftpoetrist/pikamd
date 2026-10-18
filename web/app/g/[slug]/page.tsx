@@ -13,6 +13,7 @@ import { KIND_LABEL, shortAddress } from "@/components/md-format";
 import { CHAIN } from "@/lib/chain";
 import { getGuideline } from "@/lib/data/guidelines";
 import RawLink from "@/components/guideline/RawLink";
+import ReportButton from "@/components/guideline/ReportButton";
 
 // A guideline's own page (ARCHITECTURE §7.2, §11): the file, who wrote it, its record on Arc
 // checked in the browser, and how to use it with an agent. The shell is static; the guideline
@@ -161,6 +162,8 @@ async function GuidelineView({ slug }: { slug: string }) {
               </>
             )}
           </section>
+
+          <ReportButton slug={g.slug} title={g.title} />
         </aside>
       </div>
     </article>

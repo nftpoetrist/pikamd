@@ -26,6 +26,10 @@ const RULES = {
   collect: { max: 120, windowS: 10 * 60, by: "wallet" },
   /** Creating and revoking MCP keys. */
   mcpKey: { max: 20, windowS: 60 * 60, by: "wallet" },
+  /** Reports: one per guideline per wallet anyway; this caps a wallet reporting everything. */
+  report: { max: 20, windowS: 60 * 60, by: "wallet" },
+  /** Moderator actions (each checks the role on Arc first). */
+  moderate: { max: 120, windowS: 10 * 60, by: "wallet" },
 } as const;
 
 export type LimitRule = keyof typeof RULES;

@@ -226,6 +226,23 @@ try {
     check((await call("DELETE", "/api/mcp-key", { cookie: a.cookie, origin: "https://evil.example" })).status === 403, "revoking from another site refused (CSRF)");
     check((await call("DELETE", "/api/mcp-key", { cookie: a.cookie })).json?.revoked === true, "alice revokes it");
     check((await rpc(db, "mcp_key_collection", { p_hash: sha(k2) })).length === 0, "a revoked key opens nothing");
+
+    // ── Reports: signed in, one per wallet per guideline; moderation needs MODERATOR_ROLE on Arc ──
+    check((await call("POST", "/api/reports", { body: { slug: "secure-solidity", reason: "spam" } })).status === 401, "reporting needs a session");
+    check((await call("POST", "/api/reports", { cookie: a.cookie, origin: "https://evil.example", body: { slug: "secure-solidity", reason: "spam" } })).status === 403, "report from another site refused (CSRF)");
+    check((await call("POST", "/api/reports", { cookie: a.cookie, body: { slug: "secure-solidity", reason: "rude" } })).status === 400, "unknown reason refused");
+    check((await call("POST", "/api/reports", { cookie: a.cookie, body: { slug: "secure-solidity", reason: "other" } })).status === 400, "'something else' needs a note");
+    check((await call("POST", "/api/reports", { cookie: a.cookie, body: { slug: "secure-solidity", reason: "spam", note: "x".repeat(501) } })).status === 400, "overlong note refused");
+    check((await call("POST", "/api/reports", { cookie: a.cookie, body: { slug: "does-not-exist", reason: "spam" } })).status === 404, "unknown guideline can't be reported");
+    const rep1 = await call("POST", "/api/reports", { cookie: a.cookie, body: { slug: "secure-solidity", reason: "harmful", note: "smoke test" } });
+    check(rep1.status === 200 && rep1.json?.first === true, "alice reports a guideline");
+    check((await call("POST", "/api/reports", { cookie: a.cookie, body: { slug: "secure-solidity", reason: "spam" } })).json?.first === false, "a second report from alice changes nothing");
+    check((await call("GET", "/api/mod/me", { cookie: a.cookie })).json?.moderator === false, "alice isn't a moderator (checked on Arc)");
+    check((await call("GET", "/api/mod/queue", { cookie: a.cookie })).status === 403, "the queue is for moderators only");
+    check((await call("GET", "/api/mod/queue")).status === 401, "the queue needs a session");
+    check((await call("POST", "/api/mod/action", { cookie: a.cookie, body: { guidelineId: 1, action: "dismiss" } })).status === 403, "a non-moderator can't dismiss reports");
+    check((await call("POST", "/api/mod/action", { cookie: a.cookie, body: { guidelineId: 1, action: "unpin" } })).status === 403, "a non-moderator can't unpin");
+    check((await call("POST", "/api/mod/lock", { cookie: a.cookie, body: { txHash: DEPLOY_TX } })).status === 403, "a non-moderator can't sync a lock");
   }
 
   // ── Logout ──

@@ -71,3 +71,21 @@ export function readHiddenChange(receipt: ReceiptLike, registry: `0x${string}`):
   const [e] = events;
   return { id: e.args.id, hidden: e.args.hidden, txHash: receipt.transactionHash, blockNumber: receipt.blockNumber };
 }
+
+export type LockChange = { id: bigint; locked: boolean; moderator: `0x${string}`; txHash: `0x${string}`; blockNumber: bigint };
+
+/**
+ * What a setModeratorLock transaction changed (/mod): the registry's own ModeratorLockSet event,
+ * exactly one. Only a wallet holding MODERATOR_ROLE can emit it, and the event names that wallet.
+ */
+export function readLockChange(receipt: ReceiptLike, registry: `0x${string}`): LockChange | { error: string } {
+  if (receipt.status !== "success") return { error: "The transaction failed on Arc" };
+  const events = parseEventLogs({
+    abi: REGISTRY_ABI,
+    eventName: "ModeratorLockSet",
+    logs: receipt.logs.filter((l) => same(l.address, registry)),
+  });
+  if (events.length !== 1) return { error: "No lock change found in this transaction" };
+  const [e] = events;
+  return { id: e.args.id, locked: e.args.locked, moderator: e.args.moderator, txHash: receipt.transactionHash, blockNumber: receipt.blockNumber };
+}

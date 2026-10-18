@@ -444,3 +444,72 @@ test("public roles can't touch collections or keys", async () => {
     await assert.rejects(asRole(role, `select * from collections`), /permission denied/);
   }
 });
+
+// ── Reports and moderation ──
+
+test("one report per wallet per guideline, listed guidelines only, known reasons only", async () => {
+  const R1 = "0x" + "6".repeat(40);
+  await addGuideline(51, "rep-a", A);
+  await addGuideline(52, "rep-hidden", A, { hidden: true });
+  const report = (w, slug, reason, note = null) => db.query(`select add_report($1, $2, $3, $4) as created`, [w, slug, reason, note]).then((r) => r.rows[0].created);
+  assert.equal(await report(R1.toUpperCase().replace("0X", "0x"), "rep-a", "harmful", "  runs curl | sh  "), true);
+  assert.equal(await report(R1, "rep-a", "spam"), false, "a second report from the same wallet changes nothing");
+  await assert.rejects(report(R1, "rep-hidden", "spam"), /unknown guideline/);
+  await assert.rejects(report(B, "rep-a", "because"), /violates check constraint/);
+  await assert.rejects(report(B, "rep-a", "other", "x".repeat(501)), /violates check constraint/);
+  assert.equal(await report(B, "rep-a", "other", "   "), true, "a blank note is stored as none");
+  const rows = (await db.query(`select reporter_address, reason, note, status from reports where guideline_id = 51 order by id`)).rows;
+  assert.deepEqual(rows, [
+    { reporter_address: R1, reason: "harmful", note: "runs curl | sh", status: "open" },
+    { reporter_address: B, reason: "other", note: null, status: "open" },
+  ]);
+});
+
+test("moderators dismiss or action reports, approve flagged files; every action is logged", async () => {
+  const M = "0x" + "7".repeat(40);
+  assert.equal((await db.query(`select resolve_reports(51, 'dismissed', $1, null) as n`, [M])).rows[0].n, 2);
+  assert.equal((await db.query(`select resolve_reports(51, 'dismissed', $1, null) as n`, [M])).rows[0].n, 0, "nothing left open");
+  assert.deepEqual((await db.query(`select distinct status, resolved_by from reports where guideline_id = 51`)).rows, [{ status: "dismissed", resolved_by: M }]);
+  await assert.rejects(db.query(`select resolve_reports(51, 'deleted', $1, null)`, [M]), /bad status/);
+
+  await addGuideline(53, "rep-flagged", A, { scan: "suspicious" });
+  assert.equal((await db.query(`select approve_flagged(53, $1) as ok`, [M])).rows[0].ok, true);
+  assert.equal((await db.query(`select approve_flagged(53, $1) as ok`, [M])).rows[0].ok, false, "already approved");
+  assert.equal((await db.query(`select scan_status from listed_guidelines where id = 53`)).rows[0].scan_status, "clean");
+  const log = (await db.query(`select guideline_id, action from moderation_log where moderator = $1 order by id`, [M])).rows;
+  assert.deepEqual(log.map((r) => [Number(r.guideline_id), r.action]), [[51, "dismiss"], [53, "approve"]], "one entry per action that changed something");
+});
+
+test("a locked guideline's file is unpinnable only when nothing else needs it", async () => {
+  const M = "0x" + "7".repeat(40);
+  await addGuideline(54, "pin-locked", A, { locked: true });
+  await addGuideline(55, "pin-shared-listed", B);
+  await addGuideline(56, "pin-own", A, { locked: true });
+  await db.query(`update guideline_versions set pinata_id = 'same-file' where guideline_id in (54, 55)`);
+  await db.query(`update guideline_versions set pinata_id = 'own-file' where guideline_id = 56`);
+  const files = async (id) => (await db.query(`select * from unpinnable_files($1)`, [id])).rows;
+  assert.deepEqual(await files(54), [], "shared with a listed guideline: stays pinned");
+  assert.deepEqual(await files(56), [{ version: 1, pinata_id: "own-file" }]);
+  assert.deepEqual(await files(55), [], "not locked: never unpinned");
+  await db.query(`update guidelines set moderator_locked = true where id = 55`);
+  assert.deepEqual(await files(54), [{ version: 1, pinata_id: "same-file" }], "both holders locked: can go");
+  await db.query(`update guidelines set moderator_locked = false where id = 55`);
+  await db.query(`insert into pending_uploads (wallet_address, slug, cid, pinata_id, content_hash, content, meta, scan_status, expires_at)
+    values ($1, 'pin-pending', 'bafy', 'own-file', $2, '# x', '{}', 'clean', now() + interval '1 day')`, [B, hex64("e")]);
+  assert.deepEqual(await files(56), [], "an upload still waiting on the same file keeps it");
+  await db.query(`delete from pending_uploads where slug = 'pin-pending'`);
+  await db.query(`select mark_unpinned(56, 1, $1)`, [M]);
+  assert.deepEqual(await files(56), [], "after unpinning there is nothing left");
+  assert.equal((await db.query(`select count(*)::int as n from moderation_log where action = 'unpin' and guideline_id = 56`)).rows[0].n, 1);
+});
+
+test("public roles can't report, moderate or read the log", async () => {
+  for (const role of ["anon", "authenticated"]) {
+    await assert.rejects(asRole(role, `select add_report($1, 'rep-a', 'spam', null)`, [B]), /permission denied/);
+    await assert.rejects(asRole(role, `select resolve_reports(51, 'dismissed', $1, null)`, [B]), /permission denied/);
+    await assert.rejects(asRole(role, `select approve_flagged(53, $1)`, [B]), /permission denied/);
+    await assert.rejects(asRole(role, `select * from unpinnable_files(54)`), /permission denied/);
+    await assert.rejects(asRole(role, `select * from moderation_log`), /permission denied/);
+    await assert.rejects(asRole(role, `select * from reports`), /permission denied/);
+  }
+});

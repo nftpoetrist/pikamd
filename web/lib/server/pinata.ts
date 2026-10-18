@@ -32,12 +32,16 @@ export async function pinMarkdown(fileName: string, text: string): Promise<{ cid
   return { cid, id };
 }
 
-/** Removes a public pin, e.g. an upload whose registration never happened. Best effort. */
-export async function unpin(id: string): Promise<void> {
+/**
+ * Removes a public pin. True when Pinata removed it (or it was already gone). Pinata gives the same
+ * file id to the same content, so callers must check nothing else uses the id (ARC.md §11, #18).
+ */
+export async function unpin(id: string): Promise<boolean> {
   const res = await fetch(`${API_URL}/files/public/${encodeURIComponent(id)}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${jwt()}` },
     cache: "no-store",
   });
-  if (!res.ok) console.error(`[pinata] unpin failed: HTTP ${res.status}`);
+  if (!res.ok && res.status !== 404) console.error(`[pinata] unpin failed: HTTP ${res.status}`);
+  return res.ok || res.status === 404;
 }
