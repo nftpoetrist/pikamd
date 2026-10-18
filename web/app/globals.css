@@ -2751,18 +2751,6 @@ body {
   background: repeating-linear-gradient(90deg, rgba(255, 203, 5, 0.45) 0 6px, transparent 6px 12px) bottom / 100% 3px no-repeat;
 }
 
-.collection-heading {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-family: var(--font-jersey);
-  font-weight: 400;
-  font-size: 30px;
-  line-height: 1;
-  color: var(--t0);
-  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.7);
-}
-
 .collection-count {
   min-width: 30px;
   padding: 2px 7px 3px;
@@ -4126,12 +4114,6 @@ body {
 }
 .wallet-chip {
   gap: 10px;
-}
-.wallet-gold {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: var(--y1);
 }
 .wallet-chip > span:last-child {
   color: var(--t1);

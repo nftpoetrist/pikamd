@@ -1,5 +1,5 @@
 // PikaMd's X images, drawn from the site's own pixel maps (no third-party logos):
-//   design/brand/pikamd-x-profile.png  1000×1000, safe for X's circle crop
+//   design/brand/pikamd-x-profile.png  1000×1000, safe for X's circle crop (git-ignored: uploaded to X by hand)
 //   design/brand/pikamd-x-header.png   1500×500, the pika chasing the four guideline kinds (Rules,
 //                                      Skills, Prompts, Agents), the layout of PikaMd's first X header
 //

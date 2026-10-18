@@ -16,3 +16,6 @@ contracts/out/
 contracts/cache/
 # Simulations only; real deploy records under contracts/broadcast/ are kept
 contracts/broadcast/**/dry-run/
+
+# X images made by design/brand/social.mjs: uploaded to X by hand, not kept in the repo
+design/brand/*.png
