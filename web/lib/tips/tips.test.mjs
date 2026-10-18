@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { encodeAbiParameters, encodeEventTopics } from "viem";
-import { FEE_RESERVE, MAX_TIP, MIN_TIP, TIP_PRESETS, formatUsdc, parseTipAmount } from "./amount.ts";
+import { FEE_RESERVE, MAX_TIP, MIN_TIP, TIP_PRESETS, formatBalance, formatUsdc, parseTipAmount } from "./amount.ts";
 import { readTips, tipEvents } from "./events.ts";
 import { TIPS_ABI } from "../tips-abi.ts";
 
@@ -61,6 +61,13 @@ test("units are shown exactly: whole amounts plain, others with 2 to 6 decimals"
   assert.equal(formatUsdc(1_250_000_000n), "1,250");
   assert.equal(formatUsdc(123_456_789_012_345_678n), "123,456,789,012.345678", "beyond 2^53: still exact");
   for (const s of ["1", "2.50", "0.01", "999.99"]) assert.equal(formatUsdc(parseTipAmount(s).units), s, "round trip");
+});
+
+test("balances read in whole cents, rounded down, never more than the wallet holds", () => {
+  assert.equal(formatBalance(896_892n), "0.89");
+  assert.equal(formatBalance(1_000_000n), "1");
+  assert.equal(formatBalance(9_999n), "0");
+  assert.equal(formatBalance(12_345_678_999n), "12,345.67");
 });
 
 // ── Tipped events ──

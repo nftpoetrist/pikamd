@@ -46,3 +46,6 @@ export function formatUsdc(units: bigint): string {
   if (frac !== "" && frac.length < 2) frac = frac.padEnd(2, "0");
   return `${negative ? "-" : ""}${whole}${frac ? `.${frac}` : ""}`;
 }
+
+/** A balance for reading: whole cents, rounded down, so it never shows more than the wallet holds. */
+export const formatBalance = (units: bigint): string => formatUsdc(units - (units % BigInt(10_000)));

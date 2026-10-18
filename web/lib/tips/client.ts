@@ -9,7 +9,7 @@ import { sameWallet } from "@/lib/likes/rules";
 import { messageFor } from "@/lib/publish/client";
 import { REGISTRY_ABI } from "@/lib/registry-abi";
 import { TIPS_ABI } from "@/lib/tips-abi";
-import { FEE_RESERVE, formatUsdc } from "@/lib/tips/amount";
+import { FEE_RESERVE, formatBalance, formatUsdc } from "@/lib/tips/amount";
 import type { TipTarget } from "@/lib/tips/dialog";
 import { api, isUserRejection } from "@/lib/wallet/api";
 import { wagmiConfig } from "@/lib/wallet/config";
@@ -35,7 +35,7 @@ const TIP_CALL_ABI = [...TIPS_ABI, ...REGISTRY_ABI.filter((item) => item.type ==
 class TipError extends Error {}
 
 const needFees = (has: bigint, amount: bigint) =>
-  `Your wallet has ${formatUsdc(has)} USDC. A ${formatUsdc(amount)} USDC tip also needs a little for network fees` +
+  `Your wallet has ${formatBalance(has)} USDC. A ${formatUsdc(amount)} USDC tip also needs a little for network fees` +
   (CHAIN.testnet ? `. Get testnet USDC at ${FAUCET}` : "");
 
 /** A short, honest message for whatever stopped the tip. */

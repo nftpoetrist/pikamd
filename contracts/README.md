@@ -44,6 +44,9 @@ web app's env.
 registry records them (`../ARCHITECTURE.md` K21). It holds no funds, takes no fee and has no owner,
 so nothing about it depends on who deploys it.
 
+Testnet deployment: `0x81a1A7D604f9771472d5eDE0eF8736b7F75F874a`, block 67850761 (`../ARC.md` §8),
+verified on Sourcify (exact match).
+
 ```bash
 arc-forge test --match-contract GuidelineTipsTest                            # unit + fuzz, mock USDC
 arc-forge test --match-contract GuidelineTipsForkTest --fork-url arc_testnet # Arc's real USDC + registry

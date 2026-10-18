@@ -338,6 +338,22 @@ Gas düşümleri log üretmez; maliyeti receipt'ten hesapla.
 | Zincirden doğrulandı | kod var, `hasRole(DEFAULT_ADMIN_ROLE/MODERATOR_ROLE, admin)` = true, rastgele adres false, `licenses(0)` = "CC-BY-4.0", `nextId` = 1 |
 | Explorer verify | ❌ Blockscout yöntemi `Fail - Unable to verify`: explorer'ın derleyici listesi **en fazla 0.8.36** (`/api/v2/smart-contracts/verification/config`, 2026-10-13); `osaka` destekleniyor. ✅ **Sourcify** (`--verifier sourcify`, Arc testnet + mainnet Sourcify'da destekli) → `exact_match`; Blockscout ~30 sn içinde içe aktardı: `is_verified: true, is_fully_verified: true`. **Ders:** Arc explorer'da verify için solc ≤ 0.8.36 kullan ya da Sourcify ile doğrula. |
 
+### PikaMd — GuidelineTips (testnet, 2026-10-18)
+
+Yazarlara USDC bağışı (ARCHITECTURE K21, §7.5). Sahibi yok, fon tutmaz; alıcıyı kayıt kontratından okur.
+
+| Alan | Değer |
+|---|---|
+| **Adres** | **`0x81a1A7D604f9771472d5eDE0eF8736b7F75F874a`** (https://explorer.testnet.arc.io/address/0x81a1A7D604f9771472d5eDE0eF8736b7F75F874a) |
+| Deploy tx / blok | `0x5975f44de6c0f608d9595dcde90af4f7a4ec5344acc28adb0e13b73eee495bd3` · **blok 67850761** (bağış indexer'ı buradan başlar) · 313.332 gas × 58,8 Gwei ≈ **0,018 USDC** |
+| Deployer | `0xd76B…7cDe` (keystore `pikamd-deployer`, kullanıcı kendi terminalinden; kontratta rol yok, deployer'ın yetkisi yok) |
+| Zincirden doğrulandı | `USDC()` = `0x3600…0000`, `REGISTRY()` = `0x27cf…9986`, `MIN_TIP()` = 10000 (0,01 USDC), `owner()` yok (revert); Sourcify `exact_match`, explorer `is_fully_verified: true` |
+| İlk gerçek bağış | 2026-10-18, test cüzdanı → #4 0,10 USDC: approve `0x038505895b5925932de9872f92257cabf7a287dbe1fe005f66d77338061285c3` (55.438 gas), tip `0xf2b84a3552a2cb301e3f6f93b25996b06ec5d49347e02bb044c18360561e4298` (68.875 gas), ikisi 25 Gwei → 0,0031 USDC ücret |
+
+**USDC ERC-20 arayüzü (2026-10-16, zincirden okundu):** `name`/`symbol` "USDC", `decimals` 6, EIP-712 `version()` "2", `DOMAIN_SEPARATOR`, `PERMIT_TYPEHASH` (EIP-2612 permit), `TRANSFER_WITH_AUTHORIZATION_TYPEHASH` (EIP-3009), `nonces`, `paused`, `isBlacklisted` (FiatToken v2 benzeri, proxy → `0xC6AD…3cA6`). **Kara liste yalnızca para hareketinde uygulanır** (fork testiyle ölçüldü): kara listedeki cüzdanın `approve`'u geçer, `transferFrom` "Blocked address" ile revert eder. Bir ERC-20 transferi iki log üretir: sistem yayıcısından `Transfer` (18 ondalık, önce) + `0x3600…`'dan `Transfer` (6 ondalık).
+
+**Memo / Multicall3From (docs.arc.io, 2026-10-16):** `Memo.memo(target, data, memoId, memoData)` ve `Multicall3From.aggregate3(calls)` CallFrom ön-derlemesiyle orijinal EOA'yı `msg.sender` olarak korur (ör. tek işlemde `approve` + başka çağrı). **Yalnızca EOA**: akıllı cüzdanlar (ERC-4337, Safe) revert eder; değer iletmez; cüzdan iç çağrıyı göstermez. PikaMd bağışında bu yüzden kullanılmadı (ARCHITECTURE §7.5).
+
 ### Testnet (5042002)
 
 | Kontrat | Adres |

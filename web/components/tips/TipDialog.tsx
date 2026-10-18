@@ -5,7 +5,7 @@ import { erc20Abi } from "viem";
 import { useConnection, useReadContract } from "wagmi";
 import { PixelStar, shortAddress } from "@/components/md-format";
 import { CHAIN, TIPS, USDC } from "@/lib/chain";
-import { FEE_RESERVE, TIP_PRESETS, formatUsdc, parseTipAmount } from "@/lib/tips/amount";
+import { FEE_RESERVE, TIP_PRESETS, formatBalance, formatUsdc, parseTipAmount } from "@/lib/tips/amount";
 import { useTipFlow } from "@/lib/tips/client";
 import { closeTipDialog, useTipRequest, type TipRequest } from "@/lib/tips/dialog";
 import { openWalletModal } from "@/lib/wallet/modal";
@@ -108,8 +108,8 @@ function TipPanel({ target }: { target: TipRequest }) {
   const amountText = amount !== null ? `${formatUsdc(amount)} USDC` : "the tip";
   const asks =
     allowance.data !== undefined && amount !== null && allowance.data >= amount
-      ? "Your wallet asks once, to send it"
-      : `Your wallet asks twice: to allow ${amountText}, then to send it`;
+      ? "Your wallet asks once: send"
+      : `Your wallet asks twice: allow ${amountText}, then send`;
   const steps = flow.needsApproval
     ? [
         { key: "allow", label: `Allow ${amountText}`, now: flow.phase === "approve" || flow.phase === "approving", done: flow.phase === "tip" || flow.phase === "sending" },
@@ -206,7 +206,7 @@ function TipPanel({ target }: { target: TipRequest }) {
         {connected && balance.data !== undefined && (
           <div>
             <dt>Your balance</dt>
-            <dd>{formatUsdc(balance.data)} USDC</dd>
+            <dd>{formatBalance(balance.data)} USDC</dd>
           </div>
         )}
       </dl>
@@ -229,7 +229,7 @@ function TipPanel({ target }: { target: TipRequest }) {
         <button type="button" className="btn-gold tip-send" disabled={flow.busy || (connected && short)} aria-busy={flow.busy || undefined} onClick={send}>
           {!connected ? "Connect wallet" : flow.busy ? "Sending…" : `Send ${amountText}`}
         </button>
-        <p className="tip-hint">{connected ? asks : "Connecting is free. Then your wallet asks you to allow the amount and to send it"}</p>
+        <p className="tip-hint">{connected ? asks : "Connecting is free. Then your wallet asks to allow the amount and to send it"}</p>
       </div>
 
       {flow.error && (
