@@ -5,11 +5,13 @@ import { useState, type ReactNode } from "react";
 import { WagmiProvider } from "wagmi";
 import TipDialog from "@/components/tips/TipDialog";
 import WalletModal from "@/components/wallet/WalletModal";
+import { useMoveLocalCollection } from "@/lib/collection/client";
 import { useSessionFollowsWallet } from "@/lib/wallet/session";
 import { wagmiConfig } from "@/lib/wallet/config";
 
 function SessionSync() {
   useSessionFollowsWallet();
+  useMoveLocalCollection();
   return null;
 }
 

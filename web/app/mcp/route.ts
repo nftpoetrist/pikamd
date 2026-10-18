@@ -5,8 +5,8 @@ import {
   localhostAllowedOrigins,
   originValidationResponse,
 } from "@modelcontextprotocol/server";
-import { collectionForKey } from "@/lib/mcp/mock-store";
 import { buildMcpServer } from "@/lib/mcp/server";
+import { collectionForKey } from "@/lib/server/collection";
 
 // PikaMd MCP server (ARCHITECTURE §8, K10/K11): Streamable HTTP, stateless.
 // createMcpHandler serves 2026-07-28 clients and, through its stateless fallback, 2025-era
@@ -44,8 +44,9 @@ async function serve(request: Request): Promise<Response> {
     hostHeaderValidationResponse(request, allowedHosts) ?? originValidationResponse(request, allowedOrigins);
   if (rejected) return rejected;
 
-  // Public tools work without a key. A missing or wrong key only matters to my_collection,
+  // Public tools work without a key. A missing, wrong or revoked key only matters to my_collection,
   // which answers with a tool error that says where to get one (API key mode, K11; no OAuth yet).
+  // A valid key opens its wallet's collection (only the key's SHA-256 is looked up).
   const token = bearerToken(request.headers.get("authorization"));
   const collection = token ? await collectionForKey(token) : null;
   const authInfo = token && collection ? { token, clientId: "pikamd-api-key", scopes: ["collection:read"], extra: { collection } } : undefined;

@@ -22,6 +22,10 @@ const RULES = {
   visibility: { max: 30, windowS: 10 * 60, by: "wallet" },
   /** Tip records read a receipt from Arc. No sign-in for a tip, so per IP. */
   tipRecord: { max: 30, windowS: 10 * 60, by: "ip" },
+  /** Saving and removing collection items. */
+  collect: { max: 120, windowS: 10 * 60, by: "wallet" },
+  /** Creating and revoking MCP keys. */
+  mcpKey: { max: 20, windowS: 60 * 60, by: "wallet" },
 } as const;
 
 export type LimitRule = keyof typeof RULES;

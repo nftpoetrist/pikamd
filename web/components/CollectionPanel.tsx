@@ -5,8 +5,9 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useRef, useState, type KeyboardEvent } from "react";
 import { useConnection } from "wagmi";
 import MdCard from "@/components/MdCard";
-import { useCollection } from "@/lib/collection/store";
+import { useSavedSlugs, type Saved } from "@/lib/collection/client";
 import { useSharedList, type SharedList } from "@/lib/owned/client";
+import { messageFor } from "@/lib/publish/client";
 import type { GuidelineCard } from "@/lib/types";
 import { openWalletModal } from "@/lib/wallet/modal";
 import { useSignIn } from "@/lib/wallet/session";
@@ -17,7 +18,8 @@ const TABS: { tab: Tab; label: string }[] = [
   { tab: "shared", label: "Shared by me" },
 ];
 
-// My Collection shelf, two tabs: the guidelines saved on Explore, and the ones this wallet shared
+// My Collection shelf, two tabs: the guidelines this wallet saved (K12: on the server, the list its
+// MCP key opens), and the ones this wallet shared
 // (with Hide / Show again). The tab is in the URL (?tab=shared), read on the client: Suspense keeps
 // the rest of the page prerendered, the fallback is the same shelf on its first tab.
 export default function CollectionPanel({ guidelines }: { guidelines: GuidelineCard[] }) {
@@ -40,14 +42,14 @@ function ShelfFromUrl({ guidelines }: { guidelines: GuidelineCard[] }) {
 }
 
 function Shelf({ guidelines, tab, onTab }: { guidelines: GuidelineCard[]; tab: Tab; onTab?: (tab: Tab) => void }) {
-  const slugs = useCollection();
+  const savedList = useSavedSlugs();
   const shared = useSharedList(guidelines);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   const bySlug = new Map(guidelines.map((g) => [g.slug, g]));
-  const saved = (slugs ?? []).flatMap((slug) => bySlug.get(slug) ?? []);
+  const saved = savedList.state === "ready" ? savedList.slugs.flatMap((slug) => bySlug.get(slug) ?? []) : [];
   const counts: Record<Tab, string> = {
-    saved: slugs === null ? "–" : String(saved.length),
+    saved: savedList.state === "ready" ? String(saved.length) : "–",
     shared: "guidelines" in shared ? String(shared.guidelines.length) : "–",
   };
 
@@ -93,15 +95,64 @@ function Shelf({ guidelines, tab, onTab }: { guidelines: GuidelineCard[]; tab: T
       </header>
 
       <div role="tabpanel" id={`collection-panel-${tab}`} aria-labelledby={`collection-tab-${tab}`}>
-        {tab === "saved" ? <SavedShelf slugs={slugs} saved={saved} /> : <SharedShelf shared={shared} />}
+        {tab === "saved" ? <SavedShelf list={savedList} saved={saved} /> : <SharedShelf shared={shared} />}
       </div>
     </section>
   );
 }
 
-function SavedShelf({ slugs, saved }: { slugs: readonly string[] | null; saved: GuidelineCard[] }) {
-  // Nothing until hydrated: the server can't see what this browser saved.
-  if (slugs === null) return null;
+function SavedShelf({ list, saved }: { list: Saved; saved: GuidelineCard[] }) {
+  const signIn = useSignIn();
+  const [signing, setSigning] = useState(false);
+  const [signError, setSignError] = useState<string | null>(null);
+
+  if (list.state === "loading") return null;
+  if (list.state === "disconnected") {
+    return (
+      <div className="collection-empty">
+        <p className="collection-empty-title">Your library lives in your wallet</p>
+        <p className="collection-empty-text">Connect it to see the guidelines you saved, on any device. Your agent reads the same list over MCP.</p>
+        <button type="button" className="btn-gold" onClick={openWalletModal}>
+          Connect Wallet
+        </button>
+      </div>
+    );
+  }
+  if (list.state === "signed-out") {
+    const start = async () => {
+      if (signing) return;
+      setSignError(null);
+      setSigning(true);
+      try {
+        await signIn(list.wallet);
+      } catch {
+        setSignError("You didn't sign in, so your saved guidelines stay hidden here");
+      } finally {
+        setSigning(false);
+      }
+    };
+    return (
+      <div className="collection-empty">
+        <p className="collection-empty-title">Sign in to open your library</p>
+        <p className="collection-empty-text">One free signature from your wallet, with no transaction and no gas.</p>
+        <button type="button" className="btn-gold" disabled={signing} aria-busy={signing || undefined} onClick={() => void start()}>
+          {signing ? "Check your wallet…" : "Sign in"}
+        </button>
+        {signError && (
+          <p className="shared-error" role="alert">
+            {signError}
+          </p>
+        )}
+      </div>
+    );
+  }
+  if (list.state === "error") {
+    return (
+      <p className="shared-error" role="alert">
+        Couldn&apos;t load your collection: {messageFor(list.error)}
+      </p>
+    );
+  }
   if (saved.length === 0) {
     return (
       <div className="collection-empty">

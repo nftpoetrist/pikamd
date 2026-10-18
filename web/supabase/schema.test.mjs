@@ -355,3 +355,92 @@ test("public roles can't read or write tips", async () => {
   const r = await asRole("service_role", `select count(*)::int as n from tips`);
   assert.ok(r.rows[0].n >= 1);
 });
+
+// ── Collections and MCP keys (K11, K12) ──
+
+test("a wallet's collection: listed guidelines only, once each, newest first, wallet stored lowercase", async () => {
+  const W = "0x" + "1".repeat(40);
+  await addGuideline(41, "col-a", A);
+  await addGuideline(42, "col-b", A);
+  await addGuideline(43, "col-hidden", A, { hidden: true });
+  const add = async (slug) => (await db.query(`select * from add_to_collection($1, $2)`, [W.toUpperCase().replace("0X", "0x"), slug])).rows[0];
+  assert.deepEqual(await add("col-a"), { added: true, total: 1 });
+  await db.query(`update collections set added_at = now() - interval '1 minute' where guideline_id = 41`);
+  assert.deepEqual(await add("col-b"), { added: true, total: 2 });
+  assert.deepEqual(await add("col-a"), { added: false, total: 2 }, "saving again changes nothing");
+  await assert.rejects(add("col-hidden"), /unknown guideline/);
+  await assert.rejects(add("nope"), /unknown guideline/);
+  const slugs = async () => (await db.query(`select * from collection_slugs($1)`, [W])).rows.map((r) => r.collection_slugs);
+  assert.deepEqual(await slugs(), ["col-b", "col-a"], "newest first");
+  assert.equal((await db.query(`select count(*)::int as n from collections where wallet_address = $1`, [W])).rows[0].n, 2);
+
+  // Hidden after it was saved: drops out of the list (and MCP), comes back when shown again
+  await db.query(`update guidelines set author_hidden = true where id = 41`);
+  assert.deepEqual(await slugs(), ["col-b"]);
+  await db.query(`update guidelines set author_hidden = false where id = 41`);
+  assert.deepEqual(await slugs(), ["col-b", "col-a"]);
+
+  const remove = async (slug) => (await db.query(`select * from remove_from_collection($1, $2)`, [W, slug])).rows[0];
+  assert.deepEqual(await remove("col-b"), { removed: true, total: 1 });
+  assert.deepEqual(await remove("col-b"), { removed: false, total: 1 });
+  assert.deepEqual(await remove("nope"), { removed: false, total: 1 });
+  assert.deepEqual(await slugs(), ["col-a"]);
+});
+
+test("a collection holds at most 500 guidelines", async () => {
+  const W = "0x" + "2".repeat(40);
+  await db.query(`insert into guidelines (id, slug, author_address, title, description, kind, tags, license, latest_version, tx_hash, block_number)
+    select 100000 + i, 'bulk-' || i, $1, 't', 'd', 'rules', '{}', 0, 1, '0x' || lpad(to_hex(i), 64, '0'), 1 from generate_series(1, 501) i`, [A]);
+  await db.query(`insert into guideline_versions (guideline_id, version, cid, content_hash, content, scan_status, tx_hash, block_number, log_index)
+    select 100000 + i, 1, 'bafy', $1, '# hi', 'clean', '0x' || lpad(to_hex(i), 64, '0'), 1, 0 from generate_series(1, 501) i`, [hex64("c")]);
+  await db.query(`insert into collections (wallet_address, guideline_id) select $1, 100000 + i from generate_series(1, 500) i`, [W]);
+  await assert.rejects(db.query(`select * from add_to_collection($1, 'bulk-501')`, [W]), (e) => e.code === "PM001");
+  assert.deepEqual((await db.query(`select * from add_to_collection($1, 'bulk-1')`, [W])).rows[0], { added: false, total: 500 }, "re-saving one you have is fine");
+  await db.query(`select * from remove_from_collection($1, 'bulk-1')`, [W]);
+  assert.equal((await db.query(`select * from add_to_collection($1, 'bulk-501')`, [W])).rows[0].added, true, "room again after removing one");
+  await db.query(`delete from collections where wallet_address = $1`, [W]);
+  await db.exec(`delete from guideline_versions where guideline_id > 100000; delete from guidelines where id > 100000`);
+});
+
+test("one active MCP key per wallet: a new one revokes the old, revoked keys open nothing", async () => {
+  const W = "0x" + "3".repeat(40);
+  const h1 = "a1".repeat(32);
+  const h2 = "b2".repeat(32);
+  await db.query(`select * from add_to_collection($1, 'col-a')`, [W]);
+  const first = (await db.query(`select * from replace_mcp_key($1, $2, 'pmd_a1a1…a1a1')`, [W.toUpperCase().replace("0X", "0x"), h1])).rows[0];
+  assert.equal(first.masked, "pmd_a1a1…a1a1");
+  const open = async (h) => (await db.query(`select * from mcp_key_collection($1)`, [h])).rows;
+  assert.deepEqual(await open(h1), [{ wallet: W, slugs: ["col-a"] }]);
+  assert.ok((await db.query(`select last_used_at from mcp_keys where key_hash = $1`, [h1])).rows[0].last_used_at, "marked as used");
+
+  await db.query(`select * from replace_mcp_key($1, $2, 'pmd_b2b2…b2b2')`, [W, h2]);
+  assert.deepEqual(await open(h1), [], "the replaced key opens nothing");
+  assert.deepEqual(await open(h2), [{ wallet: W, slugs: ["col-a"] }]);
+  const info = (await db.query(`select * from mcp_key_info($1)`, [W])).rows;
+  assert.equal(info.length, 1);
+  assert.equal(info[0].masked, "pmd_b2b2…b2b2");
+
+  assert.equal((await db.query(`select revoke_mcp_key($1) as r`, [W])).rows[0].r, true);
+  assert.equal((await db.query(`select revoke_mcp_key($1) as r`, [W])).rows[0].r, false);
+  assert.deepEqual(await open(h2), []);
+  assert.deepEqual((await db.query(`select * from mcp_key_info($1)`, [W])).rows, []);
+  assert.deepEqual(await open("c3".repeat(32)), [], "unknown key");
+
+  // A key with an empty collection still opens (my_collection answers "empty", not "no key")
+  const E = "0x" + "4".repeat(40);
+  await db.query(`select * from replace_mcp_key($1, $2, 'pmd_d4d4…d4d4')`, [E, "d4".repeat(32)]);
+  assert.deepEqual(await open("d4".repeat(32)), [{ wallet: E, slugs: [] }]);
+  await assert.rejects(db.query(`select * from replace_mcp_key($1, 'not-a-hash', 'x')`, [E]), /violates check constraint/);
+  await assert.rejects(db.query(`select * from replace_mcp_key($1, $2, 'x')`, [E, "d4".repeat(32)]), /duplicate key/, "a hash is never reused");
+});
+
+test("public roles can't touch collections or keys", async () => {
+  for (const role of ["anon", "authenticated"]) {
+    await assert.rejects(asRole(role, `select * from add_to_collection($1, 'col-a')`, [B]), /permission denied/);
+    await assert.rejects(asRole(role, `select * from collection_slugs($1)`, [B]), /permission denied/);
+    await assert.rejects(asRole(role, `select * from mcp_key_collection($1)`, ["a1".repeat(32)]), /permission denied/);
+    await assert.rejects(asRole(role, `select * from replace_mcp_key($1, $2, 'x')`, [B, "e5".repeat(32)]), /permission denied/);
+    await assert.rejects(asRole(role, `select * from mcp_keys`), /permission denied/);
+    await assert.rejects(asRole(role, `select * from collections`), /permission denied/);
+  }
+});

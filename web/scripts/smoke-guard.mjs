@@ -61,3 +61,25 @@ export async function clearTestLikes(db, wallets) {
   const res = await rest(db, "DELETE", `/rest/v1/stars?wallet_address=in.(${list})`);
   if (!res.ok) throw new Error(`clearing test likes failed (HTTP ${res.status})`);
 }
+
+/** Calls a database function with the server key (development database only). */
+export async function rpc(db, fn, args) {
+  const res = await fetch(`${db.url}/rest/v1/rpc/${fn}`, {
+    method: "POST",
+    headers: { apikey: db.key, Authorization: `Bearer ${db.key}`, "Content-Type": "application/json" },
+    body: JSON.stringify(args),
+  });
+  const body = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(`${fn} failed (HTTP ${res.status}): ${body?.message ?? ""}`);
+  return body;
+}
+
+/** Deletes the test wallets' collections and MCP keys (development database only). */
+export async function clearTestCollections(db, wallets) {
+  if (!db) return;
+  const list = wallets.map((w) => w.toLowerCase()).join(",");
+  for (const table of ["collections", "mcp_keys"]) {
+    const res = await rest(db, "DELETE", `/rest/v1/${table}?wallet_address=in.(${list})`);
+    if (!res.ok) throw new Error(`clearing test ${table} failed (HTTP ${res.status})`);
+  }
+}

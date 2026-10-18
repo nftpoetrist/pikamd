@@ -1,21 +1,25 @@
-// End-to-end check of the local MCP server with the official MCP client SDK.
+// End-to-end check of the MCP server with the official MCP client SDK.
 // Run with the dev server up:  npm run mcp:smoke   (PIKAMD_URL overrides http://localhost:3001)
 // Connects in both protocol eras (2025 "legacy" handshake and 2026-07-28 "modern"), with a valid
-// key, without one and with a wrong one. It swaps in a test key for the run and puts the local
-// store (.data/mock-mcp.json, see lib/mcp/mock-store.ts) back exactly as it was afterwards.
+// key, without one, with a wrong one and with a revoked one. The key belongs to a throwaway test
+// wallet in the development database (only its SHA-256 is stored, like a real key); the wallet's
+// collection and keys are deleted before and after the run.
 import { createHash, randomBytes } from "node:crypto";
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 
-import { devDatabase } from "./smoke-guard.mjs";
+import { clearTestCollections, devDatabase, rpc } from "./smoke-guard.mjs";
 
-// Read-only on the database; needs the sample guidelines (npm run db:seed on the development project)
-await devDatabase("mcp:smoke");
+// Needs the sample guidelines (npm run db:seed on the development project)
+const db = await devDatabase("mcp:smoke");
+if (!db) {
+  console.error("mcp:smoke: needs the development database (SUPABASE_URL in web/.env.local): keys and collections live there");
+  process.exit(2);
+}
 
 const BASE = process.env.PIKAMD_URL ?? "http://localhost:3001";
-const DIR = new URL("../.data/", import.meta.url);
-const FILE = new URL("mock-mcp.json", DIR);
+const WALLET = "0x" + "5e".repeat(20); // never a real wallet: no key exists for it
 const sha256 = (s) => createHash("sha256").update(s).digest("hex");
+const masked = (k) => `${k.slice(0, 8)}…${k.slice(-4)}`;
 
 let failures = 0;
 const check = (ok, label) => {
@@ -23,10 +27,13 @@ const check = (ok, label) => {
   if (!ok) failures++;
 };
 
-const backup = await readFile(FILE, "utf8").catch(() => null);
+await clearTestCollections(db, [WALLET]);
+const revoked = `pmd_${randomBytes(20).toString("hex")}`;
+await rpc(db, "replace_mcp_key", { p_wallet: WALLET, p_hash: sha256(revoked), p_masked: masked(revoked) });
 const key = `pmd_${randomBytes(20).toString("hex")}`;
-await mkdir(DIR, { recursive: true });
-await writeFile(FILE, JSON.stringify({ keyHash: sha256(key), collection: ["react-performance", "secure-solidity"] }));
+await rpc(db, "replace_mcp_key", { p_wallet: WALLET, p_hash: sha256(key), p_masked: masked(key) }); // replaces the first
+await rpc(db, "add_to_collection", { p_wallet: WALLET, p_slug: "secure-solidity" });
+await rpc(db, "add_to_collection", { p_wallet: WALLET, p_slug: "react-performance" }); // newest
 
 async function session(mode, auth) {
   const headers = auth ? { Authorization: `Bearer ${auth}` } : undefined;
@@ -38,7 +45,7 @@ const text = (result) => result.content?.[0]?.text ?? "";
 
 try {
   for (const mode of ["legacy", "auto"]) {
-    for (const [name, auth] of [["valid key", key], ["no key", null], ["wrong key", `pmd_${"0".repeat(40)}`]]) {
+    for (const [name, auth] of [["valid key", key], ["no key", null], ["wrong key", `pmd_${"0".repeat(40)}`], ["replaced key", revoked]]) {
       const label = `[${mode} · ${name}]`;
       const client = await session(mode, auth);
       try {
@@ -67,8 +74,10 @@ try {
 
         const mine = await client.callTool({ name: "my_collection", arguments: {} });
         check(
-          auth === key ? !mine.isError && text(mine).includes("has 2 guidelines") : mine.isError === true && text(mine).includes("/connect"),
-          `${label} my_collection`,
+          auth === key
+            ? !mine.isError && text(mine).includes("has 2 guidelines") && text(mine).indexOf("react-performance") < text(mine).indexOf("secure-solidity")
+            : mine.isError === true && text(mine).includes("/connect"),
+          `${label} my_collection${auth === key ? " (the wallet's 2, newest first)" : " refused, points to /connect"}`,
         );
       } finally {
         await client.close();
@@ -78,9 +87,13 @@ try {
 } catch (error) {
   failures++;
   console.error("FAIL", error);
+}
+
+try {
+  const [info] = await rpc(db, "mcp_key_info", { p_wallet: WALLET });
+  check(!!info?.last_used_at, "the key is marked as used by an agent");
 } finally {
-  if (backup === null) await rm(FILE, { force: true });
-  else await writeFile(FILE, backup);
+  await clearTestCollections(db, [WALLET]);
 }
 
 console.log(failures === 0 ? "\nAll checks passed" : `\n${failures} check(s) failed`);

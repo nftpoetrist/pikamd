@@ -7,7 +7,8 @@ import { readFile, rm, writeFile } from "node:fs/promises";
 import { privateKeyToAccount } from "viem/accounts";
 import { createSiweMessage } from "viem/siwe";
 
-import { clearRateLimits, clearTestLikes, devDatabase } from "./smoke-guard.mjs";
+import { createHash } from "node:crypto";
+import { clearRateLimits, clearTestCollections, clearTestLikes, devDatabase, rpc } from "./smoke-guard.mjs";
 
 // null = local dev store; otherwise the development Supabase project (never the live one)
 const db = await devDatabase("auth:smoke");
@@ -57,6 +58,7 @@ async function signIn(account) {
 
 const backup = await readFile(FILE, "utf8").catch(() => null);
 await clearTestLikes(db, [alice.address, bob.address]);
+await clearTestCollections(db, [alice.address, bob.address]);
 await clearRateLimits(db);
 
 try {
@@ -183,6 +185,47 @@ try {
     }
     const tipsProfile = (await call("GET", `/api/profile/${alice.address}`)).json;
     check(tipsProfile?.tipsReceived === "0" && tipsProfile?.tipsCount === 0, "profile carries tips received (none for a test wallet)");
+
+    // ── Collection (K12): the wallet's own list, from the session only ──
+    check((await call("GET", "/api/collection")).status === 401, "collection needs a session");
+    check((await call("PUT", "/api/collection/secure-solidity")).status === 401, "saving needs a session");
+    check((await call("PUT", "/api/collection/secure-solidity", { cookie: a.cookie, origin: "https://evil.example" })).status === 403, "saving from another site refused (CSRF)");
+    const save1 = await call("PUT", "/api/collection/secure-solidity", { cookie: a.cookie });
+    check(save1.status === 200 && save1.json?.changed === true && save1.json?.total === 1, "alice saves a guideline");
+    const save2 = await call("PUT", "/api/collection/react-performance", { cookie: a.cookie });
+    check(save2.json?.total === 2, "alice saves a second one");
+    check((await call("PUT", "/api/collection/secure-solidity", { cookie: a.cookie })).json?.changed === false, "saving again changes nothing");
+    check((await call("PUT", "/api/collection/does-not-exist", { cookie: a.cookie })).status === 404, "unknown guideline can't be saved");
+    check((await call("PUT", "/api/collection/Bad_Slug!", { cookie: a.cookie })).status === 404, "malformed name refused");
+    const listA = await call("GET", "/api/collection", { cookie: a.cookie });
+    check(JSON.stringify(listA.json?.slugs) === JSON.stringify(["react-performance", "secure-solidity"]), "alice's list, newest first");
+    check((await call("GET", "/api/collection", { cookie: b.cookie })).json?.slugs?.length === 0, "bob's list is his own (empty)");
+    const removed = await call("DELETE", "/api/collection/secure-solidity", { cookie: a.cookie });
+    check(removed.json?.changed === true && removed.json?.total === 1, "alice removes one");
+    check((await call("DELETE", "/api/collection/secure-solidity", { cookie: a.cookie })).json?.changed === false, "removing again changes nothing");
+
+    // ── MCP key (K11): only the SHA-256 reaches the server; one active key per wallet ──
+    const sha = (k) => createHash("sha256").update(k).digest("hex");
+    const k1 = "pmd_" + "1a".repeat(20);
+    const k2 = "pmd_" + "2b".repeat(20);
+    const mask = (k) => `${k.slice(0, 8)}…${k.slice(-4)}`;
+    check((await call("GET", "/api/mcp-key")).status === 401, "key needs a session");
+    check((await call("POST", "/api/mcp-key", { body: { keyHash: sha(k1), masked: mask(k1) } })).status === 401, "creating a key needs a session");
+    check((await call("POST", "/api/mcp-key", { cookie: a.cookie, origin: "https://evil.example", body: { keyHash: sha(k1), masked: mask(k1) } })).status === 403, "creating a key from another site refused (CSRF)");
+    check((await call("POST", "/api/mcp-key", { cookie: a.cookie, body: { key: k1 } })).status === 400, "a raw key is refused: only its hash is accepted");
+    check((await call("POST", "/api/mcp-key", { cookie: a.cookie, body: { keyHash: sha(k1), masked: k1 } })).status === 400, "a masked form that is the whole key is refused");
+    check((await call("GET", "/api/mcp-key", { cookie: a.cookie })).json?.key === null, "no key yet");
+    const made = await call("POST", "/api/mcp-key", { cookie: a.cookie, body: { keyHash: sha(k1), masked: mask(k1) } });
+    check(made.status === 200 && made.json?.key?.masked === mask(k1) && made.json?.key?.lastUsedAt === null, "alice creates a key");
+    const opened = await rpc(db, "mcp_key_collection", { p_hash: sha(k1) });
+    check(opened[0]?.wallet === alice.address.toLowerCase() && JSON.stringify(opened[0]?.slugs) === JSON.stringify(["react-performance"]), "the key opens alice's collection");
+    check((await call("POST", "/api/mcp-key", { cookie: b.cookie, body: { keyHash: sha(k1), masked: mask(k1) } })).status === 409, "bob can't register alice's key hash");
+    await call("POST", "/api/mcp-key", { cookie: a.cookie, body: { keyHash: sha(k2), masked: mask(k2) } });
+    check((await rpc(db, "mcp_key_collection", { p_hash: sha(k1) })).length === 0, "a new key retires the old one");
+    check((await call("GET", "/api/mcp-key", { cookie: a.cookie })).json?.key?.masked === mask(k2), "the new key is the active one");
+    check((await call("DELETE", "/api/mcp-key", { cookie: a.cookie, origin: "https://evil.example" })).status === 403, "revoking from another site refused (CSRF)");
+    check((await call("DELETE", "/api/mcp-key", { cookie: a.cookie })).json?.revoked === true, "alice revokes it");
+    check((await rpc(db, "mcp_key_collection", { p_hash: sha(k2) })).length === 0, "a revoked key opens nothing");
   }
 
   // ── Logout ──
@@ -192,6 +235,7 @@ try {
   check(out.status === 200 && /pikamd_session=;|Max-Age=0|Expires=Thu, 01 Jan 1970/i.test(out.setCookie ?? ""), "logout clears the cookie");
 } finally {
   await clearTestLikes(db, [alice.address, bob.address]);
+  await clearTestCollections(db, [alice.address, bob.address]);
   if (backup === null) await rm(FILE, { force: true });
   else await writeFile(FILE, backup);
 }

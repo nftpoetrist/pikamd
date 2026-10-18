@@ -9,7 +9,7 @@ server checks the file, pins it to IPFS (Pinata), the author's wallet registers 
 `GuidelineRegistry` contract, and the server reads the receipt and indexes it in Supabase. Wallet
 sign-in (SIWE), likes and PikaGold run on Supabase; an indexer keeps hides and moderator locks in
 step with the chain. The MCP server (`/mcp`) serves search and reading and checks every text
-against its on-chain hash. MCP keys and My Collection are still a local demo. The security review
+against its on-chain hash. MCP keys and collections belong to wallets: only a key's SHA-256 is stored, and `my_collection` serves that wallet's saved guidelines. The security review
 of 2026-10-15 is in `../ARCHITECTURE.md` §9.4.
 
 ## Run it

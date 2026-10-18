@@ -2373,16 +2373,22 @@ body {
   margin: 0 auto;
 }
 
-.pub-demo {
+.pub-cost strong { color: var(--t0); font-weight: 400; }
+
+/* Connect your agent: what works without a key and what the key adds (calm gold note) */
+.connect-intro {
   padding: 10px 14px;
   font-size: 19px;
   line-height: 1.2;
   color: var(--t1);
-  background: rgba(255, 159, 67, 0.1);
-  box-shadow: inset 3px 0 0 0 var(--orange);
+  background: rgba(255, 203, 5, 0.07);
+  box-shadow: inset 3px 0 0 0 var(--y1);
 }
-
-.pub-demo strong, .pub-cost strong { color: var(--t0); font-weight: 400; }
+.connect-intro code {
+  font-family: var(--font-vt323);
+  font-size: inherit;
+  color: var(--y1);
+}
 
 .pub-summary {
   display: grid;
@@ -3873,6 +3879,22 @@ body {
 }
 .md-note-start::after {
   left: 28px;
+}
+
+/* Collect: its wrapper takes the row's spare width (the button did, before it had a note), and the
+   note opens to the left: Add is the last button in the row */
+.md-card-actions .md-collect-wrap {
+  flex: 1;
+  min-width: 0;
+}
+.md-note-end {
+  left: auto;
+  right: -6px;
+  transform: none;
+}
+.md-note-end::after {
+  left: auto;
+  right: 28px;
 }
 
 /* Native <dialog>: the box itself is the full-screen dim layer, the panel sits centered in it */
