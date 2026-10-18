@@ -4,7 +4,8 @@ The PikaMd site and MCP server: a public, non-profit library of Markdown guideli
 (CLAUDE.md rules, skills, prompts, subagents, guides) on Arc. Architecture and decisions live in
 `../ARCHITECTURE.md`, the design system in `../DESIGN.md`, verified Arc network facts in `../ARC.md`.
 
-Status (2026-10-15): works end to end on Arc testnet, not deployed yet. Publishing is real: the
+Status (2026-10-18): works end to end on Arc testnet (publishing, likes, collections, MCP keys,
+USDC tips, the guideline pages, reports and moderation), not deployed yet. Publishing is real: the
 server checks the file, pins it to IPFS (Pinata), the author's wallet registers it in the
 `GuidelineRegistry` contract, and the server reads the receipt and indexes it in Supabase. Wallet
 sign-in (SIWE), likes and PikaGold run on Supabase; an indexer keeps hides and moderator locks in
