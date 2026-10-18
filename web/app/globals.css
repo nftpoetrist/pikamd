@@ -1024,6 +1024,74 @@ body {
   .md-lane { overflow-x: auto; }
 }
 
+/* Fewer cards than a lane needs (MdLanes LANES_FROM): full-size cards stand on a centered shelf,
+   at most four a row, rows centered so a short last row stays symmetric */
+.md-shelf {
+  --card-w: 304px;
+  --card-gap: 22px; /* two 3px frames + 16px clear space */
+  width: min(calc(4 * var(--card-w) + 3 * var(--card-gap) + 6px), calc(100% - 40px));
+  margin: 6px auto 48px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 28px var(--card-gap);
+  padding: 3px 0 4px; /* card frames sit outside their boxes */
+}
+
+/* Nothing shared yet: an invitation in the search box's place */
+.explore-empty {
+  --px-b: 3px;
+  --px-gap: 12px;
+  --px-h: 34px;
+  --px-base: 4px;
+  width: min(760px, calc(100% - 40px));
+  margin: 4px auto 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 26px 28px 30px;
+  text-align: center;
+}
+.explore-empty-pika {
+  display: block;
+  filter: drop-shadow(0 0 18px rgba(255, 203, 5, 0.28));
+}
+.explore-empty-title {
+  font-family: var(--font-jersey);
+  font-weight: 400;
+  font-size: 36px;
+  line-height: 1;
+  color: var(--t0);
+  text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.7);
+}
+.explore-empty-title span {
+  color: var(--y1);
+  text-shadow: 3px 3px 0 var(--g4);
+}
+.explore-empty-text {
+  font-family: var(--font-vt323);
+  font-size: 21px;
+  line-height: 1.2;
+  color: var(--t1);
+}
+.explore-empty-text span {
+  display: block;
+}
+.explore-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 18px 28px; /* two frames + base + clear space, vertical too */
+  margin-top: 12px;
+}
+@media (max-width: 639px) {
+  .md-shelf { --card-w: 288px; }
+  .explore-empty { padding: 22px 16px 26px; }
+  .explore-empty-title { font-size: 30px; }
+  .explore-empty-text { font-size: 19px; }
+}
+
 .md-card {
   flex: none;
   width: var(--card-w);

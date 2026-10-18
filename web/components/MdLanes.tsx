@@ -4,7 +4,7 @@ import type { GuidelineCard } from "@/lib/types";
 
 type Direction = "left" | "right";
 
-// Two endless lanes: right→left, then left→right.
+// Two endless lanes: right→left, then left→right (from LANES_FROM cards; fewer stand on a shelf).
 // Each lane renders its cards twice and slides by exactly one copy (-50%),
 // so the loop is seamless. Pure CSS animation; only the collect buttons are client components.
 const LANES: { direction: Direction; seconds: number }[] = [
@@ -31,7 +31,22 @@ function Lane({ items, direction, seconds }: { items: GuidelineCard[]; direction
   );
 }
 
+/**
+ * Below this many cards a lane's copy is narrower than a wide screen (9 cards × 294 px > 2560 px),
+ * and the loop would show gaps: the cards stand still on a centered shelf instead.
+ */
+export const LANES_FROM = 18;
+
 export default function MdLanes({ guidelines }: { guidelines: GuidelineCard[] }) {
+  if (guidelines.length < LANES_FROM) {
+    return (
+      <section className="md-shelf" aria-label="Guidelines">
+        {guidelines.map((g) => (
+          <MdCard key={g.id} guideline={g} />
+        ))}
+      </section>
+    );
+  }
   // Deal cards round-robin so each lane gets a varied mix.
   const lanes = LANES.map((_, i) => guidelines.filter((_, j) => j % LANES.length === i));
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import ExploreEmpty from "@/components/ExploreEmpty";
 import MdLanes from "@/components/MdLanes";
 import PageTransition from "@/components/PageTransition";
 import ExploreSearch, { SearchBoxShell } from "@/components/search/ExploreSearch";
@@ -39,11 +40,17 @@ export default async function ExplorePage() {
             <span>Browse guidelines shared by the community</span>{" "}
             <span>Add the ones you like to your collection and your agent can use them over MCP</span>
           </p>
-          {/* Reads ?q= on the client: Suspense keeps the rest of the page prerendered */}
-          <Suspense fallback={<SearchBoxShell />}>
-            <ExploreSearch topTags={topTags(guidelines)} />
-          </Suspense>
-          <MdLanes guidelines={guidelines} />
+          {guidelines.length === 0 ? (
+            <ExploreEmpty />
+          ) : (
+            <>
+              {/* Reads ?q= on the client: Suspense keeps the rest of the page prerendered */}
+              <Suspense fallback={<SearchBoxShell />}>
+                <ExploreSearch topTags={topTags(guidelines)} />
+              </Suspense>
+              <MdLanes guidelines={guidelines} />
+            </>
+          )}
         </div>
       </main>
     </PageTransition>
