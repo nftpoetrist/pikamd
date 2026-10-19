@@ -107,8 +107,8 @@ export default function Navbar() {
           </span>
         </PageLink>
 
-        {/* Dead center: nav-inner is a 3-column grid (1fr · auto · 1fr) */}
-        <div className="nav-center hidden xl:flex">
+        {/* Centered between equal side columns that never shrink below their content (globals.css .nav-inner); shown from 1120px */}
+        <div className="nav-center">
           <Suspense fallback={<NavLinks pathname={null} onNavigate={close} />}>
             <ActiveNavLinks onNavigate={close} indicator />
           </Suspense>
@@ -122,7 +122,7 @@ export default function Navbar() {
           <PikaGoldBox />
           <button
             type="button"
-            className="nav-menu-btn xl:hidden"
+            className="nav-menu-btn"
             aria-label={open ? "Close menu" : "Open menu"}
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
@@ -139,7 +139,7 @@ export default function Navbar() {
       </div>
 
       {open && (
-        <div className="nav-mobile xl:hidden">
+        <div className="nav-mobile">
           {links}
           <PageLink href="/new" className="btn-gold mt-2 justify-center sm:hidden" onClick={() => setOpen(false)}>
             <span aria-hidden="true">+</span> Publish

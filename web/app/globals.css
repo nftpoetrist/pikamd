@@ -179,9 +179,11 @@ body {
   max-width: 1180px;
   margin: 0 auto;
   padding: 0 22px;
-  /* 1fr · auto · 1fr: the center menu is always dead center */
+  /* Side columns share the room equally (menu dead center) but never shrink below their content:
+     when the right group (Publish + wallet + PikaGold, up to 368px measured) outgrows its half, the
+     menu moves toward the logo instead of running into the buttons */
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr);
   align-items: center;
   column-gap: 24px;
 }
@@ -198,7 +200,12 @@ body {
   gap: 10px;
 }
 
+/* Menu links show from 1120px. Measured widest row (not connected, a menu page active so its link
+   carries the cursor dot): 22 + logo 123 + 24 + menu 472 + 24 + right 368 + 22 = 1055px inside the
+   20px side margins = 1095px window; 1120 leaves 25px to spare. A wallet's side panel (MetaMask)
+   leaves about 1130px on a laptop, so the menu stays. Below it, ☰ */
 .nav-center {
+  display: none;
   position: relative;
   align-items: center;
   gap: calc(var(--px-b) * 2 + var(--px-gap));
@@ -423,6 +430,11 @@ body {
   gap: calc(var(--px-b) * 2 + var(--px-base) + var(--px-gap));
   padding: 18px 22px 22px;
   border-top: 3px dashed rgba(255, 203, 5, 0.18);
+}
+@media (min-width: 1120px) {
+  .nav-center { display: flex; }
+  .nav-menu-btn,
+  .nav-mobile { display: none; }
 }
 
 .nav-link:focus-visible,
