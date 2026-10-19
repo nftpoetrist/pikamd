@@ -4110,6 +4110,20 @@ body {
   font-size: 17px;
   color: var(--y1);
 }
+/* WalletConnect row: our pixel phone-and-QR mark and a second line saying what it is for */
+.wallet-option-wc {
+  flex: none;
+  color: var(--y1);
+}
+.wallet-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.wallet-option-sub {
+  font-size: 17px;
+  color: var(--t1);
+}
 
 .wallet-empty {
   display: flex;

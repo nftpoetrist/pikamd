@@ -6,6 +6,7 @@ import { NOTE_MAX, REPORT_REASONS, type ReportReason } from "@/lib/moderation/re
 import { messageFor } from "@/lib/publish/client";
 import { api } from "@/lib/wallet/api";
 import { openWalletModal } from "@/lib/wallet/modal";
+import { dialogsSuspended } from "@/lib/wallet/suspend-dialogs";
 import { useSignIn } from "@/lib/wallet/session";
 
 // ⚑ Report (ARCHITECTURE §9.2): a reason and an optional note go to the moderators (/mod). Needs a
@@ -61,7 +62,8 @@ export default function ReportButton({ slug, title }: { slug: string; title: str
         ref={ref}
         className="wallet-dialog"
         aria-labelledby={`${id}-title`}
-        onClose={() => setOpen(false)}
+        // A WalletConnect modal sets it aside for a moment (lib/wallet/suspend-dialogs.ts): not a real close
+        onClose={() => !dialogsSuspended() && setOpen(false)}
         onClick={(e) => e.target === ref.current && setOpen(false)}
         onKeyDown={(e) => e.key === "Escape" && e.stopPropagation()}
       >

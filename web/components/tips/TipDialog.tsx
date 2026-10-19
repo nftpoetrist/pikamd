@@ -8,6 +8,7 @@ import { CHAIN, TIPS, USDC } from "@/lib/chain";
 import { FEE_RESERVE, TIP_PRESETS, formatBalance, formatUsdc, parseTipAmount } from "@/lib/tips/amount";
 import { useTipFlow } from "@/lib/tips/client";
 import { closeTipDialog, useTipRequest, type TipRequest } from "@/lib/tips/dialog";
+import { dialogsSuspended } from "@/lib/wallet/suspend-dialogs";
 import { openWalletModal } from "@/lib/wallet/modal";
 
 const txUrl = (hash: string) => `${CHAIN.blockExplorers?.default.url}/tx/${hash}`;
@@ -32,7 +33,8 @@ export default function TipDialog() {
       ref={ref}
       className="wallet-dialog"
       aria-label="Tip the author"
-      onClose={closeTipDialog}
+      // A WalletConnect modal sets it aside for a moment (lib/wallet/suspend-dialogs.ts): not a real close
+      onClose={() => !dialogsSuspended() && closeTipDialog()}
       // A click on the dimmed area (the dialog box itself, outside the panel) closes it
       onClick={(e) => e.target === ref.current && closeTipDialog()}
       // Esc closes this dialog only, not a guideline preview open underneath

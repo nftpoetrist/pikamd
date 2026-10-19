@@ -8,8 +8,10 @@ import WalletModal from "@/components/wallet/WalletModal";
 import { useMoveLocalCollection } from "@/lib/collection/client";
 import { useSessionFollowsWallet } from "@/lib/wallet/session";
 import { wagmiConfig } from "@/lib/wallet/config";
+import { useRestoreWalletConnect } from "@/lib/wallet/walletconnect";
 
 function SessionSync() {
+  useRestoreWalletConnect();
   useSessionFollowsWallet();
   useMoveLocalCollection();
   return null;
