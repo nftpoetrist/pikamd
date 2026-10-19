@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import PageLink from "@/components/PageLink";
 import { useId, useState, useSyncExternalStore, type KeyboardEvent } from "react";
 import CopyButton from "@/components/CopyButton";
 import { useSavedSlugs, useSignedIn } from "@/lib/collection/client";
@@ -262,15 +262,15 @@ export default function ConnectPanel() {
         <p className="connect-text">
           {count === null ? (
             <>
-              Your agent sees the guidelines you save with your wallet. <Link href="/explore">Find some on Explore</Link>
+              Your agent sees the guidelines you save with your wallet. <PageLink href="/explore">Find some on Explore</PageLink>
             </>
           ) : count > 0 ? (
             <>
-              Your agent will see the <Link href="/collection">{count} guideline{count === 1 ? "" : "s"} in your collection</Link>
+              Your agent will see the <PageLink href="/collection">{count} guideline{count === 1 ? "" : "s"} in your collection</PageLink>
             </>
           ) : (
             <>
-              Your collection is empty. <Link href="/explore">Add guidelines on Explore</Link> and your agent will see them
+              Your collection is empty. <PageLink href="/explore">Add guidelines on Explore</PageLink> and your agent will see them
             </>
           )}
         </p>

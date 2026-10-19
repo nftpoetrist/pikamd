@@ -1,4 +1,4 @@
-import Link from "next/link";
+import PageLink from "@/components/PageLink";
 import PikaSprite from "@/components/brand/PikaSprite";
 
 // Explore before anyone has shared a guideline (the live site starts empty): an invitation
@@ -15,12 +15,12 @@ export default function ExploreEmpty() {
         <span>They show up here for everyone, and every agent can use them over MCP</span>
       </p>
       <div className="explore-empty-actions">
-        <Link href="/new" className="btn-gold">
+        <PageLink href="/new" className="btn-gold">
           + Publish the first guideline
-        </Link>
-        <Link href="/connect" className="btn-ghost">
+        </PageLink>
+        <PageLink href="/connect" className="btn-ghost">
           Connect your agent
-        </Link>
+        </PageLink>
       </div>
     </section>
   );

@@ -199,8 +199,44 @@ body {
 }
 
 .nav-center {
+  position: relative;
   align-items: center;
   gap: calc(var(--px-b) * 2 + var(--px-gap));
+}
+
+/* Desktop menu: the active link's gold frame is one element (Navbar.tsx → NavIndicator) that slides
+   to the new link with the page slide: same duration and curve (--vt-slide, PAGE TRANSITIONS).
+   Position and width come from the active link as inline styles. */
+.nav-indicator {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  height: var(--px-h);
+  margin-top: calc(var(--px-h) / -2);
+  width: 0;
+  opacity: 0;
+  pointer-events: none;
+  background: rgba(255, 203, 5, 0.10);
+  box-shadow:
+    0 calc(var(--px-b) * -1) 0 0 rgba(255, 203, 5, 0.45),
+    0 var(--px-b) 0 0 rgba(255, 203, 5, 0.45),
+    calc(var(--px-b) * -1) 0 0 0 rgba(255, 203, 5, 0.45),
+    var(--px-b) 0 0 0 rgba(255, 203, 5, 0.45);
+  transition:
+    transform var(--vt-slide) var(--vt-slide-ease),
+    width var(--vt-slide) var(--vt-slide-ease),
+    opacity 0.2s ease;
+}
+
+.nav-center .nav-link {
+  position: relative;
+  z-index: 1;
+}
+
+/* The frame is drawn by .nav-indicator here; the link keeps only its gold text */
+.nav-center .nav-link[aria-current="page"] {
+  background: none;
+  box-shadow: none;
 }
 
 .nav-right {
@@ -399,6 +435,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .nav-dot { animation: none; }
+  .nav-indicator { transition: none; }
 }
 
 /* Pixel panel (same visual language as the navbar) */
@@ -5193,15 +5230,28 @@ body {
 
 /* ══════════════════════════════════════════════
    PAGE TRANSITIONS (React <ViewTransition> + View Transitions API)
-   Navbar and background stay put; only the page content changes.
-   Old content exits fast; new content sharpens from a blur and rises slightly.
+   Navbar, footer and background stay put; only the page content moves.
+   Links inside the site slide the pages side by side, like turning a page: further right in the
+   menu pushes the content left, back pushes it right (<html data-nav="forward|back">, set on
+   click by components/PageLink.tsx from lib/nav-direction.ts).
+   Navigations without a direction (browser back/forward) cross-fade.
+   Transform and opacity only: both run on the compositor, at the display's full refresh rate.
+   A filter (the old blur) made the browser repaint the whole page snapshot every frame.
 ══════════════════════════════════════════════ */
 :root {
-  --vt-exit: 140ms;
-  --vt-enter: 260ms;
-  --vt-move: 380ms;
+  --vt-exit: 90ms;
+  --vt-enter: 180ms;
+  --vt-move: 220ms;
   --vt-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --vt-slide: 560ms;
+  /* Fast start, long soft landing */
+  --vt-slide-ease: cubic-bezier(0.32, 0.72, 0, 1);
 }
+
+@keyframes vt-to-left    { to   { transform: translateX(-100%); } }
+@keyframes vt-from-right { from { transform: translateX(100%); } }
+@keyframes vt-to-right   { to   { transform: translateX(100%); } }
+@keyframes vt-from-left  { from { transform: translateX(-100%); } }
 
 ::view-transition-old(.page-exit) {
   animation: var(--vt-exit) ease-in both vt-fade reverse;
@@ -5209,17 +5259,37 @@ body {
 
 ::view-transition-new(.page-enter) {
   animation:
-    var(--vt-enter) var(--vt-ease) 90ms both vt-fade,
+    var(--vt-enter) var(--vt-ease) 30ms both vt-fade,
     var(--vt-move) var(--vt-ease) both vt-rise;
 }
 
+/* Directional slides: the two pages travel side by side, edge to edge */
+:root[data-nav="forward"]::view-transition-old(.page-exit) {
+  animation: var(--vt-slide) var(--vt-slide-ease) both vt-to-left;
+}
+:root[data-nav="forward"]::view-transition-new(.page-enter) {
+  animation: var(--vt-slide) var(--vt-slide-ease) both vt-from-right;
+}
+:root[data-nav="back"]::view-transition-old(.page-exit) {
+  animation: var(--vt-slide) var(--vt-slide-ease) both vt-to-right;
+}
+:root[data-nav="back"]::view-transition-new(.page-enter) {
+  animation: var(--vt-slide) var(--vt-slide-ease) both vt-from-left;
+}
+
+/* The browser's default root cross-fade is 250ms and the transition only ends when it does */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--vt-move);
+}
+
 @keyframes vt-fade {
-  from { opacity: 0; filter: blur(3px); }
-  to   { opacity: 1; filter: blur(0); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @keyframes vt-rise {
-  from { transform: translateY(8px); }
+  from { transform: translateY(6px); }
   to   { transform: translateY(0); }
 }
 

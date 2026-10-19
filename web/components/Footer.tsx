@@ -1,4 +1,4 @@
-import Link from "next/link";
+import PageLink from "@/components/PageLink";
 import { PixelBlock } from "@/components/PixelBlocks";
 import { ARC_TRADEMARK } from "@/components/VisionCards";
 
@@ -33,12 +33,12 @@ export default function Footer() {
       <div className="footer-bg" />
 
       <div className="footer-inner">
-        <Link href="/" className="footer-brand" aria-label="PikaMd home">
+        <PageLink href="/" className="footer-brand" aria-label="PikaMd home">
           <span className="logo-text">
             Pika<span>Md</span>
           </span>
           <span className="footer-tag">for the community</span>
-        </Link>
+        </PageLink>
 
         <p className="footer-arc" title={ARC_TRADEMARK}>
           <PixelBlock scale={2} />

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import PageLink from "@/components/PageLink";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import AuthorAction from "@/components/AuthorAction";
@@ -53,7 +53,7 @@ async function GuidelineView({ slug }: { slug: string }) {
   return (
     <article className="gl-page pixel-panel" aria-labelledby="gl-title">
       <nav className="gl-crumbs" aria-label="Breadcrumb">
-        <Link href="/explore">← Explore</Link>
+        <PageLink href="/explore">← Explore</PageLink>
       </nav>
 
       <header className="gl-head">
@@ -81,9 +81,9 @@ async function GuidelineView({ slug }: { slug: string }) {
             <>
               <span aria-hidden="true"> · </span>
               {g.tags.map((t) => (
-                <Link key={t} href={`/explore?q=${encodeURIComponent(`tag:${t}`)}`} className="gl-tag">
+                <PageLink key={t} href={`/explore?q=${encodeURIComponent(`tag:${t}`)}`} className="gl-tag">
                   #{t}
-                </Link>
+                </PageLink>
               ))}
             </>
           )}
@@ -153,7 +153,7 @@ async function GuidelineView({ slug }: { slug: string }) {
             ) : (
               <>
                 <p className="gl-note">
-                  Add it to your collection and ask your agent, or point it at the file directly. <Link href="/connect">Connect your agent</Link>
+                  Add it to your collection and ask your agent, or point it at the file directly. <PageLink href="/connect">Connect your agent</PageLink>
                 </p>
                 <p className="gl-ask">
                   <span aria-hidden="true">&gt; </span>Use the {g.slug} guideline from PikaMd

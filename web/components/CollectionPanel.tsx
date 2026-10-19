@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import PageLink from "@/components/PageLink";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useRef, useState, type KeyboardEvent } from "react";
 import { useConnection } from "wagmi";
@@ -89,9 +89,9 @@ function Shelf({ guidelines, tab, onTab }: { guidelines: GuidelineCard[]; tab: T
             </button>
           ))}
         </div>
-        <Link href="/connect" className="btn-ghost">
+        <PageLink href="/connect" className="btn-ghost">
           Connect your agent
-        </Link>
+        </PageLink>
       </header>
 
       <div role="tabpanel" id={`collection-panel-${tab}`} aria-labelledby={`collection-tab-${tab}`}>
@@ -160,9 +160,9 @@ function SavedShelf({ list, saved }: { list: Saved; saved: GuidelineCard[] }) {
         <p className="collection-empty-text">
           Find a guideline on Explore and press <span>+ Add to collection</span>.
         </p>
-        <Link href="/explore" className="btn-gold">
+        <PageLink href="/explore" className="btn-gold">
           Explore guidelines
-        </Link>
+        </PageLink>
       </div>
     );
   }
@@ -232,9 +232,9 @@ function SharedShelf({ shared }: { shared: SharedList }) {
         <div className="collection-empty">
           <p className="collection-empty-title">{mode === "signed" ? "You haven't shared a guideline yet." : "Nothing listed from this wallet."}</p>
           <p className="collection-empty-text">Share one with the community and it shows up here.</p>
-          <Link href="/new" className="btn-gold">
+          <PageLink href="/new" className="btn-gold">
             Publish a guideline
-          </Link>
+          </PageLink>
         </div>
       ) : (
         <div className="collection-grid">

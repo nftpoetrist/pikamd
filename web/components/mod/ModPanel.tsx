@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import PageLink from "@/components/PageLink";
 import { useState } from "react";
 import { shortAddress } from "@/components/md-format";
 import { useSignedIn } from "@/lib/collection/client";
@@ -97,9 +97,9 @@ function ModRow({ g }: { g: QueueItem }) {
   return (
     <article className="mod-row">
       <header>
-        <Link href={`/g/${g.slug}`} className="mod-title">
+        <PageLink href={`/g/${g.slug}`} className="mod-title">
           {g.title}
-        </Link>
+        </PageLink>
         <span className="mod-meta">
           #{g.id} · by {shortAddress(g.author)}
           {g.locked && <em className="mod-badge is-locked">LOCKED</em>}

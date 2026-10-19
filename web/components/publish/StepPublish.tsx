@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import PageLink from "@/components/PageLink";
 import { useConnection } from "wagmi";
 import { CHAIN } from "@/lib/chain";
 import { DONE, PHASES, type usePublish } from "@/lib/publish/client";
@@ -37,9 +37,9 @@ export default function StepPublish({ draft, scan, onReset, publish }: Props) {
           <strong>{draft.meta.title}</strong> is on IPFS and recorded on Arc under your wallet. It&apos;s on Explore now.
         </p>
         <div className="pub-done-actions">
-          <Link href={`/explore?q=${encodeURIComponent(result.slug)}`} className="btn-ghost">
+          <PageLink href={`/explore?q=${encodeURIComponent(result.slug)}`} className="btn-ghost">
             See it on Explore
-          </Link>
+          </PageLink>
           <a href={txUrl(result.txHash)} target="_blank" rel="noopener noreferrer" className="btn-ghost">
             View on Arc ↗
           </a>

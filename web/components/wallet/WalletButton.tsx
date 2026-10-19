@@ -5,7 +5,7 @@ import { useConnection, useDisconnect } from "wagmi";
 import CopyButton from "@/components/CopyButton";
 import PikaGoldCoin from "@/components/PikaGoldCoin";
 import { PixelStar } from "@/components/md-format";
-import Link from "next/link";
+import PageLink from "@/components/PageLink";
 import { useProfile } from "@/lib/likes/client";
 import { useIsModerator } from "@/lib/moderation/client";
 import { formatUsdc } from "@/lib/tips/amount";
@@ -106,9 +106,9 @@ function ConnectedWallet({ address, className }: { address: `0x${string}`; class
           )}
 
           {moderator && (
-            <Link href="/mod" className="wallet-mod" onClick={() => setOpen(false)}>
+            <PageLink href="/mod" className="wallet-mod" onClick={() => setOpen(false)}>
               Moderation desk →
-            </Link>
+            </PageLink>
           )}
 
           <button
