@@ -12,7 +12,7 @@ export interface CardPerk {
 }
 
 export interface TradingCardProps {
-  theme: "violet" | "navy" | "emerald" | "teal" | "ruby";
+  theme: "violet" | "navy" | "emerald" | "ruby";
   kicker: string;
   name: string;
   stat: string;

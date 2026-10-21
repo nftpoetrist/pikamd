@@ -210,10 +210,10 @@ body {
   gap: 10px;
 }
 
-/* Menu links show from 1120px. Measured widest row (not connected, a menu page active so its link
-   carries the cursor dot): 22 + logo 123 + 24 + menu 472 + 24 + right 368 + 22 = 1055px inside the
-   20px side margins = 1095px window; 1120 leaves 25px to spare. A wallet's side panel (MetaMask)
-   leaves about 1130px on a laptop, so the menu stays. Below it, ☰ */
+/* Menu links on one row from 1120px. Measured widest row (not connected, a menu page active so its
+   link carries the cursor dot): 22 + logo 123 + 24 + menu 472 + 24 + right 368 + 22 = 1055px inside
+   the 20px side margins = 1095px window; 1120 leaves 25px to spare. From 640 to 1119px they move to
+   a second row (below); under 640px, the ☰ menu */
 .nav-center {
   display: none;
   position: relative;
@@ -537,10 +537,11 @@ body {
 }
 
 /* Four cards: one centered row when they fit (4 × 250 + 3 × 40 = 1120px inside the 20px margins),
-   otherwise two by two instead of three and one; a phone stacks them */
+   otherwise two by two instead of three and one; a phone stacks them. The 20px side margins stay:
+   two cards side by side only from 580px, so the 7px frames never reach the screen edge */
 @media (max-width: 1159px) {
   .tcg-row {
-    max-width: 540px; /* 2 × 250 + 40 */
+    max-width: min(540px, 100% - 40px); /* 2 × 250 + 40 */
     margin-inline: auto;
   }
 }
@@ -623,24 +624,7 @@ body {
   15%, 35%      { transform: scale(1.12); }
 }
 
-/* Theme candidates for card 004 (agents) */
-.tcg-teal {
-  --tcg-1: #031719; /* deepest */
-  --tcg-2: #083337;
-  --tcg-3: #0E6169;
-  --tcg-4: #86D6D8; /* labels */
-  --tcg-5: #DDF6F6; /* highlight */
-  --frame: #E6EAF5;
-  --frame-light: #FFFFFF;
-  --frame-shade: #8D9BC2;
-  --card-glow: rgba(110, 220, 225, 0.22);
-  --stat: #FFFFFF;
-  --stat-shadow: #0E6169;
-  --art-glow: rgba(255, 203, 5, 0.26);
-  --strip-a: #C9D3EE;
-  --strip-b: #FFFFFF;
-  --strip-ink: #083337;
-}
+/* Theme: ruby, framed in brand gold (card 004, agents) */
 .tcg-ruby {
   --tcg-1: #1A0508; /* deepest */
   --tcg-2: #3B0C16;

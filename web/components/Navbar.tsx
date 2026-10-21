@@ -107,7 +107,7 @@ export default function Navbar() {
           </span>
         </PageLink>
 
-        {/* Centered between equal side columns that never shrink below their content (globals.css .nav-inner); shown from 1120px */}
+        {/* One row from 1120px (centered between side columns that never shrink below their content), a second row from 640 to 1119px, the ☰ menu below (globals.css .nav-inner) */}
         <div className="nav-center">
           <Suspense fallback={<NavLinks pathname={null} onNavigate={close} />}>
             <ActiveNavLinks onNavigate={close} indicator />
