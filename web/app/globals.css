@@ -4,6 +4,10 @@
    DESIGN TOKENS (PikaStake paletinden)
 ══════════════════════════════════════════════ */
 :root {
+  /* Room the fixed navbar takes above the page: 14px top + 64px bar + 18px clear = 96px on one row.
+     --nav-extra is how much taller the two-row navbar is (see .nav-inner, 640–1119px) */
+  --nav-extra: 0px;
+  --nav-space: calc(96px + var(--nav-extra));
   --y1: #FFCB05;   /* brand yellow */
   --y2: #FFD740;   /* light yellow   */
   --g1: #F0A500;   /* deep gold      */
@@ -20,6 +24,12 @@
   --orange: #FF9F43; /* needs review */
   --green: #7BD88F;  /* done / clean */
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Two-row navbar (640–1119px, see .nav-inner): a 56px menu row, its 3px divider included (measured). Unlayered like the
+   tokens above, so it wins over them (a rule inside @layer would lose to unlayered :root) */
+@media (min-width: 640px) and (max-width: 1119px) {
+  :root { --nav-extra: 56px; }
 }
 
 @theme inline {
@@ -437,6 +447,30 @@ body {
   .nav-mobile { display: none; }
 }
 
+/* 640–1119px (a tablet, or a laptop with a wallet's side panel open): two rows instead of hiding the
+   menu. Top row: logo and buttons, as on one row. Bottom row: the menu links centered, under the
+   same dashed gold divider as the phone menu. Below 640px, Publish and the wallet live in the ☰
+   menu, so the menu does too. */
+@media (min-width: 640px) and (max-width: 1119px) {
+  .nav-inner {
+    height: auto;
+    grid-template-columns: auto 1fr;
+    grid-template-areas: "logo right" "menu menu";
+  }
+  .nav-left { grid-area: logo; height: 64px; }
+  .nav-right { grid-area: right; height: 64px; }
+  .nav-center {
+    grid-area: menu;
+    display: flex;
+    justify-content: center;
+    height: 56px;
+    margin: 0 -22px; /* the divider spans the whole bar, like the phone menu's */
+    border-top: 3px dashed rgba(255, 203, 5, 0.18);
+  }
+  .nav-menu-btn,
+  .nav-mobile { display: none; }
+}
+
 .nav-link:focus-visible,
 .btn-gold:focus-visible,
 .btn-ghost:focus-visible,
@@ -449,6 +483,9 @@ body {
   .nav-dot { animation: none; }
   .nav-indicator { transition: none; }
 }
+
+/* Page content starts below the fixed navbar (one or two rows) */
+.site-main { padding-top: var(--nav-space); }
 
 /* Pixel panel (same visual language as the navbar) */
 .pixel-panel {
@@ -470,7 +507,7 @@ body {
 
 /* ── Page content vertically centered in the first screen (home, explore) ── */
 .page-center {
-  min-height: calc(100svh - 96px); /* 96px = layout top padding under the fixed navbar */
+  min-height: calc(100svh - var(--nav-space)); /* the layout's top padding under the fixed navbar */
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -996,7 +1033,8 @@ body {
    card's bottom ≈ 633px + 1.9 × title size, so title ≤ (height − 641px) / 1.9 (≈ 41px at 720, 67px
    at 768, the full 76px from ~800) */
 @media (max-height: 820px) {
-  .hero-compact .hero-plaque .hero-title { font-size: clamp(34px, calc(52.6svh - 337px), 76px); }
+  /* Each px of title costs 1.9px of height: a taller navbar takes it back from the title */
+  .hero-compact .hero-plaque .hero-title { font-size: clamp(34px, calc(52.6svh - 337px - var(--nav-extra) / 1.9), 76px); }
 }
 
 /* Phones: a smaller cartouche hugging the text, 2× ornaments, no swashes */
@@ -2351,8 +2389,8 @@ body {
 /* The file with highlights */
 .scan-file {
   position: sticky;
-  top: 96px;
-  max-height: min(640px, calc(100svh - 120px));
+  top: var(--nav-space);
+  max-height: min(640px, calc(100svh - var(--nav-space) - 24px));
   overflow: auto;
   padding: 10px 0;
   font-size: 18px;
@@ -2622,8 +2660,8 @@ body {
   }
 
   .pub-panel.is-working {
-    /* 96px layout padding + 8px above, 20px below */
-    height: calc(100svh - 124px);
+    /* the layout's top padding + 8px above, 20px below */
+    height: calc(100svh - var(--nav-space) - 28px);
     min-height: 480px;
     margin-bottom: 0;
     padding-top: 16px;

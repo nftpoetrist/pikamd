@@ -54,7 +54,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </div>
         <WalletProvider>
           <Navbar />
-          <div className="relative z-10 flex flex-1 flex-col pt-24">{children}</div>
+          <div className="site-main relative z-10 flex flex-1 flex-col">{children}</div>
           <Footer />
         </WalletProvider>
       </body>
