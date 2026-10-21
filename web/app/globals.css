@@ -536,6 +536,15 @@ body {
   gap: 40px; /* outer frames (7px each side) + clear space */
 }
 
+/* Four cards: one centered row when they fit (4 × 250 + 3 × 40 = 1120px inside the 20px margins),
+   otherwise two by two instead of three and one; a phone stacks them */
+@media (max-width: 1159px) {
+  .tcg-row {
+    max-width: 540px; /* 2 × 250 + 40 */
+    margin-inline: auto;
+  }
+}
+
 /* Theme: violet, framed in brand gold */
 .tcg-violet {
   --frame: var(--y1);
@@ -612,6 +621,57 @@ body {
 @keyframes heart-beat {
   0%, 60%, 100% { transform: scale(1); }
   15%, 35%      { transform: scale(1.12); }
+}
+
+/* Theme candidates for card 004 (agents) */
+.tcg-teal {
+  --tcg-1: #031719; /* deepest */
+  --tcg-2: #083337;
+  --tcg-3: #0E6169;
+  --tcg-4: #86D6D8; /* labels */
+  --tcg-5: #DDF6F6; /* highlight */
+  --frame: #E6EAF5;
+  --frame-light: #FFFFFF;
+  --frame-shade: #8D9BC2;
+  --card-glow: rgba(110, 220, 225, 0.22);
+  --stat: #FFFFFF;
+  --stat-shadow: #0E6169;
+  --art-glow: rgba(255, 203, 5, 0.26);
+  --strip-a: #C9D3EE;
+  --strip-b: #FFFFFF;
+  --strip-ink: #083337;
+}
+.tcg-ruby {
+  --tcg-1: #1A0508; /* deepest */
+  --tcg-2: #3B0C16;
+  --tcg-3: #74192C;
+  --tcg-4: #F0A0B0; /* labels */
+  --tcg-5: #FFE4EA; /* highlight */
+  --frame: var(--y1);
+  --frame-light: #FFE680;
+  --frame-shade: var(--g3);
+  --card-glow: rgba(240, 110, 140, 0.22);
+  --stat: var(--y1);
+  --stat-shadow: var(--g4);
+  --art-glow: rgba(255, 203, 5, 0.26);
+  --strip-a: var(--g1);
+  --strip-b: #FFE680;
+  --strip-ink: var(--ink);
+}
+
+/* Data pixels stepping along the cable from the page to the agent (PixelAgents) */
+.tcg-agents {
+  filter: drop-shadow(0 0 12px rgba(255, 203, 5, 0.35));
+}
+.tcg-pulse {
+  animation: tcg-pulse 1.1s steps(11) infinite;
+}
+.tcg-pulse-late {
+  animation-delay: -0.55s;
+}
+@keyframes tcg-pulse {
+  from { transform: translateX(0); }
+  to   { transform: translateX(11px); }
 }
 
 /* Keeps the 63:88 card ratio as a minimum; grows instead of clipping text */
@@ -890,7 +950,8 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tcg-coin, .tcg-blocks, .tcg-heart, .tcg-art::after { animation: none; }
+  .tcg-coin, .tcg-blocks, .tcg-heart, .tcg-pulse, .tcg-art::after { animation: none; }
+  .tcg-pulse-late { display: none; }
 }
 
 /* ── Explore: hero title ────────────────────────────────────── */
