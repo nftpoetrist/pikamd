@@ -1,33 +1,37 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import StepBar, { STEPS } from "@/components/publish/StepBar";
 import StepCleanup, { openCount } from "@/components/publish/StepCleanup";
 import StepDetails, { detailsProblem } from "@/components/publish/StepDetails";
 import StepFile from "@/components/publish/StepFile";
 import StepPublish from "@/components/publish/StepPublish";
+import { useLibrary } from "@/lib/library/client";
 import { DONE, usePublish } from "@/lib/publish/client";
 import { EMPTY_DRAFT, clearDraft, loadDraft, saveDraft, type Draft, type Step } from "@/lib/publish/draft";
 import { guessMeta } from "@/lib/publish/templates";
 import { MAX_BYTES, byteLength, scanGuideline, stripInvisible } from "@/lib/scan";
-
-/** While the page reads the published names: the panel as it looks before the draft is restored. */
-export function PublishFlowShell() {
-  return (
-    <section className="pub-panel pixel-panel" aria-label="Publish a guideline" aria-busy="true">
-      <StepBar current={1} reachable={1} onSelect={() => {}} finished={false} />
-    </section>
-  );
-}
+import type { GuidelineCard } from "@/lib/types";
 
 // Publish quest: File → Clean up → Details → Publish (ARCHITECTURE §3 Scenario A, §9.1.1).
 // Clean up can't be skipped: each step unlocks only when the one before it is complete.
-export default function PublishFlow({ takenSlugs }: { takenSlugs: string[] }) {
+export default function PublishFlow({ guidelines }: { guidelines: GuidelineCard[] }) {
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [ready, setReady] = useState(false);
   const panelRef = useRef<HTMLElement>(null);
+  // Names already published, from the page's shell, refreshed when the page opens
+  const library = useLibrary(guidelines);
+  const takenSlugs = useMemo(() => library.map((g) => g.slug), [library]);
 
-  // The draft lives in this browser: restore it once, then save every change.
+  const update = useCallback((patch: Partial<Draft>) => setDraft((d) => ({ ...d, ...patch })), []);
+  // Publish step state lives here so its button can sit in the footer.
+  const publish = usePublish(draft, update);
+  const busy = publish.phase >= 0 && publish.phase < DONE;
+  const published = publish.phase >= DONE;
+
+  // The draft lives in this browser: restore it once, then save every change until it's
+  // published. Once it is, it's gone from storage: the next visit starts a new guideline, while
+  // this one keeps showing "Published".
   useEffect(() => {
     const saved = loadDraft();
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore from storage after hydration
@@ -36,14 +40,13 @@ export default function PublishFlow({ takenSlugs }: { takenSlugs: string[] }) {
   }, []);
   useEffect(() => {
     if (!ready) return;
+    if (published) {
+      clearDraft();
+      return;
+    }
     const t = window.setTimeout(() => saveDraft(draft), 300);
     return () => window.clearTimeout(t);
-  }, [draft, ready]);
-
-  const update = useCallback((patch: Partial<Draft>) => setDraft((d) => ({ ...d, ...patch })), []);
-  // Publish step state lives here so its button can sit in the footer.
-  const publish = usePublish(draft, update);
-  const busy = publish.phase >= 0 && publish.phase < DONE;
+  }, [draft, ready, published]);
 
   const scan = useMemo(() => scanGuideline(draft.content, draft.privateTerms), [draft.content, draft.privateTerms]);
 
@@ -78,6 +81,15 @@ export default function PublishFlow({ takenSlugs }: { takenSlugs: string[] }) {
     setDraft(EMPTY_DRAFT);
     publish.reset();
   };
+
+  // Next keeps a visited page's state while it's hidden, so leaving after a publish would bring
+  // the published file back with the page. React runs this cleanup when the page is hidden or
+  // left: the next visit starts a new guideline.
+  const startOver = useEffectEvent(reset);
+  useEffect(() => {
+    if (!published) return;
+    return () => startOver();
+  }, [published]);
 
   const label = STEPS.find((s) => s.step === step)?.label;
   const finished = step === 4 && publish.phase >= DONE;

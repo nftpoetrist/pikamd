@@ -1,33 +1,18 @@
 import type { Metadata } from "next";
-import { connection } from "next/server";
-import { Suspense } from "react";
-import ExploreEmpty from "@/components/ExploreEmpty";
-import MdLanes from "@/components/MdLanes";
+import ExploreLibrary from "@/components/ExploreLibrary";
 import PageTransition from "@/components/PageTransition";
-import ExploreSearch, { SearchBoxShell } from "@/components/search/ExploreSearch";
 import { listGuidelineCards } from "@/lib/data/guidelines";
-import type { GuidelineCard } from "@/lib/types";
 
 export const metadata: Metadata = {
   title: "Explore · PikaMd",
   description: "Browse guidelines shared by the community and add the ones you like to your collection. Your agent can use them over MCP.",
 };
 
-const TOP_TAGS = 8;
+// The whole page is prerendered, cards included, so a navigation shows them at once; the browser
+// then refreshes the list (lib/data/guidelines.ts: Freshness).
+export default async function ExplorePage() {
+  const guidelines = await listGuidelineCards();
 
-/** Most used tags first (ties alphabetical), for the search filter buttons. */
-function topTags(guidelines: GuidelineCard[]): string[] {
-  const counts = new Map<string, number>();
-  for (const g of guidelines) for (const t of g.tags) counts.set(t, (counts.get(t) ?? 0) + 1);
-  return [...counts.entries()]
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-    .slice(0, TOP_TAGS)
-    .map(([t]) => t);
-}
-
-// The hero is prerendered; the library is read at request time (lib/data/guidelines.ts:
-// Freshness), so a new guideline shows up on the next visit.
-export default function ExplorePage() {
   return (
     <PageTransition>
       <main className="flex flex-1 flex-col">
@@ -41,26 +26,9 @@ export default function ExplorePage() {
             <span>Browse guidelines shared by the community</span>{" "}
             <span>Add the ones you like to your collection and your agent can use them over MCP</span>
           </p>
-          <Suspense fallback={<SearchBoxShell />}>
-            <Library />
-          </Suspense>
+          <ExploreLibrary initial={guidelines} />
         </div>
       </main>
     </PageTransition>
-  );
-}
-
-async function Library() {
-  await connection(); // never read at build time: the list is per request
-  const guidelines = await listGuidelineCards();
-  if (guidelines.length === 0) return <ExploreEmpty />;
-  return (
-    <>
-      {/* Reads ?q= on the client, hence its own boundary */}
-      <Suspense fallback={<SearchBoxShell />}>
-        <ExploreSearch topTags={topTags(guidelines)} />
-      </Suspense>
-      <MdLanes guidelines={guidelines} />
-    </>
   );
 }

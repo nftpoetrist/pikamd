@@ -7,6 +7,7 @@ import { useConnection } from "wagmi";
 import { getChainId, switchChain, waitForTransactionReceipt, writeContract } from "wagmi/actions";
 import { CHAIN, REGISTRY } from "@/lib/chain";
 import { useHydrated } from "@/lib/hydrated";
+import { LIBRARY_KEY } from "@/lib/library/client";
 import { sameWallet } from "@/lib/likes/rules";
 import { messageFor } from "@/lib/publish/client";
 import { REGISTRY_ABI } from "@/lib/registry-abi";
@@ -72,7 +73,8 @@ export function useVisibility() {
       await api("/api/guidelines/visibility", { method: "POST", body: { txHash } });
       setPendingTx(null);
       await client.invalidateQueries({ queryKey: OWNED_KEY });
-      router.refresh(); // the page's listed guidelines (Saved tab, card props) follow
+      void client.invalidateQueries({ queryKey: LIBRARY_KEY }); // Explore, Saved and card lists follow
+      router.refresh();
     },
     [client, router],
   );

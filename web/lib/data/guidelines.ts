@@ -13,11 +13,12 @@ import { check, supabase } from "@/lib/server/supabase";
 //
 // Freshness: "use cache" keeps entries in each server instance's own memory, and revalidateTag
 // only clears the instance that calls it (next/dist/server/lib/cache-handlers/default.js; Vercel
-// docs, Runtime Cache). With a minute-long cache, a publish showed up on Explore minutes late
-// (2026-10-22). So the lists live for a second ("seconds": a burst of requests on one instance
-// shares one query) and pages read them at request time, inside <Suspense> and after
-// connection() (a read during the build only raced Next's prerender phases). The tag still
-// clears the calling instance at once.
+// docs, Runtime Cache), so a cached list can be minutes old (2026-10-22). Two lists, then:
+// - pages get the card list in their prerendered shell (stale ≥ 5 minutes is what Next needs to
+//   put it in the App Shell), so a navigation shows the cards at once, never an empty fallback;
+// - the browser then asks GET /api/guidelines (lib/library/client.ts), which reads a list that
+//   lives for one second, and swaps in whatever changed.
+// Reads that serve a single request (search, MCP, a guideline's page) use the one-second list.
 
 export const GUIDELINES_TAG = "guidelines";
 
@@ -32,14 +33,26 @@ export async function listGuidelines(): Promise<Guideline[]> {
 }
 
 /**
- * The list for pages that show cards (Explore, My Collection): no file contents, so a page's size
- * doesn't grow with every file in the library. A preview loads its file from /api/guidelines/[slug].
+ * The list for pages that show cards (Explore, My Collection, Publish's name check), in their
+ * prerendered shell: no file contents, so a page's size doesn't grow with every file in the
+ * library. A preview loads its file from /api/guidelines/[slug].
  */
 export async function listGuidelineCards(): Promise<GuidelineCard[]> {
   "use cache";
+  cacheLife("minutes");
+  cacheTag(GUIDELINES_TAG);
+  return readCards();
+}
+
+/** The same cards, at most a second old: what the browser refreshes the page's list with. */
+export async function listFreshGuidelineCards(): Promise<GuidelineCard[]> {
+  "use cache";
   cacheLife("seconds");
   cacheTag(GUIDELINES_TAG);
+  return readCards();
+}
 
+async function readCards(): Promise<GuidelineCard[]> {
   const rows = await listedRows<GuidelineCardRow>(CARD_COLUMNS);
   if (!rows) return process.env.NODE_ENV !== "production" ? MOCK_GUIDELINES.map(toCard) : [];
   return mapRows(rows, rowToCard);

@@ -6,6 +6,7 @@ import { Suspense, useRef, useState, type KeyboardEvent } from "react";
 import { useConnection } from "wagmi";
 import MdCard from "@/components/MdCard";
 import { useSavedSlugs, type Saved } from "@/lib/collection/client";
+import { useLibrary } from "@/lib/library/client";
 import { useSharedList, type SharedList } from "@/lib/owned/client";
 import { messageFor } from "@/lib/publish/client";
 import type { GuidelineCard } from "@/lib/types";
@@ -21,36 +22,14 @@ const TABS: { tab: Tab; label: string }[] = [
 // My Collection shelf, two tabs: the guidelines this wallet saved (K12: on the server, the list its
 // MCP key opens), and the ones this wallet shared
 // (with Hide / Show again). The tab is in the URL (?tab=shared), read on the client: Suspense keeps
-// the rest of the page prerendered, the fallback is the same shelf on its first tab.
-export default function CollectionPanel({ guidelines }: { guidelines: GuidelineCard[] }) {
+// the rest of the page prerendered, the fallback is the same shelf on its first tab. The library
+// comes from the page's shell and is refreshed in place (lib/library/client.ts).
+export default function CollectionPanel({ guidelines: initial }: { guidelines: GuidelineCard[] }) {
+  const guidelines = useLibrary(initial);
   return (
     <Suspense fallback={<Shelf guidelines={guidelines} tab="saved" />}>
       <ShelfFromUrl guidelines={guidelines} />
     </Suspense>
-  );
-}
-
-/**
- * While the page reads the library: the same panel as before hydration (first tab, unknown
- * counts, empty shelf), without the hooks, so nothing is fetched twice.
- */
-export function CollectionPanelShell() {
-  return (
-    <section className="collection-panel pixel-panel" aria-label="My collection" aria-busy="true">
-      <header className="collection-head">
-        <div className="collection-tabs" inert>
-          {TABS.map(({ tab, label }) => (
-            <button key={tab} type="button" className={tab === "saved" ? "btn-gold collection-tab" : "btn-ghost collection-tab"}>
-              {label}
-              <span className="collection-count">–</span>
-            </button>
-          ))}
-        </div>
-        <PageLink href="/connect" className="btn-ghost">
-          Connect your agent
-        </PageLink>
-      </header>
-    </section>
   );
 }
 
