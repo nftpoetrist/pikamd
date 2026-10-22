@@ -11,17 +11,27 @@ import ContentView from "@/components/guideline/ContentView";
 import FileActions from "@/components/guideline/FileActions";
 import { KIND_LABEL, shortAddress } from "@/components/md-format";
 import { CHAIN } from "@/lib/chain";
-import { getGuideline } from "@/lib/data/guidelines";
+import { getGuideline, listGuidelineCards } from "@/lib/data/guidelines";
 import RawLink from "@/components/guideline/RawLink";
 import ReportButton from "@/components/guideline/ReportButton";
 
 // A guideline's own page (ARCHITECTURE §7.2, §11): the file, who wrote it, its record on Arc
-// checked in the browser, and how to use it with an agent. The shell is static; the guideline
-// streams in (cacheComponents: its slug is only known at request time, and the live site starts
-// with none to list at build time).
+// checked in the browser, and how to use it with an agent.
+//
+// The guidelines listed at build time are prerendered whole, so a direct visit gets the file in
+// the HTML (a streamed boundary is revealed no sooner than 300 ms after the first paint: React's
+// throttle). Newer ones get the App Shell on their first visit and are stored complete for the
+// next (guides/incremental-static-regeneration-cache-components); a <Link prefetch> starts that
+// early. Hide and lock clear them through the guidelines tag.
 
 const explorer = CHAIN.blockExplorers?.default.url;
 const LICENSE_NAME = { "CC-BY-4.0": "CC BY 4.0", "CC0-1.0": "CC0 1.0" } as const;
+
+/** Cache Components needs at least one param: an empty library builds a placeholder that is a 404. */
+export async function generateStaticParams() {
+  const slugs = (await listGuidelineCards()).map((g) => ({ slug: g.slug }));
+  return slugs.length > 0 ? slugs : [{ slug: "no-guidelines-yet" }];
+}
 
 export async function generateMetadata({ params }: PageProps<"/g/[slug]">): Promise<Metadata> {
   const g = await getGuideline((await params).slug);

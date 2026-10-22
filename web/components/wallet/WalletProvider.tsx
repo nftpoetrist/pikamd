@@ -1,11 +1,12 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { WagmiProvider } from "wagmi";
 import TipDialog from "@/components/tips/TipDialog";
 import WalletModal from "@/components/wallet/WalletModal";
 import { useMoveLocalCollection } from "@/lib/collection/client";
+import { persistQueries } from "@/lib/query-persist";
 import { useSessionFollowsWallet } from "@/lib/wallet/session";
 import { wagmiConfig } from "@/lib/wallet/config";
 import { useRestoreWalletConnect } from "@/lib/wallet/walletconnect";
@@ -22,6 +23,8 @@ function SessionSync() {
 // native modal dialogs: the one opened last (the wallet picker, from the tip dialog) is on top.
 export default function WalletProvider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
+  // A returning visitor's last-known session, collection, PikaGold… right after hydration
+  useEffect(() => persistQueries(queryClient), [queryClient]);
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>

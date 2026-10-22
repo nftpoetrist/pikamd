@@ -18,7 +18,8 @@ import { check, supabase } from "@/lib/server/supabase";
 //   put it in the App Shell), so a navigation shows the cards at once, never an empty fallback;
 // - the browser then asks GET /api/guidelines (lib/library/client.ts), which reads a list that
 //   lives for one second, and swaps in whatever changed.
-// Reads that serve a single request (search, MCP, a guideline's page) use the one-second list.
+// Search, MCP and /raw use the one-second list; a guideline's page reads just its own row
+// (getGuideline), cached so a link can prefetch it.
 
 export const GUIDELINES_TAG = "guidelines";
 
@@ -89,8 +90,20 @@ export async function listGuidelinesForAgents(): Promise<Guideline[]> {
   return forAgents(await listGuidelines());
 }
 
+/**
+ * One listed guideline with its file (its page, the preview). Only that row is read, and it's
+ * cached long enough (stale ≥ 5 minutes) for a `<Link prefetch>` to bring the page along before
+ * the click. Agents and /raw don't use it: they read the one-second list.
+ */
 export async function getGuideline(slug: string): Promise<Guideline | null> {
-  return (await listGuidelines()).find((g) => g.slug === slug) ?? null;
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(GUIDELINES_TAG);
+
+  const db = supabase();
+  if (!db) return process.env.NODE_ENV !== "production" ? (MOCK_GUIDELINES.find((g) => g.slug === slug) ?? null) : null;
+  const rows = check(await db.from("listed_guidelines").select(GUIDELINE_COLUMNS).eq("slug", slug).limit(1), "get guideline") as GuidelineRow[];
+  return mapRows(rows, rowToGuideline)[0] ?? null;
 }
 
 /**

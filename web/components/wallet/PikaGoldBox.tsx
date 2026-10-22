@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
-import { useConnection } from "wagmi";
 import PikaGoldCoin from "@/components/PikaGoldCoin";
 import { useProfile } from "@/lib/likes/client";
 import { openWalletModal } from "@/lib/wallet/modal";
+import { useKnownWallet } from "@/lib/wallet/known";
 
 const noop = () => () => {};
 const NOTE_MS = 2600;
@@ -21,9 +21,10 @@ const formatGold = (n: number) =>
 // (a like on one of your guidelines), the coin hops and a "+N" floats up.
 export default function PikaGoldBox() {
   const hydrated = useSyncExternalStore(noop, () => true, () => false);
-  const { address, status } = useConnection();
-  const connected = hydrated && status === "connected" && !!address;
-  const profile = useProfile(connected ? address : undefined);
+  const known = useKnownWallet();
+  const address = (hydrated && known) || undefined;
+  const connected = !!address;
+  const profile = useProfile(address);
   const gold = connected ? profile.data?.pikagold : undefined;
 
   const [note, setNote] = useState(false);

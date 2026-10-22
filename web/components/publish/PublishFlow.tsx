@@ -101,6 +101,9 @@ export default function PublishFlow({ guidelines }: { guidelines: GuidelineCard[
       ref={panelRef}
       className={`pub-panel pixel-panel${ready && draft.content ? " is-working" : ""}${finished ? " is-finished" : ""}`}
       aria-label="Publish a guideline"
+      // Until the draft is restored only the step bar shows: hold a screen's height so the footer
+      // doesn't sit under it and then jump down when the steps open
+      style={ready ? undefined : { minHeight: "100svh" }}
     >
       <StepBar current={step} reachable={reachable} onSelect={go} finished={finished} />
 

@@ -7,6 +7,7 @@ import { useSavedSlugs, useSignedIn } from "@/lib/collection/client";
 import { EXAMPLE_ASKS, KEY_PLACEHOLDER, MCP_TOOLS, agentPrompt, agentSetups, maskKey, mcpUrl, type AgentId } from "@/lib/mcp/connect";
 import { useKeyActions, useMcpKey } from "@/lib/mcp/key-client";
 import { messageFor } from "@/lib/publish/client";
+import { useWalletUnknown } from "@/lib/wallet/known";
 import { openWalletModal } from "@/lib/wallet/modal";
 import { useSignIn } from "@/lib/wallet/session";
 
@@ -30,7 +31,8 @@ function ago(iso: string): string {
 export default function ConnectPanel() {
   // The server is this site's own /mcp route, so the URL follows whatever domain serves the page.
   const origin = useSyncExternalStore(noSubscribe, () => window.location.origin, () => null);
-  const { wallet, signed } = useSignedIn();
+  const unknown = useWalletUnknown();
+  const { wallet, signed, pending } = useSignedIn();
   const signIn = useSignIn();
   const keyInfo = useMcpKey();
   const actions = useKeyActions();
@@ -41,13 +43,15 @@ export default function ConnectPanel() {
   const [error, setError] = useState<string | null>(null);
   const tabsId = useId();
 
-  // Nothing until hydrated: the server sees neither the origin nor the wallet.
-  if (origin === null || saved.state === "loading" || (signed && keyInfo.isPending)) {
-    return <section className="connect-panel pixel-panel" aria-label="Connect your agent" aria-busy="true" />;
-  }
+  // Everything but step 01 shows at once. Step 01 depends on the wallet, the session and the key,
+  // which the server can't see: until they're known its row keeps its place. The MCP address
+  // comes from this page's origin, known once the page runs in the browser; until then the boxes
+  // that carry it keep their place too, so a wrong address never flashes.
+  const checking = origin === null || unknown || (wallet !== null && pending) || (signed && keyInfo.isPending);
+  const hideUntilKnown = (known: boolean) => (known ? undefined : ({ visibility: "hidden" } as const));
 
   const record = signed ? (keyInfo.data ?? null) : null;
-  const url = mcpUrl(origin);
+  const url = mcpUrl(origin ?? "");
   // The full key exists only in this page's memory, right after it's created (shown once). If
   // another tab or device replaced or revoked it, the record no longer matches and it's hidden.
   const key = freshKey && record && record.masked === maskKey(freshKey) ? freshKey : null;
@@ -110,7 +114,13 @@ export default function ConnectPanel() {
           One key links your agent to your wallet&apos;s collection. You&apos;ll see it only once, so copy it right away
         </p>
 
-        {!wallet ? (
+        {checking ? (
+          <div className="connect-actions" aria-busy="true">
+            <button type="button" className="btn-gold" disabled tabIndex={-1} aria-hidden="true" style={hideUntilKnown(false)}>
+              Connect Wallet
+            </button>
+          </div>
+        ) : !wallet ? (
           <div className="connect-actions">
             <button type="button" className="btn-gold" onClick={openWalletModal}>
               Connect Wallet
@@ -181,10 +191,10 @@ export default function ConnectPanel() {
             <CopyButton text={agentPrompt(url, shownKey)} label="Copy prompt" disabled={!key} />
           </div>
           {/* Scrolls inside its box (people copy it more than read it); focusable so keyboards can scroll it */}
-          <pre className="pub-prompt-text connect-prompt-text" tabIndex={0} aria-label="Prompt for your agent">
+          <pre className="pub-prompt-text connect-prompt-text" tabIndex={0} aria-label="Prompt for your agent" style={hideUntilKnown(origin !== null)}>
             {agentPrompt(url, shownKey)}
           </pre>
-          <p className={key ? "pub-hint" : "pub-hint is-warn"}>
+          <p className={key ? "pub-hint" : "pub-hint is-warn"} style={hideUntilKnown(!checking)}>
             {key
               ? "Your key is part of this prompt, so it stays in your agent's chat history. Prefer to keep it out? Use the manual setup below"
               : record
@@ -221,7 +231,7 @@ export default function ConnectPanel() {
             <p className="connect-where">{active.where}</p>
             <CopyButton text={active.snippet} />
           </div>
-          <pre className="connect-code">
+          <pre className="connect-code" style={hideUntilKnown(origin !== null)}>
             <code>{active.snippet}</code>
           </pre>
           <ul className="connect-notes">

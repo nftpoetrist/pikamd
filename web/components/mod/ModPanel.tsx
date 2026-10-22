@@ -97,7 +97,7 @@ function ModRow({ g }: { g: QueueItem }) {
   return (
     <article className="mod-row">
       <header>
-        <PageLink href={`/g/${g.slug}`} className="mod-title">
+        <PageLink href={`/g/${g.slug}`} prefetch className="mod-title">
           {g.title}
         </PageLink>
         <span className="mod-meta">

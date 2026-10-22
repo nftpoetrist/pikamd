@@ -137,7 +137,7 @@ export default function MdPreview({ guideline, card, focusLine, closing, onClose
 
         <h3 className="mdp-title">
           {title}
-          <PageLink href={`/g/${slug}`} className="mdp-page" onClick={onClose}>
+          <PageLink href={`/g/${slug}`} prefetch className="mdp-page" onClick={onClose}>
             Open its page →
           </PageLink>
         </h3>

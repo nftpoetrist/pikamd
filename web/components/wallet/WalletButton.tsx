@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
-import { useConnection, useDisconnect } from "wagmi";
+import { useDisconnect } from "wagmi";
 import CopyButton from "@/components/CopyButton";
 import PikaGoldCoin from "@/components/PikaGoldCoin";
 import { PixelStar } from "@/components/md-format";
@@ -9,6 +9,7 @@ import PageLink from "@/components/PageLink";
 import { useProfile } from "@/lib/likes/client";
 import { useIsModerator } from "@/lib/moderation/client";
 import { formatUsdc } from "@/lib/tips/amount";
+import { useKnownWallet } from "@/lib/wallet/known";
 import { openWalletModal } from "@/lib/wallet/modal";
 
 const shortAddress = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
@@ -19,10 +20,9 @@ const noop = () => () => {};
 export default function WalletButton({ className = "" }: { className?: string }) {
   // The server can't see the wallet: render the disconnected button until hydrated
   const hydrated = useSyncExternalStore(noop, () => true, () => false);
-  const { address, status } = useConnection();
-  const connected = hydrated && status === "connected" && !!address;
+  const wallet = useKnownWallet();
 
-  if (!connected) {
+  if (!hydrated || !wallet) {
     return (
       <button type="button" className={`btn-ghost ${className}`} onClick={openWalletModal}>
         <span className="nav-dot" />
@@ -30,7 +30,7 @@ export default function WalletButton({ className = "" }: { className?: string })
       </button>
     );
   }
-  return <ConnectedWallet address={address} className={className} />;
+  return <ConnectedWallet address={wallet} className={className} />;
 }
 
 function ConnectedWallet({ address, className }: { address: `0x${string}`; className: string }) {

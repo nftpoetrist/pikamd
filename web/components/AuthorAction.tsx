@@ -1,11 +1,11 @@
 "use client";
 
-import { useConnection } from "wagmi";
 import HideButton from "@/components/HideButton";
 import TipButton from "@/components/TipButton";
 import { useHydrated } from "@/lib/hydrated";
 import { sameWallet } from "@/lib/likes/rules";
 import type { GuidelineCard } from "@/lib/types";
+import { useKnownWallet } from "@/lib/wallet/known";
 
 // The third button on every card and preview: Tip for everyone else, Hide / Show for the author
 // (tipping yourself means nothing). One place decides, so every page behaves the same. The
@@ -25,8 +25,8 @@ export default function AuthorAction({
   focusable?: boolean;
 }) {
   const hydrated = useHydrated();
-  const { address, status } = useConnection();
-  const mine = hydrated && status === "connected" && !!address && guideline.id >= 1 && sameWallet(address, guideline.author.address);
+  const wallet = useKnownWallet();
+  const mine = hydrated && !!wallet && guideline.id >= 1 && sameWallet(wallet, guideline.author.address);
   if (!mine) return <TipButton guideline={guideline} authorName={authorName} focusable={focusable} />;
   return <HideButton id={guideline.id} title={guideline.title} hidden={hidden} focusable={focusable} />;
 }

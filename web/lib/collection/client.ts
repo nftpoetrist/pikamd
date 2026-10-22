@@ -2,11 +2,11 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { useConnection } from "wagmi";
 import { useHydrated } from "@/lib/hydrated";
 import { sameWallet } from "@/lib/likes/rules";
 import { ApiError, api } from "@/lib/wallet/api";
 import { useSessionWallet } from "@/lib/wallet/session";
+import { useKnownWallet, useWalletUnknown } from "@/lib/wallet/known";
 
 // The collection in the browser (K12): it belongs to the wallet and lives on the server, so the
 // same list shows on any device and the wallet's MCP key opens it for agents. Reading and changing
@@ -25,15 +25,14 @@ export type Saved =
 
 /** True when the connected wallet is the one signed in. */
 export function useSignedIn(): { wallet: `0x${string}` | null; signed: boolean; pending: boolean } {
-  const { address, status } = useConnection();
+  const wallet = useKnownWallet();
   const session = useSessionWallet();
-  const wallet = status === "connected" && address ? address : null;
   return { wallet, signed: !!wallet && !!session.data && sameWallet(session.data, wallet), pending: session.isPending };
 }
 
 export function useSavedSlugs(): Saved {
   const hydrated = useHydrated();
-  const { status } = useConnection();
+  const unknown = useWalletUnknown();
   const { wallet, signed, pending } = useSignedIn();
   const list = useQuery({
     queryKey: [...COLLECTION_KEY, wallet?.toLowerCase()],
@@ -43,7 +42,7 @@ export function useSavedSlugs(): Saved {
     retry: false,
   });
   // The server can't see the wallet: until hydration ends, render exactly what it rendered
-  if (!hydrated || status === "connecting" || status === "reconnecting") return { state: "loading" };
+  if (!hydrated || unknown) return { state: "loading" };
   if (!wallet) return { state: "disconnected" };
   if (pending) return { state: "loading" };
   if (!signed) return { state: "signed-out", wallet };

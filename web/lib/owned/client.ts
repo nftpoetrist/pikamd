@@ -16,6 +16,7 @@ import { api } from "@/lib/wallet/api";
 import { wagmiConfig } from "@/lib/wallet/config";
 import { openWalletModal } from "@/lib/wallet/modal";
 import { useSessionWallet, useSignIn } from "@/lib/wallet/session";
+import { useKnownWallet, useWalletUnknown } from "@/lib/wallet/known";
 
 // My Collection → Shared by me. Connecting the wallet is enough to see its listed guidelines
 // (public anyway, filtered from the page's list); hidden ones and Hide / Show again come after the
@@ -34,9 +35,11 @@ export type SharedList =
 export function useSharedList(listed: GuidelineCard[]): SharedList {
   // The server can't see the wallet: until hydration ends, render exactly what it rendered
   const hydrated = useHydrated();
-  const { address, status } = useConnection();
+  const wallet = useKnownWallet();
+  const unknown = useWalletUnknown();
   const session = useSessionWallet();
-  const signed = status === "connected" && !!address && !!session.data && sameWallet(session.data, address);
+  const address = wallet ?? undefined;
+  const signed = !!address && !!session.data && sameWallet(session.data, address);
   const owned = useQuery({
     queryKey: [...OWNED_KEY, address?.toLowerCase()],
     queryFn: async () => (await api<{ guidelines: OwnedGuideline[] }>("/api/me/guidelines")).guidelines,
@@ -45,8 +48,8 @@ export function useSharedList(listed: GuidelineCard[]): SharedList {
     retry: false,
   });
 
-  if (!hydrated || status === "connecting" || status === "reconnecting") return { mode: "loading" };
-  if (status !== "connected" || !address) return { mode: "disconnected" };
+  if (!hydrated || unknown) return { mode: "loading" };
+  if (!address) return { mode: "disconnected" };
   if (session.isPending) return { mode: "loading" };
   if (signed && owned.data) return { mode: "signed", wallet: address, guidelines: owned.data, signedIn: true, error: null };
   const mine = listed.filter((g) => sameWallet(g.author.address, address)).map((g) => ({ ...g, hidden: false, locked: false }));
