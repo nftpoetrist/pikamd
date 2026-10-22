@@ -121,31 +121,49 @@ test("unknown, hidden and locked guidelines can't be liked and don't count", asy
   for (const slug of ["nope", "hidden", "locked"]) {
     await assert.rejects(db.query(`select * from add_like($1, $2)`, [B, slug]), /unknown guideline/, slug);
   }
-  await db.query(`insert into stars (wallet_address, guideline_id) values ($1, 3)`, [B]); // liked before it was hidden
+  // Liked before it was hidden / locked
+  await db.query(`insert into stars (wallet_address, guideline_id) values ($1, 3), ($1, 5)`, [B]);
   const p = (await db.query(`select * from wallet_profile($1)`, [A])).rows[0];
-  assert.deepEqual(p, { pikagold: 2, guidelines: 1, tips_received: "0", tips_count: 0 }, "hidden guideline's likes don't count");
+  assert.deepEqual(p, { pikagold: 3, guidelines: 1, tips_received: "0", tips_count: 0 }, "hiding keeps the PikaGold earned, a lock removes it");
   const slugs = (await db.query(`select slug from like_counts()`)).rows.map((r) => r.slug).sort();
-  assert.deepEqual(slugs, ["secure-solidity", "tailwind-v4"]);
+  assert.deepEqual(slugs, ["secure-solidity", "tailwind-v4"], "neither shows a like count");
+  await db.query(`delete from stars where wallet_address = $1 and guideline_id = 5`, [B]); // the lock case is done
+});
+
+test("hiding and showing a guideline never changes the author's PikaGold", async () => {
+  const gold = async () => (await db.query(`select * from wallet_profile($1)`, [A])).rows[0].pikagold;
+  const D = "0x" + "d".repeat(40);
+  const before = await gold();
+  await db.query(`insert into stars (wallet_address, guideline_id) values ($1, 3)`, [D]);
+  assert.equal(await gold(), before + 1);
+  await db.query(`update guidelines set author_hidden = false where id = 3`);
+  assert.equal(await gold(), before + 1, "shown again: same PikaGold");
+  await db.query(`update guidelines set author_hidden = true where id = 3`);
+  assert.equal(await gold(), before + 1, "hidden again: same PikaGold");
+  await db.query(`update guidelines set moderator_locked = true where id = 3`);
+  assert.equal(await gold(), before - 1, "locked by a moderator: none of its likes count (B's earlier one included)");
+  await db.query(`update guidelines set moderator_locked = false where id = 3`);
+  await db.query(`delete from stars where wallet_address = $1`, [D]); // back to the shared state
 });
 
 test("unliking keeps the author's PikaGold, and liking again earns none", async () => {
   const gold = async () => (await db.query(`select * from wallet_profile($1)`, [A])).rows[0].pikagold;
   const count = async () => (await db.query(`select * from like_counts()`)).rows.find((r) => r.slug === "secure-solidity").like_count;
   const mine = async () => (await db.query(`select * from liked_slugs($1)`, [B])).rows.map((r) => r.liked_slugs);
-  assert.equal(await gold(), 2);
+  assert.equal(await gold(), 3); // the like on A's hidden guideline counts too
 
   const removed = (await db.query(`select * from remove_like($1, 'secure-solidity')`, [B.toUpperCase().replace("0X", "0x")])).rows[0];
   assert.deepEqual(removed, { removed: true, like_count: 1 });
   assert.equal(await count(), 1, "the shown count drops");
   assert.deepEqual(await mine(), [], "no longer in my likes");
-  assert.equal(await gold(), 2, "the author keeps the PikaGold");
+  assert.equal(await gold(), 3, "the author keeps the PikaGold");
   const twice = (await db.query(`select * from remove_like($1, 'secure-solidity')`, [B])).rows[0];
   assert.deepEqual(twice, { removed: false, like_count: 1 });
 
   const back = (await db.query(`select * from add_like($1, 'secure-solidity')`, [B])).rows[0];
   assert.deepEqual(back, { created: false, restored: true, like_count: 2 });
   assert.deepEqual(await mine(), ["secure-solidity"]);
-  assert.equal(await gold(), 2, "liking again earns no second PikaGold");
+  assert.equal(await gold(), 3, "liking again earns no second PikaGold");
 
   const never = (await db.query(`select * from remove_like($1, 'tailwind-v4')`, [B])).rows[0];
   assert.deepEqual(never, { removed: false, like_count: 0 }, "nothing to take back");

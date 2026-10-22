@@ -24,7 +24,8 @@ export interface AppStore {
   /** Active like count per listed guideline. */
   likeCounts(): Promise<Map<string, number>>;
   /**
-   * PikaGold (first likes on the wallet's listed guidelines, taken back or not, K22), how many it
+   * PikaGold (first likes on the wallet's guidelines, taken back or not, hidden ones included,
+   * moderator-locked ones not: K22), how many it
    * published, and the tips it received through GuidelineTips (K21): the total in USDC units as a
    * decimal string (exact, any size) and how many.
    */
