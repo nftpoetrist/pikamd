@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import ExploreEmpty from "@/components/ExploreEmpty";
 import MdLanes from "@/components/MdLanes";
@@ -24,9 +25,9 @@ function topTags(guidelines: GuidelineCard[]): string[] {
     .map(([t]) => t);
 }
 
-export default async function ExplorePage() {
-  const guidelines = await listGuidelineCards();
-
+// The hero is prerendered; the library is read at request time (lib/data/guidelines.ts:
+// Freshness), so a new guideline shows up on the next visit.
+export default function ExplorePage() {
   return (
     <PageTransition>
       <main className="flex flex-1 flex-col">
@@ -40,19 +41,26 @@ export default async function ExplorePage() {
             <span>Browse guidelines shared by the community</span>{" "}
             <span>Add the ones you like to your collection and your agent can use them over MCP</span>
           </p>
-          {guidelines.length === 0 ? (
-            <ExploreEmpty />
-          ) : (
-            <>
-              {/* Reads ?q= on the client: Suspense keeps the rest of the page prerendered */}
-              <Suspense fallback={<SearchBoxShell />}>
-                <ExploreSearch topTags={topTags(guidelines)} />
-              </Suspense>
-              <MdLanes guidelines={guidelines} />
-            </>
-          )}
+          <Suspense fallback={<SearchBoxShell />}>
+            <Library />
+          </Suspense>
         </div>
       </main>
     </PageTransition>
+  );
+}
+
+async function Library() {
+  await connection(); // never read at build time: the list is per request
+  const guidelines = await listGuidelineCards();
+  if (guidelines.length === 0) return <ExploreEmpty />;
+  return (
+    <>
+      {/* Reads ?q= on the client, hence its own boundary */}
+      <Suspense fallback={<SearchBoxShell />}>
+        <ExploreSearch topTags={topTags(guidelines)} />
+      </Suspense>
+      <MdLanes guidelines={guidelines} />
+    </>
   );
 }

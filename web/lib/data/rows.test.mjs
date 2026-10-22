@@ -47,6 +47,17 @@ test("the on-chain record comes along when the row has it", () => {
   assert.equal(rowToGuideline(row).record, undefined);
 });
 
+test("card rows map without the file, with the same checks", async () => {
+  const { CARD_COLUMNS, GUIDELINE_COLUMNS, rowToCard } = await import("./rows.ts");
+  const { content, ...card } = row;
+  void content;
+  const g = rowToCard(card);
+  assert.deepEqual([g.id, g.slug, g.stars, "content" in g], [7, "secure-solidity", 12, false]);
+  assert.equal(rowToCard({ ...card, kind: "script" }), null);
+  assert.ok(!CARD_COLUMNS.split(", ").includes("content"), "card lists never fetch files");
+  assert.deepEqual(GUIDELINE_COLUMNS.split(", ").sort(), [...CARD_COLUMNS.split(", "), "content"].sort());
+});
+
 test("the author's own rows keep both flags and never carry the file", async () => {
   const { rowToOwned } = await import("./rows.ts");
   const { content, ...card } = row;

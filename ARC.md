@@ -66,6 +66,8 @@
 | WebSocket | `wss://rpc.testnet.arc.io` |
 | CCTP domain | `26` |
 
+> ⚠ **`rpc.testnet.arc.io` eski işlemleri hash'le bulmuyor (2026-10-22'de ölçüldü):** registry'nin deploy işlemi (`0xca4f…fb55`, 2026-10-14) için `eth_getTransactionByHash` ve `eth_getTransactionReceipt` `null` dönüyor, ama bloğu (67092487) ve 2026-10-18'deki bağış işleminin makbuzu hâlâ geliyor. Yani düğüm blokları tutuyor, eski işlemlerin hash dizinini tutmuyor; sınırın tam yeri ölçülmedi. Etkisi: PikaMd'nin makbuz okuyan uçları (yayın onayı, gizleme eşitlemesi, bağış kaydı) yalnızca yeni işlemlerde çalışır (zaten öyle kullanılıyor); `auth:smoke`'taki `DEPLOY_TX` sabiti bu yüzden 2 kontrolü düşürüyor (400 yerine "Arc'tan okunamadı" 502). Kalıcı kanıt gerekiyorsa blok numarası + `eth_getLogs` kullan, hash'e güvenme.
+
 > PikaStake testnet'te `https://5042002.rpc.thirdweb.com` RPC'sini kullanıyordu. Çalışıyordu ama
 > `queryFilter` / log sorguları yavaş ve güvenilmezdi (bkz. §11). PikaMd'de resmi RPC'leri kullan.
 

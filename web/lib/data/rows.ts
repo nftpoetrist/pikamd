@@ -1,7 +1,7 @@
 // Supabase rows → domain types. Pure, so it runs in tests. The view is `listed_guidelines`
 // (web/supabase/migrations): one row per listed guideline with its latest version's content.
 import { getAddress, isAddress } from "viem";
-import type { Guideline, GuidelineKind, License, OwnedGuideline } from "@/lib/types";
+import type { Guideline, GuidelineCard, GuidelineKind, License, OwnedGuideline } from "@/lib/types";
 
 /** The contract's license list (GuidelineRegistry.licenses), by id. Append only. */
 export const LICENSES: readonly License[] = ["CC-BY-4.0"];
@@ -27,9 +27,15 @@ export type GuidelineRow = {
   tx_hash?: string | null;
 };
 
+/** A row without the file: what card lists read. */
+export type GuidelineCardRow = Omit<GuidelineRow, "content">;
+
+/** The columns `rowToCard` reads, for .select(): everything but the file. */
+export const CARD_COLUMNS =
+  "id, slug, author_address, title, description, kind, tags, license, latest_version, uses_count, stars_count, scan_status, cid, content_hash, tx_hash";
+
 /** The columns `rowToGuideline` reads, for .select(). */
-export const GUIDELINE_COLUMNS =
-  "id, slug, author_address, title, description, kind, tags, license, latest_version, uses_count, stars_count, content, scan_status, cid, content_hash, tx_hash";
+export const GUIDELINE_COLUMNS = `${CARD_COLUMNS}, content`;
 
 const HASH_RE = /^0x[0-9a-f]{64}$/;
 
@@ -64,15 +70,21 @@ export function rowToGuideline(row: GuidelineRow): Guideline | null {
 /** What agents may receive over MCP: never guidelines with unchecked flagged lines (ARCHITECTURE §8, §9.1). */
 export const forAgents = <G extends { flagged?: boolean }>(guidelines: G[]): G[] => guidelines.filter((g) => !g.flagged);
 
-/** A row of author_guidelines(wallet): the card fields plus both flags, no file content. */
-export type OwnedGuidelineRow = Omit<GuidelineRow, "content"> & { author_hidden: unknown; moderator_locked: unknown };
-
-/** The author's own guideline, or null when the row doesn't fit (flags must be real booleans: never guess "listed"). */
-export function rowToOwned(row: OwnedGuidelineRow): OwnedGuideline | null {
-  if (typeof row.author_hidden !== "boolean" || typeof row.moderator_locked !== "boolean") return null;
+/** A card (a guideline without its file), or null when the row doesn't fit. */
+export function rowToCard(row: GuidelineCardRow): GuidelineCard | null {
   const g = rowToGuideline({ ...row, content: "" });
   if (!g) return null;
   const { content, ...card } = g;
   void content;
-  return { ...card, hidden: row.author_hidden, locked: row.moderator_locked };
+  return card;
+}
+
+/** A row of author_guidelines(wallet): the card fields plus both flags, no file content. */
+export type OwnedGuidelineRow = GuidelineCardRow & { author_hidden: unknown; moderator_locked: unknown };
+
+/** The author's own guideline, or null when the row doesn't fit (flags must be real booleans: never guess "listed"). */
+export function rowToOwned(row: OwnedGuidelineRow): OwnedGuideline | null {
+  if (typeof row.author_hidden !== "boolean" || typeof row.moderator_locked !== "boolean") return null;
+  const card = rowToCard(row);
+  return card && { ...card, hidden: row.author_hidden, locked: row.moderator_locked };
 }

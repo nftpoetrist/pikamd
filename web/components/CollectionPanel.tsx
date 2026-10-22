@@ -30,6 +30,30 @@ export default function CollectionPanel({ guidelines }: { guidelines: GuidelineC
   );
 }
 
+/**
+ * While the page reads the library: the same panel as before hydration (first tab, unknown
+ * counts, empty shelf), without the hooks, so nothing is fetched twice.
+ */
+export function CollectionPanelShell() {
+  return (
+    <section className="collection-panel pixel-panel" aria-label="My collection" aria-busy="true">
+      <header className="collection-head">
+        <div className="collection-tabs" inert>
+          {TABS.map(({ tab, label }) => (
+            <button key={tab} type="button" className={tab === "saved" ? "btn-gold collection-tab" : "btn-ghost collection-tab"}>
+              {label}
+              <span className="collection-count">–</span>
+            </button>
+          ))}
+        </div>
+        <PageLink href="/connect" className="btn-ghost">
+          Connect your agent
+        </PageLink>
+      </header>
+    </section>
+  );
+}
+
 function ShelfFromUrl({ guidelines }: { guidelines: GuidelineCard[] }) {
   const [tab, setTab] = useState<Tab>(useSearchParams().get("tab") === "shared" ? "shared" : "saved");
   const select = (next: Tab) => {

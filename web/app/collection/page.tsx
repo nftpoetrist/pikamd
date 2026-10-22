@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import CollectionPanel from "@/components/CollectionPanel";
+import { connection } from "next/server";
+import { Suspense } from "react";
+import CollectionPanel, { CollectionPanelShell } from "@/components/CollectionPanel";
 import PageTransition from "@/components/PageTransition";
 import { listGuidelineCards } from "@/lib/data/guidelines";
 
@@ -8,10 +10,9 @@ export const metadata: Metadata = {
   description: "Every guideline you've collected, in one place. Connect your agent once and it can read them all over MCP.",
 };
 
-// My Collection: hero in the same layout as Home and Explore, then the saved guidelines.
-export default async function CollectionPage() {
-  const guidelines = await listGuidelineCards();
-
+// My Collection: hero in the same layout as Home and Explore, then the saved guidelines. The hero
+// is prerendered; the library is read at request time (lib/data/guidelines.ts: Freshness).
+export default function CollectionPage() {
   return (
     <PageTransition>
       <main className="flex flex-1 flex-col">
@@ -25,9 +26,16 @@ export default async function CollectionPage() {
             <span>Every guideline you&apos;ve collected, in one place</span>{" "}
             <span>Connect your agent once and it can read them all over MCP</span>
           </p>
-          <CollectionPanel guidelines={guidelines} />
+          <Suspense fallback={<CollectionPanelShell />}>
+            <Library />
+          </Suspense>
         </div>
       </main>
     </PageTransition>
   );
+}
+
+async function Library() {
+  await connection(); // never read at build time: the list is per request
+  return <CollectionPanel guidelines={await listGuidelineCards()} />;
 }

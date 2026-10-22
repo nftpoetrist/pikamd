@@ -2,39 +2,33 @@ import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import type { Guideline, GuidelineCard } from "@/lib/types";
 import { MOCK_GUIDELINES } from "@/lib/data/mock-guidelines";
-import { GUIDELINE_COLUMNS, forAgents, rowToGuideline, type GuidelineRow } from "@/lib/data/rows";
+import { CARD_COLUMNS, GUIDELINE_COLUMNS, forAgents, rowToCard, rowToGuideline, type GuidelineCardRow, type GuidelineRow } from "@/lib/data/rows";
 import { searchGuidelines as runSearch, type SearchOutcome } from "@/lib/search/engine";
 import { check, supabase } from "@/lib/server/supabase";
 
 // Single entry point for guideline reads. Supabase (`listed_guidelines`: hidden and locked
 // guidelines never appear) when SUPABASE_URL and SUPABASE_SECRET_KEY are set; otherwise the sample
-// data in development and nothing in production (samples must never pass for real guidelines). Cached for a minute and tagged, so a publish can refresh it at once
-// (revalidateTag(GUIDELINES_TAG)). Counts that change often (likes) come from /api/likes.
+// data in development and nothing in production (samples must never pass for real guidelines).
+// Counts that change often (likes) come from /api/likes.
+//
+// Freshness: "use cache" keeps entries in each server instance's own memory, and revalidateTag
+// only clears the instance that calls it (next/dist/server/lib/cache-handlers/default.js; Vercel
+// docs, Runtime Cache). With a minute-long cache, a publish showed up on Explore minutes late
+// (2026-10-22). So the lists live for a second ("seconds": a burst of requests on one instance
+// shares one query) and pages read them at request time, inside <Suspense> and after
+// connection() (a read during the build only raced Next's prerender phases). The tag still
+// clears the calling instance at once.
 
 export const GUIDELINES_TAG = "guidelines";
 
 export async function listGuidelines(): Promise<Guideline[]> {
   "use cache";
-  cacheLife("minutes");
+  cacheLife("seconds");
   cacheTag(GUIDELINES_TAG);
 
-  const db = supabase();
-  if (!db) {
-    if (process.env.NODE_ENV !== "production") return MOCK_GUIDELINES;
-    console.error("[guidelines] SUPABASE_URL / SUPABASE_SECRET_KEY are not set: listing nothing");
-    return [];
-  }
-  const rows = check(
-    await db.from("listed_guidelines").select(GUIDELINE_COLUMNS).order("block_number", { ascending: false }),
-    "list guidelines",
-  ) as GuidelineRow[];
-  const out: Guideline[] = [];
-  for (const row of rows) {
-    const g = rowToGuideline(row);
-    if (g) out.push(g);
-    else console.error(`[guidelines] skipped malformed row id=${String(row.id)}`);
-  }
-  return out;
+  const rows = await listedRows<GuidelineRow>(GUIDELINE_COLUMNS);
+  if (!rows) return process.env.NODE_ENV !== "production" ? MOCK_GUIDELINES : [];
+  return mapRows(rows, rowToGuideline);
 }
 
 /**
@@ -42,7 +36,33 @@ export async function listGuidelines(): Promise<Guideline[]> {
  * doesn't grow with every file in the library. A preview loads its file from /api/guidelines/[slug].
  */
 export async function listGuidelineCards(): Promise<GuidelineCard[]> {
-  return (await listGuidelines()).map(toCard);
+  "use cache";
+  cacheLife("seconds");
+  cacheTag(GUIDELINES_TAG);
+
+  const rows = await listedRows<GuidelineCardRow>(CARD_COLUMNS);
+  if (!rows) return process.env.NODE_ENV !== "production" ? MOCK_GUIDELINES.map(toCard) : [];
+  return mapRows(rows, rowToCard);
+}
+
+/** Listed rows, newest first; null without a database. */
+async function listedRows<R>(columns: string): Promise<R[] | null> {
+  const db = supabase();
+  if (!db) {
+    if (process.env.NODE_ENV === "production") console.error("[guidelines] SUPABASE_URL / SUPABASE_SECRET_KEY are not set: listing nothing");
+    return null;
+  }
+  return check(await db.from("listed_guidelines").select(columns).order("block_number", { ascending: false }), "list guidelines") as R[];
+}
+
+function mapRows<R extends { id: number | string }, G>(rows: R[], map: (row: R) => G | null): G[] {
+  const out: G[] = [];
+  for (const row of rows) {
+    const g = map(row);
+    if (g) out.push(g);
+    else console.error(`[guidelines] skipped malformed row id=${String(row.id)}`);
+  }
+  return out;
 }
 
 function toCard(g: Guideline): GuidelineCard {

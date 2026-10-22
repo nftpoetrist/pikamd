@@ -11,6 +11,15 @@ import { EMPTY_DRAFT, clearDraft, loadDraft, saveDraft, type Draft, type Step } 
 import { guessMeta } from "@/lib/publish/templates";
 import { MAX_BYTES, byteLength, scanGuideline, stripInvisible } from "@/lib/scan";
 
+/** While the page reads the published names: the panel as it looks before the draft is restored. */
+export function PublishFlowShell() {
+  return (
+    <section className="pub-panel pixel-panel" aria-label="Publish a guideline" aria-busy="true">
+      <StepBar current={1} reachable={1} onSelect={() => {}} finished={false} />
+    </section>
+  );
+}
+
 // Publish quest: File → Clean up → Details → Publish (ARCHITECTURE §3 Scenario A, §9.1.1).
 // Clean up can't be skipped: each step unlocks only when the one before it is complete.
 export default function PublishFlow({ takenSlugs }: { takenSlugs: string[] }) {
