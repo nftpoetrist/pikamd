@@ -53,5 +53,18 @@ const REVIEWS_CONTRACTS: Record<number, { address: `0x${string}`; deployBlock: b
 /** The reviews contract on the configured network, or undefined where it isn't deployed. */
 export const REVIEWS = REVIEWS_CONTRACTS[CHAIN.id];
 
+// Who may use the moderation desk (/mod and every /api/mod route): these wallets only, and only
+// while they also hold MODERATOR_ROLE on Arc. A second lock on top of the role (user decision
+// 2026-10-23: "only my main wallet, nobody else"): even if the role were ever granted to another
+// wallet, the site wouldn't open the desk to it. Checked on Arc 2026-10-23: since the registry was
+// deployed, MODERATOR_ROLE and DEFAULT_ADMIN_ROLE were granted once each, both to this wallet, and
+// never to anyone else; only DEFAULT_ADMIN_ROLE can grant them.
+const MODERATOR_WALLETS: Record<number, readonly `0x${string}`[]> = {
+  [arcTestnet.id]: ["0xd76B24F43bCF5C3fFe09906A7414CD4D02EA7cDe"],
+};
+
+/** True for a wallet allowed to moderate on the configured network (the role on Arc is checked too). */
+export const isModeratorWallet = (wallet: string) => (MODERATOR_WALLETS[CHAIN.id] ?? []).some((w) => w.toLowerCase() === wallet.toLowerCase());
+
 /** Optional provider RPC (API key, domain-restricted); falls back to the chain's public RPC. */
 export const RPC_URL: string = process.env.NEXT_PUBLIC_ARC_RPC_URL || CHAIN.rpcUrls.default.http[0];

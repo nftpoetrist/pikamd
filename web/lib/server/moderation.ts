@@ -1,19 +1,20 @@
 import "server-only";
 import { getAddress, keccak256, stringToBytes } from "viem";
-import { REGISTRY } from "@/lib/chain";
+import { REGISTRY, isModeratorWallet } from "@/lib/chain";
 import { REGISTRY_ABI } from "@/lib/registry-abi";
 import type { ReportReason } from "@/lib/moderation/reasons";
 import { arcClient } from "@/lib/server/auth";
 import { unpin } from "@/lib/server/pinata";
 import { check, supabase } from "@/lib/server/supabase";
 
-// Reports and moderation (web/supabase/migrations/20261018120000_moderation.sql). Who moderates is
-// decided on Arc: the wallet must hold MODERATOR_ROLE in GuidelineRegistry right now.
+// Reports and moderation (web/supabase/migrations/20261018120000_moderation.sql). Who moderates:
+// a wallet on the site's own list (lib/chain.ts, MODERATOR_WALLETS) that also holds MODERATOR_ROLE
+// in GuidelineRegistry on Arc right now. Both, always: every /api/mod route goes through here.
 
 const MODERATOR_ROLE = keccak256(stringToBytes("MODERATOR_ROLE"));
 
 export async function isModerator(wallet: string): Promise<boolean> {
-  if (!REGISTRY) return false;
+  if (!REGISTRY || !isModeratorWallet(wallet)) return false;
   return arcClient.readContract({
     address: REGISTRY.address,
     abi: REGISTRY_ABI,

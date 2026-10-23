@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
 import { useDisconnect } from "wagmi";
 import CopyButton from "@/components/CopyButton";
 import PikaGoldCoin from "@/components/PikaGoldCoin";
 import { PixelStar } from "@/components/md-format";
 import PageLink from "@/components/PageLink";
 import { useProfile } from "@/lib/likes/client";
-import { useIsModerator } from "@/lib/moderation/client";
+import { isModeratorWallet } from "@/lib/chain";
+import { sameWallet } from "@/lib/likes/rules";
+import { useSessionWallet, useSignIn } from "@/lib/wallet/session";
 import { formatUsdc } from "@/lib/tips/amount";
 import { useKnownWallet } from "@/lib/wallet/known";
 import { openWalletModal } from "@/lib/wallet/modal";
@@ -38,7 +41,8 @@ function ConnectedWallet({ address, className }: { address: `0x${string}`; class
   const wrapRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
   const profile = useProfile(address);
-  const moderator = useIsModerator().data === true;
+  // Only the site's moderator wallet ever sees the desk (lib/chain.ts); everyone else gets a 404 there
+  const moderator = isModeratorWallet(address);
   const { mutate: disconnect } = useDisconnect();
   const gold = profile.data?.pikagold;
   const tips = profile.data && /^\d+$/.test(profile.data.tipsReceived ?? "") ? BigInt(profile.data.tipsReceived) : undefined;
@@ -105,11 +109,7 @@ function ConnectedWallet({ address, className }: { address: `0x${string}`; class
             </>
           )}
 
-          {moderator && (
-            <PageLink href="/mod" className="wallet-mod" onClick={() => setOpen(false)}>
-              Moderation desk →
-            </PageLink>
-          )}
+          {moderator && <ModDeskLink address={address} onGo={() => setOpen(false)} />}
 
           <button
             type="button"
@@ -124,5 +124,40 @@ function ConnectedWallet({ address, className }: { address: `0x${string}`; class
         </div>
       )}
     </div>
+  );
+}
+
+// The desk opens only for a signed-in session of the moderator wallet (proxy.ts): sign in first
+// with one free signature when there is no session yet, then go.
+function ModDeskLink({ address, onGo }: { address: `0x${string}`; onGo: () => void }) {
+  const session = useSessionWallet();
+  const signIn = useSignIn();
+  const router = useRouter();
+  const [state, setState] = useState<"idle" | "signing" | "failed">("idle");
+  const signed = !!session.data && sameWallet(session.data, address);
+  if (signed) {
+    return (
+      <PageLink href="/mod" className="wallet-mod" onClick={onGo}>
+        Moderation desk →
+      </PageLink>
+    );
+  }
+  return (
+    <button
+      type="button"
+      className="wallet-mod"
+      disabled={state === "signing"}
+      onClick={() => {
+        setState("signing");
+        signIn(address)
+          .then(() => {
+            onGo();
+            router.push("/mod");
+          })
+          .catch(() => setState("failed"));
+      }}
+    >
+      {state === "signing" ? "Check your wallet…" : state === "failed" ? "Sign in to open the desk →" : "Moderation desk →"}
+    </button>
   );
 }
