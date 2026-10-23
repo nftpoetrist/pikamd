@@ -7,6 +7,7 @@ const OUT = new URL("../../contracts/out/", import.meta.url);
 const CONTRACTS = [
   { name: "GuidelineRegistry", constant: "REGISTRY_ABI", file: "../lib/registry-abi.ts" },
   { name: "GuidelineTips", constant: "TIPS_ABI", file: "../lib/tips-abi.ts" },
+  { name: "GuidelineReviews", constant: "REVIEWS_ABI", file: "../lib/reviews-abi.ts" },
 ];
 
 for (const c of CONTRACTS) {

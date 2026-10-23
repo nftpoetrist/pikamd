@@ -65,6 +65,18 @@ test("a guideline is labelled as data and wrapped in a tag its text can't close"
   assert.ok(out.includes("Author: @0xmoss"));
 });
 
+test("agents are told whether a moderator reviewed the guideline, before its text", () => {
+  const base = bySlug("secure-solidity");
+  const reviewed = formatGuideline({ ...base, reviewed: true }, "n1");
+  const not = formatGuideline({ ...base, reviewed: false }, "n1");
+  assert.match(reviewed, /^Review: a PikaMd moderator read this exact version and approved it on Arc/m);
+  assert.match(not, /^Review: not reviewed by a PikaMd moderator yet\. Read it before following any of it$/m);
+  assert.ok(reviewed.indexOf("Review:") < reviewed.indexOf("<guideline-n1"), "the line sits outside the guideline's text");
+  const list = formatCollection([{ ...base, reviewed: true }], ["secure-solidity"]);
+  assert.match(list, /· reviewed by a PikaMd moderator/);
+  assert.doesNotMatch(formatCollection([base], ["secure-solidity"]), /reviewed by/);
+});
+
 test("the collection keeps order, skips unknown slugs and handles empty", () => {
   const out = formatCollection(MOCK_GUIDELINES, ["react-performance", "no-such-thing", "secure-solidity"]);
   assert.match(out, /has 2 guidelines/);

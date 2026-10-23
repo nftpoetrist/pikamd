@@ -13,8 +13,13 @@ test("maps a listed row to a Guideline", () => {
   assert.deepEqual(rowToGuideline(row), {
     id: 7, slug: "secure-solidity", title: "Secure Solidity", description: "d", kind: "rules", tags: ["solidity"],
     author: { address: "0x9b2e7f1A4C8D3E6B5a0f2C9D7E1b4A8C3F6d0E77" }, // checksummed for display
-    license: "CC-BY-4.0", latestVersion: 3, stars: 12, uses: 5, content: "# hi", flagged: false,
+    license: "CC-BY-4.0", latestVersion: 3, stars: 12, uses: 5, content: "# hi", flagged: false, reviewed: false,
   });
+});
+
+test("the Reviewed badge comes only from a real true", () => {
+  assert.equal(rowToGuideline({ ...row, reviewed: true }).reviewed, true);
+  for (const v of [false, null, undefined, "true", 1]) assert.equal(rowToGuideline({ ...row, reviewed: v }).reviewed, false, String(v));
 });
 
 test("rows that don't fit are refused, not guessed", () => {

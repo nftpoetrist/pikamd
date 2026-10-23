@@ -42,5 +42,13 @@ const TIPS_CONTRACTS: Record<number, { address: `0x${string}`; deployBlock: bigi
 /** The tips contract on the configured network, or undefined where it isn't deployed. */
 export const TIPS = TIPS_CONTRACTS[CHAIN.id];
 
+// GuidelineReviews deployments (contracts/script/DeployReviews.s.sol, ARCHITECTURE §9.5): a
+// moderator's approval of one exact version, the "Reviewed" badge. Where it isn't deployed there
+// is no badge and no approve button. The indexer reads its events from deployBlock.
+const REVIEWS_CONTRACTS: Record<number, { address: `0x${string}`; deployBlock: bigint } | undefined> = {};
+
+/** The reviews contract on the configured network, or undefined where it isn't deployed. */
+export const REVIEWS = REVIEWS_CONTRACTS[CHAIN.id];
+
 /** Optional provider RPC (API key, domain-restricted); falls back to the chain's public RPC. */
 export const RPC_URL: string = process.env.NEXT_PUBLIC_ARC_RPC_URL || CHAIN.rpcUrls.default.http[0];

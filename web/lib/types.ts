@@ -38,6 +38,12 @@ export interface Guideline {
   content: string;
   /** The scan flagged lines a moderator hasn't checked yet: shown on the site, never served over MCP. */
   flagged?: boolean;
+  /**
+   * A PikaMd moderator read this exact version and approved it on Arc (GuidelineReviews), and it
+   * still holds: the "Reviewed" badge (ARCHITECTURE §9.5). From the index; the guideline's page
+   * checks it on Arc itself.
+   */
+  reviewed?: boolean;
   /** Where the latest version is recorded: Arc transaction, IPFS CID and the sha256 the chain holds.
    * Absent for the sample data used in development. */
   record?: { txHash: `0x${string}`; cid: string; contentHash: `0x${string}` };

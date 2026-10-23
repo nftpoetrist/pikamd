@@ -1284,6 +1284,47 @@ body {
   color: var(--t2);
 }
 
+/* "Reviewed" (ARCHITECTURE §9.5): a moderator approved this exact file on Arc. Solid green so it
+   reads at a glance next to the quiet type badge; same pixel frame (four box-shadows, open
+   corners), its own green. Sits under the type badge, at the right end of the title row. */
+.md-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.md-title-row > .md-title,
+.md-title-row > .mdp-title {
+  flex: 1;
+  min-width: 0;
+}
+.md-reviewed {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 2px; /* the frame sits outside the box */
+  padding: 2px 6px 2px 5px;
+  font-family: var(--font-vt323);
+  font-size: 14px;
+  line-height: 1;
+  letter-spacing: 1px;
+  color: var(--ink);
+  background: var(--green);
+  box-shadow:
+    0 -2px 0 0 #2F7D44,
+    0 2px 0 0 #2F7D44,
+    -2px 0 0 0 #2F7D44,
+    2px 0 0 0 #2F7D44,
+    inset 0 2px 0 0 rgba(255, 255, 255, 0.35),
+    0 0 10px rgba(123, 216, 143, 0.35);
+  cursor: help;
+}
+.md-reviewed.is-page {
+  gap: 7px;
+  padding: 3px 9px 3px 7px;
+  font-size: 19px;
+}
+
 .md-title {
   font-family: var(--font-jersey);
   font-size: 22px;
@@ -4695,6 +4736,11 @@ body {
 .gl-verify.is-unrecorded { color: var(--red); }
 .gl-verify.is-checking,
 .gl-verify.is-unavailable { color: var(--t2); }
+/* The review check (components/guideline/ReviewCheck.tsx), right under "Verified on Arc" */
+.gl-verify.is-review { margin-top: 10px; }
+.gl-verify.is-review.is-reviewed { color: var(--green); }
+.gl-verify.is-review.is-other-version { color: var(--orange); }
+.gl-verify.is-review.is-none { color: var(--t2); }
 .gl-facts {
   display: flex;
   flex-direction: column;
@@ -4982,6 +5028,58 @@ body {
 }
 .mod-notes span {
   color: var(--t2);
+}
+/* Review: the file as agents get it, with what the site hides listed first (ARCHITECTURE §9.5) */
+.mod-review {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.mod-attention {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  font-size: 18px;
+  color: var(--orange);
+  background: rgba(255, 159, 67, 0.08);
+  box-shadow: inset 3px 0 0 var(--orange);
+}
+.mod-file {
+  max-height: 420px;
+  overflow: auto;
+  margin: 0;
+  padding: 10px 0;
+  font-family: var(--font-vt323);
+  font-size: 18px;
+  line-height: 1.25;
+  color: var(--t0);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: rgba(0, 0, 0, 0.45);
+  box-shadow:
+    0 -2px 0 0 rgba(255, 203, 5, 0.25),
+    0 2px 0 0 rgba(255, 203, 5, 0.25),
+    -2px 0 0 0 rgba(255, 203, 5, 0.25),
+    2px 0 0 0 rgba(255, 203, 5, 0.25);
+}
+.mod-file > span {
+  display: block;
+  padding: 0 12px 0 0;
+}
+.mod-file > span.is-hit {
+  background: rgba(255, 159, 67, 0.16);
+  box-shadow: inset 3px 0 0 var(--orange);
+}
+.mod-file i {
+  display: inline-block;
+  width: 44px;
+  margin-right: 12px;
+  padding-right: 8px;
+  font-style: normal;
+  text-align: right;
+  color: var(--t2);
+  user-select: none;
 }
 .mod-actions {
   display: flex;

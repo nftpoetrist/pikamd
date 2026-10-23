@@ -42,6 +42,18 @@ export type QueueItem = {
   reports: { reason: string; note: string | null; reporter: string; at: string }[];
 };
 
+/** A listed guideline for the Reviewed badge (ARCHITECTURE §9.5): approve it, or take it back. */
+export type ReviewItem = {
+  id: number;
+  slug: string;
+  title: string;
+  author: string;
+  version: number;
+  contentHash: string;
+  flagged: boolean;
+  reviewed: boolean;
+};
+
 type GuidelineRow = {
   id: number;
   slug: string;
@@ -56,12 +68,13 @@ type GuidelineRow = {
 const G_FIELDS = "id, slug, title, author_address, author_hidden, moderator_locked, latest_version, guideline_versions(version, pinata_id, scan_status)";
 
 /** Everything waiting for a moderator: open reports, files the scan flagged, locked guidelines. */
-export async function moderationQueue(): Promise<{ reported: QueueItem[]; flagged: QueueItem[]; locked: QueueItem[] }> {
+export async function moderationQueue(): Promise<{ reported: QueueItem[]; flagged: QueueItem[]; locked: QueueItem[]; review: ReviewItem[] }> {
   const db = supabase()!;
-  const [reports, flagged, locked] = await Promise.all([
+  const [reports, flagged, locked, listed] = await Promise.all([
     db.from("reports").select(`reason, note, reporter_address, created_at, guidelines(${G_FIELDS})`).eq("status", "open").order("created_at", { ascending: false }).limit(1000),
     db.from("listed_guidelines").select("id").eq("scan_status", "suspicious").limit(500),
     db.from("guidelines").select(G_FIELDS).eq("moderator_locked", true).order("id", { ascending: false }).limit(500),
+    db.from("listed_guidelines").select("id, slug, title, author_address, latest_version, content_hash, scan_status, reviewed").order("block_number", { ascending: false }).limit(500),
   ]);
   const item = (g: GuidelineRow): QueueItem => {
     const latest = g.guideline_versions.find((v) => v.version === g.latest_version);
@@ -91,6 +104,20 @@ export async function moderationQueue(): Promise<{ reported: QueueItem[]; flagge
     reported: [...byId.values()].sort((a, b) => b.reports.length - a.reports.length),
     flagged: flaggedRows.map(item),
     locked: ((check(locked, "locked") ?? []) as unknown as GuidelineRow[]).map(item),
+    review: (
+      (check(listed, "listed for review") ?? []) as unknown as {
+        id: number; slug: string; title: string; author_address: string; latest_version: number; content_hash: string; scan_status: string; reviewed: boolean | null;
+      }[]
+    ).map((g) => ({
+      id: Number(g.id),
+      slug: g.slug,
+      title: g.title,
+      author: getAddress(g.author_address),
+      version: Number(g.latest_version),
+      contentHash: g.content_hash,
+      flagged: g.scan_status === "suspicious",
+      reviewed: g.reviewed === true,
+    })),
   };
 }
 

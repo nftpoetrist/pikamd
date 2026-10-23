@@ -1,13 +1,15 @@
 import "server-only";
 import { revalidateTag } from "next/cache";
 import type { Log } from "viem";
-import { CHAIN, REGISTRY, TIPS } from "@/lib/chain";
+import { CHAIN, REGISTRY, REVIEWS, TIPS } from "@/lib/chain";
 import { GUIDELINES_TAG } from "@/lib/data/guidelines";
 import { registryActions } from "@/lib/registry-events";
+import { moderatorRoleEvents, reviewEvents } from "@/lib/reviews/events";
 import { tipEvents } from "@/lib/tips/events";
 import { arcClient } from "@/lib/server/auth";
 import { confirmRegistration } from "@/lib/server/publish";
 import { check, supabase } from "@/lib/server/supabase";
+import { recordModeratorRoles, recordReviews } from "@/lib/server/reviews";
 import { recordTips } from "@/lib/server/tips";
 
 // Keeps the index in step with the chain (ARCHITECTURE §7.4). Registry: registrations whose
@@ -77,6 +79,8 @@ export async function syncRegistry({ budgetMs = 20_000, minIntervalS = MIN_INTER
             console.log(`[indexer] version ${a.version} of #${a.id} not indexed yet (no new-version flow)`);
           }
         }
+        // A moderator who loses MODERATOR_ROLE loses their reviews (the Reviewed badge)
+        applied += await recordModeratorRoles(moderatorRoleEvents(logs, registry.address));
         return applied;
       },
     },
@@ -84,6 +88,17 @@ export async function syncRegistry({ budgetMs = 20_000, minIntervalS = MIN_INTER
   );
 
   if ("applied" in result && result.applied > 0) revalidateTag(GUIDELINES_TAG, { expire: 0 });
+  return result;
+}
+
+export async function syncReviews({ budgetMs = 20_000, minIntervalS = MIN_INTERVAL_S } = {}): Promise<SyncResult> {
+  if (!supabase() || !REVIEWS) return { skipped: "not configured" };
+  const reviews = REVIEWS;
+  const result = await sync(
+    { name: "reviews", address: reviews.address, deployBlock: reviews.deployBlock, apply: (logs) => recordReviews(reviewEvents(logs, reviews.address)) },
+    { budgetMs, minIntervalS },
+  );
+  if ("applied" in result && result.applied > 0) revalidateTag(GUIDELINES_TAG, { expire: 0 }); // the badge is on the cached lists
   return result;
 }
 

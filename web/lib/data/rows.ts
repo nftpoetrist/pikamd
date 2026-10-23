@@ -25,6 +25,8 @@ export type GuidelineRow = {
   cid?: string | null;
   content_hash?: string | null;
   tx_hash?: string | null;
+  /** listed_guidelines / author_guidelines: the review still holds (20261023120000_reviews.sql) */
+  reviewed?: boolean | null;
 };
 
 /** A row without the file: what card lists read. */
@@ -32,7 +34,7 @@ export type GuidelineCardRow = Omit<GuidelineRow, "content">;
 
 /** The columns `rowToCard` reads, for .select(): everything but the file. */
 export const CARD_COLUMNS =
-  "id, slug, author_address, title, description, kind, tags, license, latest_version, uses_count, stars_count, scan_status, cid, content_hash, tx_hash";
+  "id, slug, author_address, title, description, kind, tags, license, latest_version, uses_count, stars_count, scan_status, cid, content_hash, tx_hash, reviewed";
 
 /** The columns `rowToGuideline` reads, for .select(). */
 export const GUIDELINE_COLUMNS = `${CARD_COLUMNS}, content`;
@@ -61,6 +63,7 @@ export function rowToGuideline(row: GuidelineRow): Guideline | null {
     uses: Number(row.uses_count) || 0,
     content: row.content,
     flagged: row.scan_status === "suspicious",
+    reviewed: row.reviewed === true,
     ...(typeof row.cid === "string" && row.cid && HASH_RE.test(row.content_hash ?? "") && HASH_RE.test(row.tx_hash ?? "")
       ? { record: { txHash: row.tx_hash as `0x${string}`, cid: row.cid, contentHash: row.content_hash as `0x${string}` } }
       : {}),

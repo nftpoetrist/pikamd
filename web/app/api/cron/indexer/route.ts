@@ -1,5 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
-import { syncRegistry, syncTips } from "@/lib/server/indexer";
+import { syncRegistry, syncReviews, syncTips } from "@/lib/server/indexer";
 import { NO_STORE } from "@/lib/server/guard";
 
 // Daily catch-up for the registry and tips index (vercel.json; Hobby plans allow one cron run per day).
@@ -21,12 +21,13 @@ export async function GET(request: Request) {
   if (!authorized(request)) return Response.json({ error: "Unauthorized" }, { status: 401, headers: NO_STORE });
   // minIntervalS 0: the cron always runs (each contract's lease still stops two syncs at once).
   // Settled separately: one failing never hides or stops the other.
-  const [registry, tips] = await Promise.allSettled([
+  const [registry, tips, reviews] = await Promise.allSettled([
     syncRegistry({ budgetMs: 45_000, minIntervalS: 0 }),
     syncTips({ budgetMs: 45_000, minIntervalS: 0 }),
+    syncReviews({ budgetMs: 45_000, minIntervalS: 0 }),
   ]);
   const report = (r: PromiseSettledResult<unknown>) =>
     r.status === "fulfilled" ? r.value : { error: r.reason instanceof Error ? r.reason.message : String(r.reason) };
-  const failed = registry.status === "rejected" || tips.status === "rejected";
-  return Response.json({ registry: report(registry), tips: report(tips) }, { status: failed ? 500 : 200, headers: NO_STORE });
+  const failed = [registry, tips, reviews].some((r) => r.status === "rejected");
+  return Response.json({ registry: report(registry), tips: report(tips), reviews: report(reviews) }, { status: failed ? 500 : 200, headers: NO_STORE });
 }

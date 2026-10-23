@@ -1,10 +1,16 @@
 "use client";
 
 import PageLink from "@/components/PageLink";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import ReviewedMark from "@/components/ReviewedMark";
 import { shortAddress } from "@/components/md-format";
+import { REVIEWS } from "@/lib/chain";
+import { scanGuideline } from "@/lib/scan";
+import type { Guideline } from "@/lib/types";
+import { api } from "@/lib/wallet/api";
 import { useSignedIn } from "@/lib/collection/client";
-import { useIsModerator, useModActions, useModQueue, type QueueItem } from "@/lib/moderation/client";
+import { useIsModerator, useModActions, useModQueue, type QueueItem, type ReviewItem } from "@/lib/moderation/client";
 import { reasonLabel } from "@/lib/moderation/reasons";
 import { messageFor } from "@/lib/publish/client";
 import { openWalletModal } from "@/lib/wallet/modal";
@@ -52,13 +58,143 @@ export default function ModPanel() {
   if (queue.isError) return gate("Couldn't load the queue", messageFor(queue.error));
   if (!queue.data) return <section className="mod-panel pixel-panel" aria-busy="true" />;
 
-  const { reported, flagged, locked } = queue.data;
+  const { reported, flagged, locked, review } = queue.data;
   return (
     <section className="mod-panel pixel-panel" aria-label="Moderation">
       <ModSection title="Reports" empty="No open reports" items={reported} />
       <ModSection title="Flagged by the scan" empty="Nothing flagged" hint="Not served to agents until you approve them" items={flagged} />
       <ModSection title="Locked" empty="Nothing locked" hint="Off Explore, search and MCP. Remove the file from IPFS once you're sure" items={locked} />
+      {REVIEWS && (
+        <>
+          <ReviewSection
+            title="Waiting for review"
+            empty="Every listed guideline is reviewed"
+            hint="Read the file, then approve that exact version on Arc: it gets the Reviewed badge"
+            items={review.filter((g) => !g.reviewed)}
+          />
+          <ReviewSection title="Reviewed" empty="Nothing reviewed yet" hint="Take an approval back if a file turns out to be unsafe" items={review.filter((g) => g.reviewed)} />
+        </>
+      )}
     </section>
+  );
+}
+
+function ReviewSection({ title, empty, hint, items }: { title: string; empty: string; hint: string; items: ReviewItem[] }) {
+  return (
+    <div className="mod-section">
+      <h2>
+        {title} <span>{items.length}</span>
+      </h2>
+      <p className="mod-hint">{hint}</p>
+      {items.length === 0 ? <p className="mod-empty">{empty}</p> : items.map((g) => <ReviewRow key={g.id} g={g} />)}
+    </div>
+  );
+}
+
+// One guideline to review: the file is read here, as agents get it, with what the site hides
+// listed first. Approve stays off until the file was opened: a review means someone read it.
+function ReviewRow({ g }: { g: ReviewItem }) {
+  const { setReview } = useModActions();
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const file = useQuery({
+    queryKey: ["guideline", g.slug],
+    queryFn: () => api<Guideline>(`/api/guidelines/${encodeURIComponent(g.slug)}`),
+    enabled: open,
+    staleTime: 60_000,
+    retry: false,
+  });
+  const content = open && file.data?.slug === g.slug ? file.data.content : null;
+  const attention = content === null ? [] : scanGuideline(content).findings.filter((f) => f.severity === "review");
+
+  const run = async (approve: boolean) => {
+    setBusy(true);
+    setNote(null);
+    try {
+      await setReview(g.id, g.version, approve);
+    } catch (e) {
+      setNote(messageFor(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <article className="mod-row">
+      <header>
+        <PageLink href={`/g/${g.slug}`} prefetch className="mod-title">
+          {g.title}
+        </PageLink>
+        <span className="mod-meta">
+          #{g.id} · v{g.version} · by {shortAddress(g.author)}
+          {g.flagged && <em className="mod-badge is-flagged">FLAGGED</em>}
+          {g.reviewed && <ReviewedMark />}
+        </span>
+      </header>
+
+      {open && (
+        <div className="mod-review">
+          {file.isError ? (
+            <p className="pub-error" role="alert">
+              Couldn&apos;t load the file: {messageFor(file.error)}
+            </p>
+          ) : content === null ? (
+            <p className="mod-empty">Loading the file…</p>
+          ) : (
+            <>
+              {attention.length > 0 ? (
+                <ul className="mod-attention" aria-label="Lines to check">
+                  {attention.map((f) => (
+                    <li key={f.id}>
+                      Line {f.line}: {f.message}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mod-hint">Nothing hidden from readers and nothing the scan flags. Still, read it all</p>
+              )}
+              <pre className="mod-file" tabIndex={0} aria-label={`${g.slug}.md as agents get it`}>
+                {content.split("\n").map((line, i) => (
+                  <span key={i} className={attention.some((f) => f.line === i + 1) ? "is-hit" : undefined}>
+                    <i aria-hidden="true">{i + 1}</i>
+                    {line}
+                    {"\n"}
+                  </span>
+                ))}
+              </pre>
+            </>
+          )}
+        </div>
+      )}
+
+      <div className="mod-actions">
+        <button type="button" className="btn-ghost" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+          {open ? "Close the file" : "Read the file"}
+        </button>
+        {g.reviewed ? (
+          <button type="button" className="btn-ghost" disabled={busy} onClick={() => void run(false)}>
+            {busy ? "Check your wallet…" : "Revoke on Arc"}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="btn-gold"
+            disabled={busy || content === null || g.flagged}
+            title={g.flagged ? "Approve it for agents first (Flagged by the scan)" : content === null ? "Read the file first" : undefined}
+            onClick={() => void run(true)}
+          >
+            {busy ? "Check your wallet…" : `Approve v${g.version} on Arc`}
+          </button>
+        )}
+      </div>
+      {g.flagged && !g.reviewed && <p className="mod-hint">Flagged by the scan: approve it for agents above before reviewing it</p>}
+      {note && (
+        <p className="mod-note" role="status">
+          {note}
+        </p>
+      )}
+    </article>
   );
 }
 

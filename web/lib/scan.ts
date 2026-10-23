@@ -43,6 +43,8 @@ type Rule = {
   group?: number;
   /** Return false to skip an obvious false positive. */
   accept?: (match: string) => boolean;
+  /** Skip matches inside code blocks and code spans: the site shows code as it is. */
+  outsideCode?: boolean;
 };
 
 // Every pattern must run in linear time on a 512 KB file: the server scans whatever a signed-in
@@ -116,6 +118,22 @@ const RULES: Rule[] = [
   },
   { rule: "encoded-blob", severity: "review", pattern: /(?<![A-Za-z0-9+/])[A-Za-z0-9+/]{200,}={0,2}/g, message: "Long encoded block: hidden instructions can live here" },
 
+  // ── Hidden from readers, read by agents (review) ─────────────
+  // The site renders Markdown without raw HTML (react-markdown + rehype-sanitize), while agents
+  // get the file as it is: whatever the page drops is a channel only agents see. Measured with the
+  // site's renderer (2026-10-23): comments, HTML blocks and tag attributes vanish, link titles
+  // show only on hover. Code blocks and code spans are shown as they are, so they're skipped.
+  { rule: "hidden-comment", severity: "review", outsideCode: true, pattern: /<!--(?:[^-]|-(?!->)){0,4000}(?:-->)?/g, message: "HTML comment: the site doesn't show it, but agents read it" },
+  {
+    rule: "hidden-html",
+    severity: "review",
+    outsideCode: true,
+    // Any tag but a few plain inline ones without attributes, whose text the page still shows
+    pattern: /<(?!(?:br|b|i|em|strong|u|s|sub|sup|kbd|mark|del|ins|small)\s*\/?>)[A-Za-z][A-Za-z0-9-]{0,40}(?:[ \t][^<>\n]{0,500})?\/?>/g,
+    message: "HTML: the site doesn't show it or its attributes, but agents read it",
+  },
+  { rule: "hidden-title", severity: "review", outsideCode: true, pattern: /\]\([^\s()]{1,2000}([ \t]+(?:"[^"\n]{1,500}"|'[^'\n]{1,500}'))\)/g, group: 1, message: "Link title: shown only on hover, but agents read it" },
+
   // ── Transparency (info) ──────────────────────────────────────
   { rule: "html-script", severity: "info", pattern: /<script\b[^>\n]{0,500}>|\bjavascript:/gi, message: "Script or javascript: link (removed when displayed)" },
 ];
@@ -140,6 +158,78 @@ function lineOf(starts: number[], offset: number) {
 }
 
 const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const FENCE = /^ {0,3}(`{3,}|~{3,})/;
+
+/**
+ * 1 for every character inside a fenced code block or a code span: shown as written on the
+ * site. Linear: fences line by line; within a line, each backtick run closes at the next run of
+ * the same length (found right to left once), and anything between is code.
+ */
+export function codeMask(text: string): Uint8Array {
+  const mask = new Uint8Array(text.length);
+  let fence: { char: string; len: number } | null = null;
+  let fenceStart = 0;
+  let pos = 0;
+  while (pos <= text.length) {
+    let end = text.indexOf("\n", pos);
+    if (end === -1) end = text.length;
+    const line = text.slice(pos, end);
+    const open = FENCE.exec(line);
+    if (fence) {
+      if (open && open[1][0] === fence.char && open[1].length >= fence.len && line.slice(open[0].length).trim() === "") {
+        mask.fill(1, fenceStart, end);
+        fence = null;
+      }
+    } else if (open) {
+      fence = { char: open[1][0], len: open[1].length };
+      fenceStart = pos;
+    } else {
+      markCodeSpans(line, pos, mask);
+    }
+    if (end === text.length) break;
+    pos = end + 1;
+  }
+  if (fence) mask.fill(1, fenceStart, text.length); // an unclosed fence runs to the end
+  return mask;
+}
+
+function markCodeSpans(line: string, offset: number, mask: Uint8Array) {
+  const runs: { at: number; len: number }[] = [];
+  for (let i = 0; i < line.length; ) {
+    if (line[i] !== "`") {
+      i++;
+      continue;
+    }
+    let j = i;
+    while (j < line.length && line[j] === "`") j++;
+    runs.push({ at: i, len: j - i });
+    i = j;
+  }
+  const next: number[] = new Array(runs.length).fill(-1);
+  const lastByLen = new Map<number, number>();
+  for (let k = runs.length - 1; k >= 0; k--) {
+    next[k] = lastByLen.get(runs[k].len) ?? -1;
+    lastByLen.set(runs[k].len, k);
+  }
+  for (let k = 0; k < runs.length; ) {
+    const close = next[k];
+    if (close === -1) {
+      k++;
+      continue;
+    }
+    mask.fill(1, offset + runs[k].at, offset + runs[close].at + runs[close].len);
+    k = close + 1;
+  }
+}
+
+// Link and footnote definitions ("[a]: url", "[^1]: text") never show on the page themselves.
+// A used one without a title is ordinary Markdown; a title, or a definition nothing points to,
+// is text only agents see.
+const DEFINITION = /^ {0,3}\[(\^?)([^\]\n]{1,200})\]:([^\n]{0,1000})$/gm;
+const BRACKETED = /\[(\^?[^\]\n]{1,200})\]/g;
+const DEFINITION_TITLE = /[ \t](?:"[^"\n]*"|'[^'\n]*'|\([^)\n]*\))[ \t]*$/;
+const labelKey = (label: string) => label.trim().replace(/\s+/g, " ").toLowerCase();
 
 /**
  * Scans a guideline. `privateTerms` are words the author marked as private
@@ -178,10 +268,12 @@ export function scanGuideline(text: string, privateTerms: string[] = []): ScanRe
   // Order matters within the data lane: secrets, then personal data, then the author's
   // private words. A key inside a URL is a key; "acme" inside ayse@acme.com is part of the
   // email, so replacing the email removes both (a separate "acme" would leave "ayse@" behind).
+  const code = codeMask(text);
   const by = (sev: Severity) => RULES.filter((r) => r.severity === sev);
   for (const r of [...by("block"), ...by("personal"), ...customRule, ...by("review"), ...by("info")]) {
     r.pattern.lastIndex = 0;
     for (const m of text.matchAll(r.pattern)) {
+      if (r.outsideCode && code[m.index ?? 0]) continue;
       const full = m[0];
       const part = r.group ? m[r.group] : full;
       if (part === undefined) continue;
@@ -192,6 +284,23 @@ export function scanGuideline(text: string, privateTerms: string[] = []): ScanRe
       if (r.accept && !r.accept(trimmed)) continue;
       add(r.rule, r.severity, start, end, r.message, r.placeholder);
     }
+  }
+
+  // Definitions the page never shows: titled ones, and ones nothing points to.
+  const mentions = new Map<string, number>();
+  for (const m of text.matchAll(BRACKETED)) {
+    if (code[m.index ?? 0]) continue;
+    const key = labelKey(m[1]);
+    mentions.set(key, (mentions.get(key) ?? 0) + 1);
+  }
+  for (const m of text.matchAll(DEFINITION)) {
+    const start = m.index ?? 0;
+    if (code[start]) continue;
+    const footnote = m[1] === "^";
+    const used = (mentions.get(labelKey(m[1] + m[2])) ?? 0) >= 2; // itself and at least one other
+    const titled = !footnote && DEFINITION_TITLE.test(m[3]);
+    if (used && !titled) continue;
+    add("hidden-definition", "review", start, start + m[0].length, footnote ? "Footnote nothing points to: the site doesn't show it, but agents read it" : titled ? "Link definition with a title: the site doesn't show it, but agents read it" : "Link definition nothing points to: the site doesn't show it, but agents read it");
   }
 
   // External links: one info finding per link that no other rule claimed.

@@ -7,6 +7,7 @@ import CollectButton from "@/components/CollectButton";
 import LikeButton from "@/components/LikeButton";
 import PageTransition from "@/components/PageTransition";
 import ArcVerified from "@/components/guideline/ArcVerified";
+import ReviewCheck from "@/components/guideline/ReviewCheck";
 import ContentView from "@/components/guideline/ContentView";
 import FileActions from "@/components/guideline/FileActions";
 import { KIND_LABEL, shortAddress } from "@/components/md-format";
@@ -14,6 +15,7 @@ import { CHAIN } from "@/lib/chain";
 import { getGuideline, listGuidelineCards } from "@/lib/data/guidelines";
 import RawLink from "@/components/guideline/RawLink";
 import ReportButton from "@/components/guideline/ReportButton";
+import ReviewedMark from "@/components/ReviewedMark";
 
 // A guideline's own page (ARCHITECTURE §7.2, §11): the file, who wrote it, its record on Arc
 // checked in the browser, and how to use it with an agent.
@@ -71,6 +73,7 @@ async function GuidelineView({ slug }: { slug: string }) {
           <span>{g.slug}.md</span>
           <span className="md-badge">{KIND_LABEL[g.kind]}</span>
           <span className="md-version">v{g.latestVersion}</span>
+          {g.reviewed && <ReviewedMark size="page" />}
         </p>
         <h1 id="gl-title" className="gl-title">
           {g.title}
@@ -124,6 +127,7 @@ async function GuidelineView({ slug }: { slug: string }) {
             {g.record ? (
               <>
                 <ArcVerified id={g.id} version={g.latestVersion} content={g.content} />
+                <ReviewCheck id={g.id} version={g.latestVersion} contentHash={g.record.contentHash} />
                 <dl className="gl-facts">
                   <div>
                     <dt>Guideline</dt>

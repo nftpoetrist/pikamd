@@ -3,9 +3,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { getChainId, switchChain, waitForTransactionReceipt, writeContract } from "wagmi/actions";
-import { CHAIN, REGISTRY } from "@/lib/chain";
+import { CHAIN, REGISTRY, REVIEWS } from "@/lib/chain";
 import { useSignedIn } from "@/lib/collection/client";
 import { REGISTRY_ABI } from "@/lib/registry-abi";
+import { LIBRARY_KEY } from "@/lib/library/client";
+import { REVIEWS_ABI } from "@/lib/reviews-abi";
 import { api } from "@/lib/wallet/api";
 import { wagmiConfig } from "@/lib/wallet/config";
 
@@ -26,7 +28,8 @@ export type QueueItem = {
   pinned: boolean;
   reports: { reason: string; note: string | null; reporter: string; at: string }[];
 };
-export type Queue = { reported: QueueItem[]; flagged: QueueItem[]; locked: QueueItem[] };
+export type ReviewItem = { id: number; slug: string; title: string; author: string; version: number; contentHash: string; flagged: boolean; reviewed: boolean };
+export type Queue = { reported: QueueItem[]; flagged: QueueItem[]; locked: QueueItem[]; review: ReviewItem[] };
 
 export function useIsModerator() {
   const { wallet, signed } = useSignedIn();
@@ -74,6 +77,25 @@ export function useModActions() {
     [refresh],
   );
 
+  /**
+   * Approves the exact version the moderator read (GuidelineReviews.approve), or takes the approval
+   * back, from the moderator's own wallet; then the server copies it from Arc.
+   */
+  const setReview = useCallback(
+    async (id: number, version: number, approve: boolean) => {
+      if (!REVIEWS) throw new Error("Reviews aren't available on this network yet");
+      if (getChainId(wagmiConfig) !== CHAIN.id) await switchChain(wagmiConfig, { chainId: CHAIN.id });
+      const hash = approve
+        ? await writeContract(wagmiConfig, { address: REVIEWS.address, abi: REVIEWS_ABI, functionName: "approve", args: [BigInt(id), version], chainId: CHAIN.id })
+        : await writeContract(wagmiConfig, { address: REVIEWS.address, abi: REVIEWS_ABI, functionName: "revoke", args: [BigInt(id)], chainId: CHAIN.id });
+      const receipt = await waitForTransactionReceipt(wagmiConfig, { hash, chainId: CHAIN.id, timeout: 60_000 });
+      if (receipt.status !== "success") throw new Error("The transaction failed on Arc, so nothing changed");
+      await api("/api/mod/review", { method: "POST", body: { txHash: hash } });
+      await Promise.all([refresh(), client.invalidateQueries({ queryKey: LIBRARY_KEY })]);
+    },
+    [client, refresh],
+  );
+
   const act = useCallback(
     async (id: number, action: "dismiss" | "approve" | "unpin") => {
       const result = await api<Record<string, number | boolean>>("/api/mod/action", { method: "POST", body: { guidelineId: id, action } });
@@ -83,5 +105,5 @@ export function useModActions() {
     [refresh],
   );
 
-  return { setLock, act };
+  return { setLock, setReview, act };
 }

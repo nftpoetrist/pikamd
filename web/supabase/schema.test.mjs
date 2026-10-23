@@ -531,3 +531,57 @@ test("public roles can't report, moderate or read the log", async () => {
     await assert.rejects(asRole(role, `select * from reports`), /permission denied/);
   }
 });
+
+// ── Reviewed badge (20261023120000_reviews.sql) ────────────────────────────────────────────
+test("a review holds for the version shown, until revoked, locked, superseded or the reviewer loses the role", async () => {
+  const R = "0x" + "9".repeat(40); // a moderator
+  await addGuideline(60, "rev-a", A); // version 1, content hash 0x00…0 (id 60 → "0")
+  const hash = (await db.query(`select content_hash from guideline_versions where guideline_id = 60`)).rows[0].content_hash;
+  const reviewed = async () => (await db.query(`select reviewed from listed_guidelines where id = 60`)).rows[0].reviewed;
+  const owned = async () => (await db.query(`select reviewed from author_guidelines($1) where id = 60`, [A])).rows[0].reviewed;
+  const apply = (on, block, log, extra = {}) =>
+    db.query(`select apply_review(60, $1, $2, $3, $4, $5, $6, $7) as ok`, [on, extra.version ?? 1, on ? (extra.hash ?? hash) : null, R, hex64("f"), block, log]);
+
+  assert.equal(await reviewed(), false, "nothing yet");
+  assert.equal((await apply(true, 100, 0)).rows[0].ok, true);
+  assert.equal(await reviewed(), true);
+  assert.equal(await owned(), true, "the author's own list shows it too");
+
+  assert.equal((await apply(false, 99, 5)).rows[0].ok, false, "an older revoke delivered late changes nothing");
+  assert.equal(await reviewed(), true);
+  assert.equal((await apply(true, 100, 0)).rows[0].ok, false, "a replay changes nothing");
+
+  await db.query(`update guidelines set moderator_locked = true where id = 60`);
+  assert.equal(await owned(), false, "locked: no badge");
+  await db.query(`update guidelines set moderator_locked = false where id = 60`);
+  assert.equal(await reviewed(), true, "unlocked: the same file, the same review");
+
+  await db.query(`select apply_moderator_role($1, false, 101, 0)`, [R]);
+  assert.equal(await reviewed(), false, "the reviewer lost the role");
+  await db.query(`select apply_moderator_role($1, true, 102, 0)`, [R]);
+  assert.equal(await reviewed(), true, "and got it back");
+  assert.equal((await db.query(`select apply_moderator_role($1, false, 101, 9) as ok`, [R])).rows[0].ok, false, "older role news is ignored");
+
+  await apply(true, 103, 0, { version: 2, hash: hex64("d") });
+  assert.equal(await reviewed(), false, "a review of another version doesn't cover the one shown");
+  await apply(true, 104, 0, { hash: hex64("d") });
+  assert.equal(await reviewed(), false, "nor one with another content hash");
+  await apply(true, 105, 0);
+  assert.equal(await reviewed(), true);
+
+  await apply(false, 106, 0);
+  assert.equal(await reviewed(), false, "revoked");
+  await assert.rejects(db.query(`insert into reviews (guideline_id, reviewed, version, content_hash, moderator, tx_hash, block_number, log_index)
+    values (61, true, 1, null, $1, $2, 1, 0)`, [R, hex64("f")]), /check constraint/, "an approval always names the content");
+});
+
+test("public roles can't read or write reviews", async () => {
+  for (const role of ["anon", "authenticated"]) {
+    await assert.rejects(asRole(role, `select * from reviews`), /permission denied/);
+    await assert.rejects(asRole(role, `select * from moderator_roles`), /permission denied/);
+    await assert.rejects(asRole(role, `select apply_review(60, true, 1, $1, $2, $1, 1, 0)`, [hex64("a"), A]), /permission denied/);
+    await assert.rejects(asRole(role, `select apply_moderator_role($1, false, 1, 0)`, [A]), /permission denied/);
+    await assert.rejects(asRole(role, `select review_holds(60, 1, $1, false)`, [hex64("a")]), /permission denied/);
+  }
+  assert.equal((await asRole("service_role", `select reviewed from listed_guidelines where id = 60`)).rows.length, 1);
+});

@@ -7,6 +7,7 @@ import CollectButton from "@/components/CollectButton";
 import LikeButton from "@/components/LikeButton";
 import { KIND_LABEL, shortAddress } from "@/components/md-format";
 import AuthorAction from "@/components/AuthorAction";
+import ReviewedMark from "@/components/ReviewedMark";
 import type { Guideline } from "@/lib/types";
 
 const OPEN_MS = 240;
@@ -66,7 +67,7 @@ export default function MdPreview({ guideline, card, focusLine, closing, onClose
   const sourceRef = useRef<HTMLPreElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
-  const { slug, title, description, kind, tags, author, latestVersion, stars, license, content } = guideline;
+  const { slug, title, description, kind, tags, author, latestVersion, stars, license, content, reviewed } = guideline;
   const authorName = author.handle ? `@${author.handle}` : shortAddress(author.address);
 
   // Open: grow from the card. Lanes pause while a preview is up so the card stays put.
@@ -135,12 +136,15 @@ export default function MdPreview({ guideline, card, focusLine, closing, onClose
           </button>
         </header>
 
-        <h3 className="mdp-title">
-          {title}
-          <PageLink href={`/g/${slug}`} prefetch className="mdp-page" onClick={onClose}>
-            Open its page →
-          </PageLink>
-        </h3>
+        <div className="md-title-row">
+          <h3 className="mdp-title">
+            {title}
+            <PageLink href={`/g/${slug}`} prefetch className="mdp-page" onClick={onClose}>
+              Open its page →
+            </PageLink>
+          </h3>
+          {reviewed && <ReviewedMark />}
+        </div>
         <p className="mdp-summary">{description}</p>
 
         <pre ref={sourceRef} className="mdp-source" tabIndex={0} aria-label={`${slug}.md`}>

@@ -7,6 +7,7 @@ import LikeButton from "@/components/LikeButton";
 import { KIND_LABEL, shortAddress } from "@/components/md-format";
 import MdPreview from "@/components/MdPreview";
 import AuthorAction from "@/components/AuthorAction";
+import ReviewedMark from "@/components/ReviewedMark";
 import type { Guideline, GuidelineCard, OwnedGuideline } from "@/lib/types";
 import { api } from "@/lib/wallet/api";
 
@@ -25,7 +26,7 @@ const isOwned = (g: GuidelineCard | Guideline | OwnedGuideline): g is OwnedGuide
 export default function MdCard({ guideline, focusable = true }: { guideline: GuidelineCard | Guideline | OwnedGuideline; focusable?: boolean }) {
   const owned = isOwned(guideline) ? guideline : null;
   const off = owned?.locked ? "locked" : owned?.hidden ? "hidden" : undefined;
-  const { slug, title, description, kind, tags, author, latestVersion, stars } = guideline;
+  const { slug, title, description, kind, tags, author, latestVersion, stars, reviewed } = guideline;
   const authorName = author.handle ? `@${author.handle}` : shortAddress(author.address);
   const cardRef = useRef<HTMLElement>(null);
   const viewRef = useRef<HTMLButtonElement>(null);
@@ -88,7 +89,11 @@ export default function MdCard({ guideline, focusable = true }: { guideline: Gui
           <span className="md-version">v{latestVersion}</span>
         </header>
 
-        <h3 className="md-title">{title}</h3>
+        {/* The Reviewed badge sits at the right, under the type badge, without making the card taller */}
+        <div className="md-title-row">
+          <h3 className="md-title">{title}</h3>
+          {reviewed && <ReviewedMark />}
+        </div>
 
         <p className="md-summary">{description}</p>
 
