@@ -45,7 +45,10 @@ export const TIPS = TIPS_CONTRACTS[CHAIN.id];
 // GuidelineReviews deployments (contracts/script/DeployReviews.s.sol, ARCHITECTURE §9.5): a
 // moderator's approval of one exact version, the "Reviewed" badge. Where it isn't deployed there
 // is no badge and no approve button. The indexer reads its events from deployBlock.
-const REVIEWS_CONTRACTS: Record<number, { address: `0x${string}`; deployBlock: bigint } | undefined> = {};
+const REVIEWS_CONTRACTS: Record<number, { address: `0x${string}`; deployBlock: bigint } | undefined> = {
+  // 2026-10-23, deployed with our keystore (pikamd-deployer); Sourcify exact match
+  [arcTestnet.id]: { address: "0x050F0556CE4ed9d195670673f580B2a22e3E40A3", deployBlock: BigInt(68707008) },
+};
 
 /** The reviews contract on the configured network, or undefined where it isn't deployed. */
 export const REVIEWS = REVIEWS_CONTRACTS[CHAIN.id];
