@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import PageLink from "@/components/PageLink";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
 import AuthorAction from "@/components/AuthorAction";
 import CollectButton from "@/components/CollectButton";
 import LikeButton from "@/components/LikeButton";
@@ -21,10 +20,9 @@ import ReviewedMark from "@/components/ReviewedMark";
 // checked in the browser, and how to use it with an agent.
 //
 // The guidelines listed at build time are prerendered whole, so a direct visit gets the file in
-// the HTML (a streamed boundary is revealed no sooner than 300 ms after the first paint: React's
-// throttle). Newer ones get the App Shell on their first visit and are stored complete for the
-// next (guides/incremental-static-regeneration-cache-components); a <Link prefetch> starts that
-// early. Hide and lock clear them through the guidelines tag.
+// the HTML. Newer ones are rendered completely on their first request and stored for the next
+// (ensureStatic "navigation"); a <Link prefetch> starts that early. An unknown slug is a real
+// 404. Hide and lock clear them through the guidelines tag.
 
 const explorer = CHAIN.blockExplorers?.default.url;
 const LICENSE_NAME = { "CC-BY-4.0": "CC BY 4.0", "CC0-1.0": "CC0 1.0" } as const;
@@ -41,16 +39,19 @@ export async function generateMetadata({ params }: PageProps<"/g/[slug]">): Prom
   return { title: `${g.title} · PikaMd`, description: g.description };
 }
 
-export default function GuidelinePage({ params }: PageProps<"/g/[slug]">) {
+// The whole page is static output: no <Suspense> around the file. React streams a finished
+// boundary larger than 12,800 bytes as a separate chunk and reveals it no sooner than 300 ms after
+// the first paint (measured 2026-10-23: a 33.5 KB guideline showed at ~335 ms and pushed the
+// footer down). Unlisted slugs are rendered once on their first request, then cached.
+export const ensureStatic = "navigation";
+
+export default async function GuidelinePage({ params }: PageProps<"/g/[slug]">) {
+  const { slug } = await params;
   return (
     <PageTransition>
       <main className="flex flex-1 flex-col">
         <div className="page-center page-center-high gl-page-wrap">
-          <Suspense fallback={<article className="gl-page pixel-panel" aria-busy="true" />}>
-            {params.then(({ slug }) => (
-              <GuidelineView slug={slug} />
-            ))}
-          </Suspense>
+          <GuidelineView slug={slug} />
         </div>
       </main>
     </PageTransition>

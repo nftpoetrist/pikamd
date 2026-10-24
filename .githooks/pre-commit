@@ -8,7 +8,13 @@ RULES = [
     ("Supabase access token", r"sbp_[A-Za-z0-9]{20,}"),
     ("JWT (e.g. Pinata)", r"eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}"),
     ("private key assignment", r"(?i)private_?key\s*[=:]\s*['\"]?(0x)?[0-9a-f]{64}"),
-    ("filled secret env var", r"^(PIKAMD_SESSION_SECRET|SUPABASE_SECRET_KEY|SUPABASE_ACCESS_TOKEN_[A-Z]+|PINATA_JWT|PRIVATE_KEY|CRON_SECRET)=\S+"),
+    ("filled secret env var", r"^(PIKAMD_SESSION_SECRET|SUPABASE_SECRET_KEY|SUPABASE_ACCESS_TOKEN_[A-Z]+|PINATA_JWT|PRIVATE_KEY|CRON_SECRET|CIRCLE_API_KEY|CIRCLE_ENTITY_SECRET|MNEMONIC|SEED_PHRASE)=\S+"),
+    ("PikaMd MCP key", r"\bpmd_[0-9a-f]{40}\b"),
+    ("private key block", r"-----BEGIN [A-Z ]*PRIVATE KEY-----(?!\\n?abc)"),
+    ("GitHub token", r"\b(?:gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{22,})"),
+    ("OpenAI / Anthropic key", r"\bsk-(?:ant-|proj-)?[A-Za-z0-9_-]{20,}"),
+    ("AWS key", r"\b(?:AKIA|ASIA)[0-9A-Z]{16}\b"),
+    ("Circle API key", r"\b(?:TEST|LIVE)_API_KEY:[0-9a-f]{32}:[0-9a-f]{32}\b"),
 ]
 staged = subprocess.run(["git", "diff", "--cached", "--name-only", "--diff-filter=ACMR"], capture_output=True, text=True).stdout.split()
 bad = []
@@ -16,6 +22,9 @@ for f in staged:
     name = f.rsplit("/", 1)[-1]
     if name.startswith(".env") and name != ".env.example":
         bad.append((f, "env file must never be committed"))
+        continue
+    if "/keystore" in f or f.startswith("keystore") or "/keystores/" in f or name.endswith((".pem", ".key", ".p12")):
+        bad.append((f, "key or keystore file must never be committed"))
         continue
     diff = subprocess.run(["git", "diff", "--cached", "-U0", "--", f], capture_output=True, text=True, errors="replace").stdout
     added = [l[1:] for l in diff.splitlines() if l.startswith("+") and not l.startswith("+++")]
