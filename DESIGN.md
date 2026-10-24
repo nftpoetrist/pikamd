@@ -1,6 +1,6 @@
 # PikaMd — Tasarım Sistemi ve Güncel Durum
 
-> Son güncelleme: 2026-10-19 (yönlü kayan sayfa geçişleri + navbar'da kayan altın çerçeve; cüzdan seçicisinde WalletConnect). Site canlı: https://pikamd.vercel.app Arayüz geliştirmesi sürüyor (yol haritası: ARCHITECTURE.md §15).
+> Son güncelleme: 2026-10-24 (kartlarda ve yönerge sayfasında yeşil REVIEWED rozeti; moderasyon masasında Waiting for review; sayfalar beklemeden dolu açılır). Önceki: 2026-10-19 (yönlü kayan sayfa geçişleri + navbar'da kayan altın çerçeve; cüzdan seçicisinde WalletConnect). Site canlı: https://pikamd.vercel.app Arayüz geliştirmesi sürüyor (yol haritası: ARCHITECTURE.md §15).
 > Bu dosya **piksel tasarım dilinin kurallarını** ve **sitenin şu anki halini** tutar.
 > Yeni bir UI işi yaparken önce burayı oku; buradaki kararlar kullanıcıyla tek tek onaylandı.
 
