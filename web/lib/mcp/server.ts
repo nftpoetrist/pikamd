@@ -87,7 +87,7 @@ export function buildMcpServer({ collection, connectUrl }: { collection: string[
         return text(
           ref.version > g.latestVersion
             ? `${g.slug} has no v${ref.version}. Its latest version is v${g.latestVersion}.`
-            : `Only the latest version of ${g.slug} (v${g.latestVersion}) can be read in this preview. Older versions come with the on-chain registry.`,
+            : `Only the latest version of ${g.slug} (v${g.latestVersion}) can be read. Reading older versions isn't available yet.`,
           true,
         );
       }

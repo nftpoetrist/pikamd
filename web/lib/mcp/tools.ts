@@ -134,7 +134,7 @@ export function formatCollection(list: Guideline[], slugs: readonly string[]): s
   if (saved.length === 0) {
     return "The user's PikaMd collection is empty. They can add guidelines on the PikaMd Explore page.";
   }
-  return `The user's PikaMd collection has ${saved.length} guideline${saved.length === 1 ? "" : "s"}, newest first. None is pinned to a version yet, so each one follows its latest version. Read one with get_guideline.\n\n${saved.map((g) => summaryLine(g)).join("\n")}`;
+  return `The user's PikaMd collection has ${saved.length} guideline${saved.length === 1 ? "" : "s"}, newest first. Each one is read at its latest version. Read one with get_guideline.\n\n${saved.map((g) => summaryLine(g)).join("\n")}`;
 }
 
 /** Shown when my_collection is called without a valid key. */
