@@ -36,7 +36,8 @@ export function buildMcpServer({ collection, connectUrl }: { collection: string[
     },
     { instructions: SERVER_INSTRUCTIONS },
   );
-  const readOnly = { readOnlyHint: true, openWorldHint: false };
+  // Read-only, and the title again inside the annotations: the Connectors Directory reads it there
+  const readOnly = (title: string) => ({ title, readOnlyHint: true, openWorldHint: false });
   const text = (t: string, isError = false) => ({ content: [{ type: "text" as const, text: t }], ...(isError ? { isError } : {}) });
 
   server.registerTool(
@@ -57,7 +58,7 @@ export function buildMcpServer({ collection, connectUrl }: { collection: string[
         tags: z.array(z.string().trim().min(1).max(40)).max(5).optional().describe("Only return guidelines that have all of these tags"),
         limit: z.number().int().min(1).max(SEARCH_LIMIT_MAX).optional().describe(`How many results to return (default 10, max ${SEARCH_LIMIT_MAX})`),
       }),
-      annotations: readOnly,
+      annotations: readOnly("Search PikaMd guidelines"),
     },
     async ({ query, tags, limit }) => text(formatSearchResults(query, searchForAgent(await listGuidelinesForAgents(), query, { tags, limit }))),
   );
@@ -72,7 +73,7 @@ export function buildMcpServer({ collection, connectUrl }: { collection: string[
         slug: z.string().trim().min(1).max(80).describe("Guideline slug, optionally with a version: secure-solidity or secure-solidity@v3"),
         version: z.string().trim().max(10).optional().describe("Version such as v3. Leave it out for the latest version"),
       }),
-      annotations: readOnly,
+      annotations: readOnly("Read a PikaMd guideline"),
     },
     async ({ slug, version }) => {
       const ref = parseGuidelineRef(slug, version);
@@ -102,7 +103,7 @@ export function buildMcpServer({ collection, connectUrl }: { collection: string[
       title: "List my PikaMd collection",
       description:
         "List the guidelines the user saved to their PikaMd collection, newest first. Needs the user to connect PikaMd (wallet sign-in or a PikaMd key). Read one in full with get_guideline.",
-      annotations: readOnly,
+      annotations: readOnly("List my PikaMd collection"),
     },
     async () =>
       collection === null ? text(missingKeyMessage(connectUrl), true) : text(formatCollection(await listGuidelinesForAgents(), collection)),
