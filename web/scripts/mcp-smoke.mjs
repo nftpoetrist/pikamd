@@ -1,7 +1,8 @@
 // End-to-end check of the MCP server with the official MCP client SDK.
 // Run with the dev server up:  npm run mcp:smoke   (PIKAMD_URL overrides http://localhost:3001)
 // Connects in both protocol eras (2025 "legacy" handshake and 2026-07-28 "modern"), with a valid
-// key, without one, with a wrong one and with a revoked one. The key belongs to a throwaway test
+// key and without one; a wrong or replaced key is refused with 401 (since OAuth, 2026-10-25: a
+// credential that doesn't work must not pass as anonymous). The key belongs to a throwaway test
 // wallet in the development database (only its SHA-256 is stored, like a real key); the wallet's
 // collection and keys are deleted before and after the run.
 import { createHash, randomBytes } from "node:crypto";
@@ -45,7 +46,7 @@ const text = (result) => result.content?.[0]?.text ?? "";
 
 try {
   for (const mode of ["legacy", "auto"]) {
-    for (const [name, auth] of [["valid key", key], ["no key", null], ["wrong key", `pmd_${"0".repeat(40)}`], ["replaced key", revoked]]) {
+    for (const [name, auth] of [["valid key", key], ["no key", null]]) {
       const label = `[${mode} · ${name}]`;
       const client = await session(mode, auth);
       try {
@@ -72,13 +73,17 @@ try {
         const bad = await client.callTool({ name: "search_guidelines", arguments: { query: "" } });
         check(bad.isError === true, `${label} empty query rejected by the schema`);
 
-        const mine = await client.callTool({ name: "my_collection", arguments: {} });
-        check(
-          auth === key
-            ? !mine.isError && text(mine).includes("has 2 guidelines") && text(mine).indexOf("react-performance") < text(mine).indexOf("secure-solidity")
-            : mine.isError === true && text(mine).includes("/connect"),
-          `${label} my_collection${auth === key ? " (the wallet's 2, newest first)" : " refused, points to /connect"}`,
-        );
+        if (auth === key) {
+          const mine = await client.callTool({ name: "my_collection", arguments: {} });
+          check(
+            !mine.isError && text(mine).includes("has 2 guidelines") && text(mine).indexOf("react-performance") < text(mine).indexOf("secure-solidity"),
+            `${label} my_collection (the wallet's 2, newest first)`,
+          );
+        } else {
+          // Lazy authentication: the HTTP request fails with 401 so the agent can start sign-in
+          const status = await client.callTool({ name: "my_collection", arguments: {} }).then(() => 200, (e) => e?.status ?? e?.data?.status ?? String(e));
+          check(status === 401 || /401|invalid_token/.test(String(status)), `${label} my_collection without a key → 401 (sign-in), not a tool error (${status})`);
+        }
       } finally {
         await client.close();
       }
@@ -87,6 +92,17 @@ try {
 } catch (error) {
   failures++;
   console.error("FAIL", error);
+}
+
+// A wrong or replaced key: every request is refused with 401 invalid_token and a challenge
+for (const [name, bad] of [["wrong key", `pmd_${"0".repeat(40)}`], ["replaced key", revoked]]) {
+  const res = await fetch(new URL("/mcp", BASE), {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json, text/event-stream", Authorization: `Bearer ${bad}` },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-11-25", capabilities: {}, clientInfo: { name: "smoke", version: "1" } } }),
+  });
+  const www = res.headers.get("www-authenticate") ?? "";
+  check(res.status === 401 && www.includes('error="invalid_token"') && www.includes("resource_metadata="), `[${name}] refused with 401 invalid_token and resource_metadata`);
 }
 
 try {

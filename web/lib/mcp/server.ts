@@ -84,7 +84,7 @@ export function buildMcpServer({ collection, connectUrl }: { collection: string[
     {
       title: "List my PikaMd collection",
       description:
-        "List the guidelines the user saved to their PikaMd collection, newest first. Needs the user's PikaMd key. Read one in full with get_guideline.",
+        "List the guidelines the user saved to their PikaMd collection, newest first. Needs the user to connect PikaMd (wallet sign-in or a PikaMd key). Read one in full with get_guideline.",
       annotations: readOnly,
     },
     async () =>

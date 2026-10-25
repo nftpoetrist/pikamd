@@ -585,3 +585,143 @@ test("public roles can't read or write reviews", async () => {
   }
   assert.equal((await asRole("service_role", `select reviewed from listed_guidelines where id = 60`)).rows.length, 1);
 });
+
+// ── OAuth (20261025090000_oauth.sql) ─────────────────────────────────────────────────────
+const W = "0x" + "c".repeat(40);
+const H = (s) => s.repeat(64).slice(0, 64); // a stand-in SHA-256 hex
+let hashN = 0;
+const freshHash = () => (++hashN).toString(16).padStart(64, "0");
+const CH = "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM";
+const RES = "https://pikamd.vercel.app/mcp";
+const DCR_ID = "pmdc_" + "A".repeat(43);
+const svc = (sql, params) => asRole("service_role", sql, params);
+
+async function newRequest({ client = DCR_ID, kind = "dcr", ttl = 600, redirect = "http://127.0.0.1:33418/" } = {}) {
+  const id = freshHash();
+  await svc(`select oauth_create_request($1,$2,$3,'VS Code',null,$4,'st',$5,$6,'collection:read',$7)`, [id, client, kind, redirect, CH, RES, ttl]);
+  return id;
+}
+async function newCode(opts = {}) {
+  const req = await newRequest(opts);
+  const code = freshHash();
+  const r = await svc(`select * from oauth_approve($1,$2,$3,60)`, [req, W, code]);
+  assert.equal(r.rows.length, 1);
+  return { req, code };
+}
+const exchange = (code, { client = DCR_ID, redirect = "http://127.0.0.1:33418/", challenge = CH, resource = RES, access = freshHash(), refresh = freshHash() } = {}) =>
+  svc(`select * from oauth_exchange_code($1,$2,$3,$4,$5,$6,$7,3600,2592000)`, [code, client, redirect, challenge, resource, access, refresh]).then((r) => ({ ...r.rows[0], access, refresh }));
+const access = (hash, resource = RES) => svc(`select * from oauth_access($1,$2)`, [hash, resource]).then((r) => r.rows[0] ?? null);
+const refresh = (old, { client = DCR_ID, resource = RES } = {}) => {
+  const a = freshHash(), n = freshHash();
+  return svc(`select * from oauth_refresh($1,$2,$3,$4,$5,3600,2592000)`, [old, client, resource, a, n]).then((r) => ({ ...r.rows[0], access: a, refresh: n }));
+};
+
+test("oauth: register, consent, code, tokens; the token opens its wallet's collection", async () => {
+  await svc(`select oauth_register_client($1,'VS Code',$2)`, [DCR_ID, ["http://127.0.0.1:33418/"]]);
+  const c = await svc(`select * from oauth_dcr_client($1)`, [DCR_ID]);
+  assert.deepEqual(c.rows[0], { client_name: "VS Code", redirect_uris: ["http://127.0.0.1:33418/"] });
+  await svc(`select * from add_to_collection($1, 'secure-solidity')`, [W]);
+  const req = await newRequest();
+  const info = await svc(`select * from oauth_request_info($1)`, [req]);
+  assert.equal(info.rows[0].client_name, "VS Code");
+  const code = freshHash();
+  const ap = await svc(`select * from oauth_approve($1,$2,$3,60)`, [req, W.toUpperCase().replace("0X", "0x"), code]);
+  assert.deepEqual(ap.rows[0], { redirect_uri: "http://127.0.0.1:33418/", state: "st" });
+  assert.equal((await svc(`select * from oauth_request_info($1)`, [req])).rows.length, 0, "an answered request is gone");
+  assert.equal((await svc(`select * from oauth_approve($1,$2,$3,60)`, [req, W, freshHash()])).rows.length, 0, "approved once only");
+  assert.equal((await svc(`select * from oauth_deny($1)`, [req])).rows.length, 0);
+  const t = await exchange(code);
+  assert.equal(t.status, "ok");
+  assert.equal(t.scope, "collection:read");
+  const a = await access(t.access);
+  assert.equal(a.wallet, W);
+  assert.equal(a.client_id, DCR_ID);
+  assert.deepEqual(a.slugs, ["secure-solidity"]);
+  assert.equal(await access(t.refresh), null, "a refresh token isn't an access token");
+  assert.equal(await access(t.access, "https://other.example/mcp"), null, "token bound to its resource");
+  const grants = await svc(`select * from oauth_wallet_grants($1)`, [W]);
+  assert.equal(grants.rows.length, 1);
+  assert.equal(grants.rows[0].client_name, "VS Code");
+});
+
+test("oauth: a code works once, for its own client, redirect, verifier and resource; reuse revokes the grant", async () => {
+  const { code } = await newCode();
+  assert.equal((await exchange(code, { client: "pmdc_" + "B".repeat(43) })).status, "invalid_grant", "another client");
+  assert.equal((await exchange(code, { redirect: "http://127.0.0.1:1/" })).status, "invalid_grant", "another redirect");
+  assert.equal((await exchange(code, { challenge: "x".repeat(43) })).status, "invalid_grant", "wrong verifier");
+  assert.equal((await exchange(code, { resource: "https://other.example/mcp" })).status, "invalid_target");
+  const ok = await exchange(code, { redirect: null, resource: null });
+  assert.equal(ok.status, "ok", "failed attempts don't burn the code; redirect and resource may be left out");
+  assert.ok(await access(ok.access));
+  assert.equal((await exchange(code)).status, "invalid_grant", "second use");
+  assert.equal(await access(ok.access), null, "the grant the code opened is revoked");
+  const r = await svc(`select revoke_reason from oauth_grants g join oauth_tokens t on t.grant_id = g.id where t.token_hash = $1`, [ok.access]);
+  assert.equal(r.rows[0].revoke_reason, "code_reuse");
+});
+
+test("oauth: expired requests and codes are refused", async () => {
+  const req = await newRequest({ ttl: 0 });
+  assert.equal((await svc(`select * from oauth_request_info($1)`, [req])).rows.length, 0);
+  assert.equal((await svc(`select * from oauth_approve($1,$2,$3,60)`, [req, W, freshHash()])).rows.length, 0);
+  const { code } = await newCode();
+  await db.query(`update oauth_codes set expires_at = now() - interval '1 second' where code_hash = $1`, [code]);
+  assert.equal((await exchange(code)).status, "invalid_grant");
+});
+
+test("oauth: refresh rotates; a spent refresh token used again revokes the grant after a 30 s grace", async () => {
+  const t = await exchange((await newCode()).code);
+  const r1 = await refresh(t.refresh);
+  assert.equal(r1.status, "ok");
+  assert.ok(await access(r1.access));
+  assert.ok(await access(t.access), "the earlier access token lives out its hour");
+  assert.equal((await refresh(t.refresh)).status, "invalid_grant", "spent token, within the grace");
+  assert.ok(await access(r1.access), "a race within the grace doesn't disconnect the client");
+  assert.equal((await refresh(r1.refresh, { client: "pmdc_" + "Z".repeat(43) })).status, "invalid_grant", "another client");
+  assert.equal((await refresh(r1.refresh, { resource: "https://other.example/mcp" })).status, "invalid_target");
+  await db.query(`update oauth_tokens set used_at = now() - interval '31 seconds' where token_hash = $1`, [t.refresh]);
+  assert.equal((await refresh(t.refresh)).status, "invalid_grant");
+  assert.equal(await access(r1.access), null, "replay after the grace: every token of the grant stops working");
+  assert.equal((await refresh(r1.refresh)).status, "invalid_grant");
+});
+
+test("oauth: expired or revoked tokens open nothing", async () => {
+  const t = await exchange((await newCode()).code);
+  await db.query(`update oauth_tokens set expires_at = now() - interval '1 second' where token_hash = $1`, [t.access]);
+  assert.equal(await access(t.access), null);
+  await db.query(`update oauth_tokens set expires_at = now() - interval '1 second' where token_hash = $1`, [t.refresh]);
+  assert.equal((await refresh(t.refresh)).status, "invalid_grant");
+  const u = await exchange((await newCode()).code);
+  assert.equal((await svc(`select oauth_revoke_token($1,$2) as ok`, [u.access, "pmdc_" + "Q".repeat(43)])).rows[0].ok, false, "another client can't revoke it");
+  assert.ok(await access(u.access));
+  assert.equal((await svc(`select oauth_revoke_token($1,$2) as ok`, [u.access, DCR_ID])).rows[0].ok, true);
+  assert.equal(await access(u.access), null, "access token revoked alone");
+  assert.equal((await refresh(u.refresh)).status, "ok", "its refresh token still works");
+  const v = await exchange((await newCode()).code);
+  await svc(`select oauth_revoke_token($1,$2)`, [v.refresh, DCR_ID]);
+  assert.equal(await access(v.access), null, "revoking the refresh token revokes the grant");
+});
+
+test("oauth: only the wallet itself disconnects its apps; at most 50 stay connected", async () => {
+  const t = await exchange((await newCode()).code);
+  const id = (await svc(`select grant_id from oauth_tokens where token_hash = $1`, [t.access])).rows[0].grant_id;
+  assert.equal((await svc(`select oauth_revoke_grant($1,$2) as ok`, [A, id])).rows[0].ok, false);
+  assert.ok(await access(t.access));
+  assert.equal((await svc(`select oauth_revoke_grant($1,$2) as ok`, [W, id])).rows[0].ok, true);
+  assert.equal(await access(t.access), null);
+  assert.ok(!(await svc(`select * from oauth_wallet_grants($1)`, [W])).rows.some((g) => g.id === id));
+  for (let i = 0; i < 52; i++) await exchange((await newCode()).code);
+  const active = await svc(`select count(*)::int as n from oauth_grants where wallet_address = $1 and revoked_at is null`, [W]);
+  assert.equal(active.rows[0].n, 50);
+});
+
+test("public roles can't read or write anything OAuth", async () => {
+  for (const role of ["anon", "authenticated"]) {
+    for (const rel of ["oauth_clients", "oauth_requests", "oauth_codes", "oauth_grants", "oauth_tokens"]) {
+      await assert.rejects(asRole(role, `select * from ${rel}`), /permission denied/, `${role} reads ${rel}`);
+    }
+    await assert.rejects(asRole(role, `select * from oauth_access($1,$2)`, [H("a"), RES]), /permission denied/);
+    await assert.rejects(asRole(role, `select oauth_register_client($1,'x',$2)`, ["pmdc_" + "C".repeat(43), ["https://a.example/cb"]]), /permission denied/);
+    await assert.rejects(asRole(role, `select * from oauth_wallet_grants($1)`, [W]), /permission denied/);
+    await assert.rejects(asRole(role, `select oauth_new_grant($1,'c','dcr','n',null,'s','r',$2,$3,1,1)`, [W, H("d"), H("e")]), /permission denied/);
+  }
+});

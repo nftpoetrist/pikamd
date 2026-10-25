@@ -5621,6 +5621,94 @@ button.wallet-mod:disabled { cursor: wait; opacity: 0.7; }
   }
 }
 
+/* Connect page: "Or use a key" divider and the connected apps list (ARCHITECTURE §8.2) */
+.connect-or {
+  margin: 0;
+  padding-top: 24px;
+  font-size: 16px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--t2);
+  background: repeating-linear-gradient(90deg, rgba(255, 203, 5, 0.3) 0 6px, transparent 6px 12px) top / 100% 3px no-repeat;
+}
+.connect-apps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.connect-apps li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-top: 2px solid rgba(255, 203, 5, 0.12);
+}
+.connect-app-name { margin: 0; font-size: 21px; color: var(--t0); display: flex; align-items: center; gap: 10px; }
+.connect-app-flag {
+  font-size: 13px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  color: var(--orange);
+  box-shadow: 0 -2px 0 0 rgba(255, 159, 67, 0.5), 0 2px 0 0 rgba(255, 159, 67, 0.5), -2px 0 0 0 rgba(255, 159, 67, 0.5), 2px 0 0 0 rgba(255, 159, 67, 0.5);
+}
+.connect-app-meta { margin: 2px 0 0; font-size: 17px; color: var(--t2); }
+
+/* ── OAuth consent (/oauth/consent): one panel, the app's identity first ── */
+.consent {
+  --px-b: 3px;
+  --px-gap: 12px;
+  --px-h: 34px;
+  --px-base: 4px;
+  width: min(560px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 30px 32px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-family: var(--font-vt323);
+  color: var(--t1);
+}
+.consent-eyebrow { margin: 0; font-size: 16px; letter-spacing: 3px; text-transform: uppercase; color: var(--y1); }
+.consent-title {
+  margin: 0;
+  font-family: var(--font-jersey);
+  font-weight: 400;
+  font-size: 34px;
+  line-height: 1.05;
+  color: var(--t0);
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.7);
+  overflow-wrap: anywhere;
+}
+.consent-app { color: var(--y1); text-shadow: 2px 2px 0 var(--g4); }
+.consent-text { margin: 0; font-size: 20px; line-height: 1.25; }
+.consent-text.is-dim { color: var(--t2); font-size: 18px; }
+.consent-flag {
+  margin: 0;
+  padding: 10px 14px;
+  font-size: 18px;
+  line-height: 1.25;
+  background: rgba(255, 140, 50, 0.08);
+  box-shadow: inset 3px 0 0 0 var(--orange);
+}
+.consent-flag b { font-weight: 400; color: var(--orange); }
+.consent-list { margin: 0; display: flex; flex-direction: column; gap: 0; }
+.consent-list > div {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 14px;
+  padding: 9px 0;
+  border-top: 2px solid rgba(255, 203, 5, 0.12);
+  font-size: 19px;
+  line-height: 1.25;
+}
+.consent-list dt { color: var(--t2); }
+.consent-list dd { margin: 0; color: var(--t0); overflow-wrap: anywhere; }
+.consent-list code { font-family: var(--font-vt323); font-size: 1em; color: var(--y2); }
+.consent-actions { display: flex; flex-wrap: wrap; gap: calc(var(--px-b) * 2 + var(--px-gap)); margin-top: 4px; }
+@media (max-width: 639px) {
+  .consent { padding: 24px 20px 22px; }
+  .consent-title { font-size: 28px; }
+  .consent-list > div { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+}
+
 /* ── Docs (/docs): a sticky table of contents beside one long article, in the site's pixel language ── */
 .docs-page { padding-bottom: 64px; }
 .docs-layout {

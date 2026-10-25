@@ -84,3 +84,19 @@ export async function clearTestCollections(db, wallets) {
     if (!res.ok) throw new Error(`clearing test ${table} failed (HTTP ${res.status})`);
   }
 }
+
+/** Deletes the test wallets' OAuth grants (their tokens go with them), codes, and the test clients' requests and registrations. */
+export async function clearTestOAuth(db, wallets, clientIds) {
+  if (!db) return;
+  const list = wallets.map((w) => w.toLowerCase()).join(",");
+  const clients = clientIds.map((c) => `"${c}"`).join(",");
+  const steps = [
+    `/rest/v1/oauth_codes?wallet_address=in.(${list})`,
+    `/rest/v1/oauth_grants?wallet_address=in.(${list})`,
+    ...(clientIds.length ? [`/rest/v1/oauth_requests?client_id=in.(${clients})`, `/rest/v1/oauth_clients?client_id=in.(${clients})`] : []),
+  ];
+  for (const path of steps) {
+    const res = await rest(db, "DELETE", path);
+    if (!res.ok) throw new Error(`clearing test OAuth rows failed (HTTP ${res.status}) at ${path.split("?")[0]}`);
+  }
+}

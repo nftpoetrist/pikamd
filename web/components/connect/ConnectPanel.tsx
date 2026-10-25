@@ -6,6 +6,8 @@ import CopyButton from "@/components/CopyButton";
 import { useSavedSlugs, useSignedIn } from "@/lib/collection/client";
 import { EXAMPLE_ASKS, KEY_PLACEHOLDER, MCP_TOOLS, agentPrompt, agentSetups, maskKey, mcpUrl, type AgentId } from "@/lib/mcp/connect";
 import { useKeyActions, useMcpKey } from "@/lib/mcp/key-client";
+import { useConnectedApps, useDisconnectApp } from "@/lib/oauth/apps-client";
+import { useHydrated } from "@/lib/hydrated";
 import { messageFor } from "@/lib/publish/client";
 import { useWalletUnknown } from "@/lib/wallet/known";
 import { openWalletModal } from "@/lib/wallet/modal";
@@ -24,10 +26,11 @@ function ago(iso: string): string {
   return rtf.format(-Math.floor(s / 86400), "day");
 }
 
-// Connect your agent (ARCHITECTURE §8, §8.1): create a key → paste one prompt into your agent,
-// or set it up by hand per agent → try it. Developers on their own machine come first (K11).
-// The key belongs to the wallet (K12): connect, sign in once, and the key opens that wallet's
-// collection for my_collection. Searching and reading need no key at all.
+// Connect your agent (ARCHITECTURE §8, §8.1, §8.2). Two ways in: add the server address and sign
+// in with the wallet when the agent asks (OAuth: claude.ai, Claude Desktop and mobile, Claude Code
+// and other agents that support MCP sign-in), or create a key → paste one prompt into the agent,
+// or set it up by hand → try it. Searching and reading need neither. Connected apps (from sign-in)
+// are listed at the end, each with Disconnect.
 export default function ConnectPanel() {
   // The server is this site's own /mcp route, so the URL follows whatever domain serves the page.
   const origin = useSyncExternalStore(noSubscribe, () => window.location.origin, () => null);
@@ -37,6 +40,10 @@ export default function ConnectPanel() {
   const keyInfo = useMcpKey();
   const actions = useKeyActions();
   const saved = useSavedSlugs();
+  const hydrated = useHydrated();
+  const apps = useConnectedApps();
+  const disconnect = useDisconnectApp();
+  const [dropping, setDropping] = useState<string | null>(null);
   const [freshKey, setFreshKey] = useState<string | null>(null);
   const [agent, setAgent] = useState<AgentId>("claude-code");
   const [busy, setBusy] = useState(false);
@@ -101,9 +108,40 @@ export default function ConnectPanel() {
   return (
     <section className="connect-panel pixel-panel" aria-label="Connect your agent">
       <p className="connect-intro">
-        Searching and reading guidelines over MCP work without a key. Your key adds <code>my_collection</code>: the guidelines you
-        saved with your wallet
+        Searching and reading guidelines over MCP need nothing. To read your collection (<code>my_collection</code>), your agent signs in
+        with your wallet, or uses a key
       </p>
+
+      {/* Sign-in: no key to copy */}
+      <div className="connect-step">
+        <h2 className="connect-step-title">
+          <span aria-hidden="true">★</span> Connect by signing in
+        </h2>
+        <p className="connect-text">
+          Add PikaMd by its address. The first time your agent needs your collection, it opens PikaMd to sign in with your wallet: one free
+          signature, no key to copy
+        </p>
+        <div className="pub-prompt-head">
+          <p className="connect-where">Server address</p>
+          <CopyButton text={url} />
+        </div>
+        <pre className="connect-code" style={hideUntilKnown(origin !== null)}>
+          <code>{url}</code>
+        </pre>
+        <ul className="connect-notes">
+          <li>
+            claude.ai, Claude Desktop and mobile: Customize → Connectors → Add custom connector, paste the address. When Claude needs your
+            collection it shows Connect
+          </li>
+          <li>
+            Claude Code: <code>claude mcp add --transport http --scope user pikamd {url}</code>, then run <code>/mcp</code> to sign in when it
+            asks
+          </li>
+          <li>Other agents that support MCP sign-in open the same screen. If yours doesn&apos;t, use a key below</li>
+        </ul>
+      </div>
+
+      <p className="connect-or">Or use a key</p>
 
       {/* 01 Key */}
       <div className="connect-step">
@@ -285,6 +323,65 @@ export default function ConnectPanel() {
           )}
         </p>
       </div>
+
+      {/* Connected apps: agents this wallet allowed through sign-in. Only after hydration: the server
+          can't see the wallet, so the first render must match its HTML */}
+      {hydrated && signed && (
+        <div className="connect-step">
+          <h2 className="connect-step-title">
+            <span aria-hidden="true">★</span> Connected apps
+          </h2>
+          {apps.isPending ? (
+            <p className="connect-text" aria-busy="true">
+              Loading…
+            </p>
+          ) : apps.isError ? (
+            <p className="pub-error" role="alert">
+              Couldn&apos;t load your connected apps: {messageFor(apps.error)}
+            </p>
+          ) : apps.data.length === 0 ? (
+            <p className="connect-text">No app has signed in with this wallet yet</p>
+          ) : (
+            <ul className="connect-apps">
+              {apps.data.map((a) => (
+                <li key={a.id}>
+                  <div>
+                    <p className="connect-app-name">
+                      {a.host ?? a.name}
+                      {a.kind === "dcr" && <span className="connect-app-flag">Unverified</span>}
+                    </p>
+                    <p className="connect-app-meta">
+                      {a.host ? `${a.name} · ` : ""}connected {new Date(a.createdAt).toLocaleDateString("en-US", DAY)} ·{" "}
+                      {a.lastUsedAt ? `last used ${ago(a.lastUsedAt)}` : "not used yet"}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="pub-link"
+                    disabled={dropping !== null}
+                    onClick={() =>
+                      void (async () => {
+                        setDropping(a.id);
+                        setError(null);
+                        try {
+                          await disconnect(a.id);
+                        } catch (e) {
+                          setError(messageFor(e));
+                        } finally {
+                          setDropping(null);
+                        }
+                      })()
+                    }
+                  >
+                    {dropping === a.id ? "Disconnecting…" : "Disconnect"}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="pub-hint">Disconnecting stops the app at once. It can ask you to sign in again later</p>
+        </div>
+      )}
     </section>
   );
 }

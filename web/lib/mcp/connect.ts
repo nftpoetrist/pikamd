@@ -142,8 +142,8 @@ Rules:
 /** Tools the server will expose (ARCHITECTURE §8). */
 export const MCP_TOOLS: { name: string; text: string }[] = [
   { name: "search_guidelines", text: "Finds guidelines by topic or tag" },
-  { name: "get_guideline", text: "Reads a full guideline, latest or a pinned version like slug@v3" },
-  { name: "my_collection", text: "Lists the guidelines you collected, with their pinned versions" },
+  { name: "get_guideline", text: "Reads a full guideline, the latest version" },
+  { name: "my_collection", text: "Lists the guidelines you saved, newest first (needs sign-in or a key)" },
 ];
 
 /** Plain-language requests to try once connected. */

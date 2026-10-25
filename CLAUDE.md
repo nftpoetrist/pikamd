@@ -52,7 +52,9 @@ Yeni oturum buradan devam eder. **Site Arc testnet'te canlı: https://pikamd.ver
 
 **MetaMask "şüpheli site" uyarısı:** MetaMask'ın tarayıcısı (`dapp-scanning.api.cx.metamask.io/v2/scan`) **incelenmemiş `*.vercel.app` / `*.netlify.app` / `*.pages.dev` alt alan adlarını varsayılan olarak BLOCK** ediyor. Kendi alan adlarında sonuç değişken (2026-10-20: `pikamd.xyz` BLOCK'a döndü, `pikamd.com/.org/.io` NONE); alan adı almadan hemen önce aynı servise sor. Kaldırma isteği: https://github.com/MetaMask/eth-phishing-detect/issues/303739. Kendi alan adı (tercihen .com/.org) olası çözüm, garanti değil.
 
-**Git:** `main` = `origin/main` (2026-10-25: kedi maskotu + VERIFIED rozeti canlıya alındı). Yeni iş: `feat/…` dalı → kullanıcı onayıyla `main` + push.
+**Git:** `main` = `origin/main` (2026-10-25: kedi maskotu, koşan kediler, arka plan kafa kartları, /docs canlıda).
+
+**2026-10-25 OAuth (dal `feat/oauth`, henüz main'de DEĞİL):** ajanlar için cüzdanla giriş (OAuth 2.1, MCP yetkilendirme 2026-07-28 + Claude "lazy authentication"), ARCHITECTURE §8.2. claude.ai'de "Add custom connector" → yalnızca adres; `my_collection` istenince Connect → `/oauth/consent` → cüzdan + SIWE → Allow. Claude CIMD ile, VS Code/Cursor/Codex DCR ile; anahtar (`pmd_`) yedek. Testler: `npm test` 165 · `npm run oauth:smoke` 82 (resmi SDK istemcisi, Claude Code'un gerçek CIMD'si) · tarayıcı 21 · `mcp:smoke` 43 · dev + production build. **Bekleyen (kullanıcı onayıyla):** `npm run db:migrate -- live` (migration `20261025090000_oauth.sql`, 14. migration) → main + push → canlıda claude.ai ile gerçek bağlantı denemesi (kullanıcı). Yeni iş: `feat/…` dalı → kullanıcı onayıyla `main` + push.
 
 **Altyapı (hepsi canlı ve doğrulandı):**
 - **`GuidelineRegistry`:** `0x27cf926771B0A311A9574543ea29dc5e3ea59986` (Arc testnet, blok 67092487), admin = moderatör = `0xd76B24F43bCF5C3fFe09906A7414CD4D02EA7cDe` (kullanıcının yönetim cüzdanı, keystore `pikamd-deployer`). Sourcify doğrulandı. Zincirde id 1–3 gizli, id 4 "Test2" (yalnızca geliştirme DB'sinde), id 5–8 canlıda. Web: `lib/chain.ts` → `REGISTRY`, ABI `lib/registry-abi.ts`.

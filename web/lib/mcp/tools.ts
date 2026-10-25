@@ -139,5 +139,5 @@ export function formatCollection(list: Guideline[], slugs: readonly string[]): s
 
 /** Shown when my_collection is called without a valid key. */
 export function missingKeyMessage(connectUrl: string): string {
-  return `my_collection needs the user's PikaMd key, and this request didn't include a valid one. The user can create a key at ${connectUrl} and add it as the header Authorization: Bearer <key>. search_guidelines and get_guideline work without a key.`;
+  return `my_collection needs the user to connect PikaMd: sign in with their wallet when the app asks, or create a key at ${connectUrl} and send it as the header Authorization: Bearer <key>. search_guidelines and get_guideline work without either.`;
 }

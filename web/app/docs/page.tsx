@@ -317,10 +317,56 @@ export default function DocsPage() {
 
               <Section id="connect" eyebrow="Using PikaMd" title="Connect your agent">
                 <p>
-                  PikaMd runs an MCP server over Streamable HTTP. Searching and reading work without a key. Your key adds{" "}
-                  <code>my_collection</code>, the guidelines you saved with your wallet.
+                  PikaMd runs an MCP server over Streamable HTTP. Searching and reading need nothing. <code>my_collection</code>, the
+                  guidelines you saved with your wallet, needs your agent to sign in with your wallet, or a key.
                 </p>
-                <Table head={["Setting", "Value"]} rows={[["Server address", <code key="v">{MCP}</code>], ["Server name", <code key="v">pikamd</code>], ["Authentication", <><code>Authorization: Bearer pmd_…</code> header</>]]} />
+                <Table
+                  head={["Setting", "Value"]}
+                  rows={[
+                    ["Server address", <code key="v">{MCP}</code>],
+                    ["Server name", <code key="v">pikamd</code>],
+                    ["Authentication", "OAuth 2.1 sign-in with your wallet, or an Authorization: Bearer pmd_… key"],
+                  ]}
+                />
+                <h3>Connect by signing in (recommended)</h3>
+                <p>No key to create or copy. Add the address; the first time your agent needs your collection, it opens PikaMd to sign in.</p>
+                <Steps
+                  items={[
+                    {
+                      title: "Add the server",
+                      body: (
+                        <>
+                          claude.ai, Claude Desktop and mobile: <b>Customize → Connectors → Add custom connector</b>, paste <code>{MCP}</code>.
+                          Claude Code: <code>claude mcp add --transport http --scope user pikamd {MCP}</code>.
+                        </>
+                      ),
+                    },
+                    {
+                      title: "Ask for your collection",
+                      body: (
+                        <>
+                          Claude shows a <b>Connect</b> card in the conversation. In Claude Code, run <code>/mcp</code> and sign in when it
+                          asks.
+                        </>
+                      ),
+                    },
+                    {
+                      title: "Sign in and allow",
+                      body: (
+                        <>
+                          PikaMd opens in your browser and names the app asking, such as claude.ai. Connect your wallet, sign once for free and
+                          press <b>Allow</b>. The app can read your saved guidelines, nothing else.
+                        </>
+                      ),
+                    },
+                  ]}
+                />
+                <p>
+                  Connected apps are listed on <PageLink href="/connect">Connect your agent</PageLink>, each with <b>Disconnect</b>. A
+                  connection stays signed in while it&apos;s used; after 30 days without use, it asks you to sign in again.
+                </p>
+                <h3>Or use a key</h3>
+                <p>For agents without MCP sign-in, or setups that can&apos;t open a browser.</p>
                 <h3>1. Create your key</h3>
                 <p>
                   On <PageLink href="/connect">Connect your agent</PageLink>, connect your wallet and press <b>Create key</b>. The key is made in
@@ -357,21 +403,27 @@ export default function DocsPage() {
                 </ul>
                 <h3>Tools</h3>
                 <Table
-                  head={["Tool", "Key", "What it does"]}
+                  head={["Tool", "Needs", "What it does"]}
                   rows={[
-                    [<code key="t">search_guidelines</code>, "No", `Searches the library with the same engine and query syntax as the site; up to ${SEARCH_LIMIT_MAX} results with the matching lines`],
-                    [<code key="t">get_guideline</code>, "No", "Returns one guideline's full Markdown with its author, version, license and Arc record"],
-                    [<code key="t">my_collection</code>, "Yes", "Lists the guidelines in your collection, newest first"],
+                    [<code key="t">search_guidelines</code>, "Nothing", `Searches the library with the same engine and query syntax as the site; up to ${SEARCH_LIMIT_MAX} results with the matching lines`],
+                    [<code key="t">get_guideline</code>, "Nothing", "Returns one guideline's full Markdown with its author, version, license and Arc record"],
+                    [<code key="t">my_collection</code>, "Sign-in or key", "Lists the guidelines in your collection, newest first"],
                   ]}
                 />
                 <p>
                   Every guideline reaches your agent labeled as community reference data, not instructions, and only after its text has been
                   checked against the hash on Arc. Guidelines the scan flagged are not served to agents.
                 </p>
-                <Note title="Not yet supported">
-                  claude.ai, Claude Desktop and the mobile apps connect only through OAuth, which PikaMd doesn&apos;t offer yet. Use a tool that
-                  accepts a custom header, such as the four above.
-                </Note>
+                <h3>How sign-in works</h3>
+                <ul className="docs-list">
+                  <li>PikaMd is its own OAuth 2.1 authorization server, following the MCP authorization specification.</li>
+                  <li>
+                    Apps identify themselves with a client metadata document (Claude does) or register automatically. Only https and localhost
+                    return addresses are accepted, and every sign-in uses PKCE.
+                  </li>
+                  <li>Tokens are bound to this server, last an hour and renew themselves; PikaMd stores only their SHA-256 hashes.</li>
+                  <li>A renewal token used twice ends the connection, in case someone copied it.</li>
+                </ul>
               </Section>
 
               <Section id="publish" eyebrow="Using PikaMd" title="Publish a guideline">
@@ -522,8 +574,8 @@ export default function DocsPage() {
                   rows={[
                     ["Explore, search, reading and raw files", "Older versions and pinning a version, such as slug@v3"],
                     ["Collections, likes, PikaGold and tips", "Forks of a guideline"],
-                    ["Publishing with clean-up and an Arc record", "claude.ai, Claude Desktop and mobile (need OAuth)"],
-                    ["MCP for Claude Code, Cursor, VS Code, Codex", "Arc mainnet"],
+                    ["Publishing with clean-up and an Arc record", ""],
+                    ["MCP with wallet sign-in (claude.ai, Claude Code) or a key", "Arc mainnet"],
                     ["Reports, moderation and the Verified badge", "A domain of its own"],
                   ]}
                 />
@@ -538,7 +590,11 @@ export default function DocsPage() {
                   <dt>Can I delete a guideline?</dt>
                   <dd>You can hide it, which takes it off the site and away from agents. The Arc record and the IPFS file remain.</dd>
                   <dt>Which agents work with PikaMd?</dt>
-                  <dd>Any MCP client that connects over HTTP with a custom header: Claude Code, Cursor, VS Code, Codex and others.</dd>
+                  <dd>
+                    Searching and reading work in any MCP client over HTTP. Your collection works in agents that support MCP sign-in, such as
+                    claude.ai, Claude Desktop, mobile and Claude Code, and in any agent that can send a key header: Cursor, VS Code, Codex
+                    and others.
+                  </dd>
                   <dt>Is a Verified guideline safe?</dt>
                   <dd>It means a moderator read that exact version and approved it. That lowers the risk but isn&apos;t a guarantee.</dd>
                   <dt>Can PikaMd see my key?</dt>

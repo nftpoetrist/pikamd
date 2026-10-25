@@ -30,6 +30,19 @@ const RULES = {
   report: { max: 20, windowS: 60 * 60, by: "wallet" },
   /** Moderator actions (each checks the role on Arc first). */
   moderate: { max: 120, windowS: 10 * 60, by: "wallet" },
+  /** OAuth (ARCHITECTURE §8.2). Dynamic client registrations: a client registers once per install. */
+  oauthRegister: { max: 20, windowS: 60 * 60, by: "ip" },
+  /** Authorization requests: each may fetch a client metadata document. */
+  oauthAuthorize: { max: 60, windowS: 10 * 60, by: "ip" },
+  /**
+   * Code exchanges, refreshes and revocations. An agent refreshes about once an hour, but claude.ai
+   * calls from Anthropic's shared range (160.79.104.0/21) for every user, so the cap leaves room
+   * for about 3,000 connected Claude users per address. Tokens are 256-bit: the cap protects the
+   * database, not the tokens.
+   */
+  oauthToken: { max: 600, windowS: 10 * 60, by: "ip" },
+  /** Answers on the consent screen and disconnecting apps. */
+  oauthConsent: { max: 30, windowS: 10 * 60, by: "wallet" },
 } as const;
 
 export type LimitRule = keyof typeof RULES;
