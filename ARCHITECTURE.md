@@ -462,6 +462,7 @@ indexer_state    (key PK, last_block BIGINT)
 /connect                Connect your agent (MCP key + her ajan için komut + durum, K19)
 /raw/[slug].md          Ham metin ✅ 2026-10-18 (+ /raw/[slug]@v3.md: sürüm akışıyla)
 /mod                    Moderasyon paneli (rol gerekli) ✅ 2026-10-18 (§9.2)
+/docs                   Dokümanlar: nasıl kullanılır, MCP kurulumu, Arc kaydı, güvenlik, SSS ✅ 2026-10-25 (DESIGN §3)
 ```
 
 ### 11.1 Explore araması (uygulama, 2026-10-12)

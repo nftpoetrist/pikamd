@@ -3,8 +3,9 @@ import { PixelBlock } from "@/components/PixelBlocks";
 import { ARC_TRADEMARK } from "@/components/VisionCards";
 
 // Slim full-width bar flush to the bottom of every page (dashed gold line on the top edge, mirroring the navbar).
-// Left: wordmark · center: Built on Arc · right: PikaMd on X, Arc on X, Arc docs (navbar button skeleton).
-// Arc links verified on arc.io (2026-10-10): x.com/arc, docs.arc.io.
+// Left: wordmark · center: Built on Arc · right: PikaMd on X, Arc on X, PikaMd docs (/docs; the Arc
+// docs link moved into PikaMd's docs, 2026-10-25) (navbar button skeleton).
+// Arc link verified on arc.io (2026-10-10): x.com/arc.
 // PikaMd's X account is @PikaStake for now; the button shows "@pikamd" (user's choice, 2026-10-10).
 // Brand rules (checked 2026-10-15): Arc's logo may only be the official file, unaltered, at least
 // 50 px tall, so the footer uses the approved words "Built on Arc" with our own pixel block. X's
@@ -50,12 +51,10 @@ export default function Footer() {
         <div className="footer-right">
           <XButton href="https://x.com/PikaStake" label="@pikamd" srLabel="PikaMd on X" />
           <XButton href="https://x.com/arc" label="@arc" srLabel="Arc on X" />
-          <a href="https://docs.arc.io" target="_blank" rel="noopener noreferrer" className="btn-ghost">
+          <PageLink href="/docs" className="btn-ghost">
             <span className="nav-dot" />
-            Arc docs
-            <span aria-hidden="true">↗</span>
-            <span className="sr-only">(opens in a new tab)</span>
-          </a>
+            PikaMd docs
+          </PageLink>
         </div>
       </div>
     </footer>

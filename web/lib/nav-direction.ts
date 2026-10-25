@@ -7,6 +7,7 @@ const ORDER: [prefix: string, rank: number][] = [
   ["/connect", 3],
   ["/new", 4],
   ["/mod", 5],
+  ["/docs", 6], // reached from the footer, after every menu page
 ];
 
 export type NavDirection = "forward" | "back";
