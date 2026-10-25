@@ -264,7 +264,7 @@ body {
 }
 
 /* Logo */
-/* The PikaMd pika (components/brand/PikaSprite.tsx): 32×32 at 1:1, exactly 2× on retina */
+/* The PikaMd cat (components/brand/PikaSprite.tsx): 32×32 at 1:1, exactly 2× on retina */
 .logo-sprite {
   width: 32px;
   height: 32px;
@@ -1284,7 +1284,7 @@ body {
   color: var(--t2);
 }
 
-/* "Reviewed" (ARCHITECTURE §9.5): a moderator approved this exact file on Arc. Solid green so it
+/* "Verified" (ARCHITECTURE §9.5): a moderator approved this exact file on Arc. Solid green so it
    reads at a glance next to the quiet type badge; same pixel frame (four box-shadows, open
    corners), its own green. Sits under the type badge, at the right end of the title row. */
 .md-title-row {
@@ -1318,11 +1318,48 @@ body {
     inset 0 2px 0 0 rgba(255, 255, 255, 0.35),
     0 0 10px rgba(123, 216, 143, 0.35);
   cursor: help;
+  position: relative;
 }
 .md-reviewed.is-page {
   gap: 7px;
   padding: 3px 9px 3px 7px;
   font-size: 19px;
+}
+/* Hover note: opens after 0.25 s (the browser's own title tooltip takes about a second), closes at once */
+.md-reviewed-tip {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: -2px;
+  z-index: 30;
+  width: 250px;
+  padding: 8px 10px;
+  font-size: 16px;
+  line-height: 1.2;
+  letter-spacing: 0;
+  text-align: left;
+  white-space: normal;
+  color: var(--t0);
+  background: #0D1409;
+  box-shadow:
+    0 -2px 0 0 #2F7D44,
+    0 2px 0 0 #2F7D44,
+    -2px 0 0 0 #2F7D44,
+    2px 0 0 0 #2F7D44,
+    0 10px 24px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+}
+.md-reviewed:hover .md-reviewed-tip {
+  visibility: visible;
+  opacity: 1;
+  transition: visibility 0s 0.25s, opacity 0s 0.25s;
+}
+.md-reviewed.is-page .md-reviewed-tip {
+  left: -2px;
+  right: auto;
+  width: 320px;
+  font-size: 18px;
 }
 
 .md-title {

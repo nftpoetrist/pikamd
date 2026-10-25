@@ -1,6 +1,6 @@
 import { PIKA, PIKA_LIDS, PIKA_PALETTE } from "@/components/brand/pika-art";
 
-// The PikaMd pika (components/brand/pika-art.ts) as crisp SVG: one rect per horizontal run of
+// The PikaMd cat (components/brand/pika-art.ts) as crisp SVG: one rect per horizontal run of
 // the same color, at an integer scale so every pixel stays sharp. `blink`: the eyes close for a
 // moment every few seconds (globals.css → .pika-lids; off with prefers-reduced-motion).
 

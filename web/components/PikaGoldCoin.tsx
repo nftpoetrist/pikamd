@@ -1,18 +1,18 @@
-// 15×15 PikaGold coin: the PikaMd pika's head (components/brand/pika-art.ts) embossed on a gold
-// coin, in the logo's palette (ink outline, gold rim, recessed face, raised head lit from the top
-// left with a drop shadow, peach inner ears). Drawn from an ASCII map at an integer scale so every
-// pixel stays crisp. Animations live in globals.css (.pg-*): a light stripe sweeps across in
-// 2-pixel steps, then a pixel sparkle blinks on the rim.
+// 15×15 PikaGold coin: the PikaMd cat's head (components/brand/pika-art.ts) embossed on a gold
+// coin, in the logo's palette (ink outline, gold rim, recessed face, raised head with pointed ears
+// lit from the top left with a drop shadow, peach inner ears and nose). Drawn from an ASCII map at
+// an integer scale so every pixel stays crisp. Animations live in globals.css (.pg-*): a light
+// stripe sweeps across in 2-pixel steps, then a pixel sparkle blinks on the rim.
 const MAP = [
   ".....OOOOO.....",
   "...OOLLLLROO...",
   "..OLLRRRRRRSO..",
-  ".OLRFFFFFFFRSO.",
-  ".OLRhyFFFhyRSO.",
+  ".OLRhFFFFFyRSO.",
+  ".OLRhyFFFygRSO.",
   "OLRFhpyyypgFRSO",
   "OLRFhyyyyygFRSO",
   "OLRFykyyykgFRSO",
-  "OLRFyyhkhygFRSO",
+  "OLRFyyypyygFRSO",
   "OLRFFgyhygFFRSO",
   ".OLRFFgggFFRSO.",
   ".OLRFFFFFFFRSO.",
@@ -30,8 +30,8 @@ const COLORS: Record<string, string> = {
   y: "#FFCB05", // raised head
   h: "#FFE680", // head light (top left)
   g: "#B86E00", // head shade and drop shadow
-  k: "#1A0800", // eyes, nose
-  p: "#F2A08A", // inner ears (same peach as the mascot)
+  k: "#1A0800", // eyes
+  p: "#F2A08A", // inner ears and nose (same peach as the mascot)
 };
 
 const N = MAP.length;

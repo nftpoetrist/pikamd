@@ -100,7 +100,7 @@ export default function Navbar() {
 
       <div className="nav-inner">
         <PageLink href="/" className="nav-left" aria-label="PikaMd home">
-          {/* The PikaMd pika, 32×32 pixels at 1:1 (2× on retina): inline SVG, sharp at every density */}
+          {/* The PikaMd cat, 32×32 pixels at 1:1 (2× on retina): inline SVG, sharp at every density */}
           <PikaSprite className="logo-sprite" blink />
           <span className="logo-text">
             Pika<span>Md</span>
