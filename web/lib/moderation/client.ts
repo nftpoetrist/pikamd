@@ -3,6 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { getChainId, switchChain, waitForTransactionReceipt, writeContract } from "wagmi/actions";
+import { suggestedFees } from "@/lib/wallet/fees";
 import { CHAIN, REGISTRY, REVIEWS } from "@/lib/chain";
 import { useSignedIn } from "@/lib/collection/client";
 import { REGISTRY_ABI } from "@/lib/registry-abi";
@@ -68,6 +69,7 @@ export function useModActions() {
         functionName: "setModeratorLock",
         args: [BigInt(id), locked],
         chainId: CHAIN.id,
+        ...(await suggestedFees()),
       });
       const receipt = await waitForTransactionReceipt(wagmiConfig, { hash, chainId: CHAIN.id, timeout: 60_000 });
       if (receipt.status !== "success") throw new Error("The transaction failed on Arc, so nothing changed");
@@ -85,9 +87,10 @@ export function useModActions() {
     async (id: number, version: number, approve: boolean) => {
       if (!REVIEWS) throw new Error("Reviews aren't available on this network yet");
       if (getChainId(wagmiConfig) !== CHAIN.id) await switchChain(wagmiConfig, { chainId: CHAIN.id });
+      const fees = await suggestedFees();
       const hash = approve
-        ? await writeContract(wagmiConfig, { address: REVIEWS.address, abi: REVIEWS_ABI, functionName: "approve", args: [BigInt(id), version], chainId: CHAIN.id })
-        : await writeContract(wagmiConfig, { address: REVIEWS.address, abi: REVIEWS_ABI, functionName: "revoke", args: [BigInt(id)], chainId: CHAIN.id });
+        ? await writeContract(wagmiConfig, { address: REVIEWS.address, abi: REVIEWS_ABI, functionName: "approve", args: [BigInt(id), version], chainId: CHAIN.id, ...fees })
+        : await writeContract(wagmiConfig, { address: REVIEWS.address, abi: REVIEWS_ABI, functionName: "revoke", args: [BigInt(id)], chainId: CHAIN.id, ...fees });
       const receipt = await waitForTransactionReceipt(wagmiConfig, { hash, chainId: CHAIN.id, timeout: 60_000 });
       if (receipt.status !== "success") throw new Error("The transaction failed on Arc, so nothing changed");
       await api("/api/mod/review", { method: "POST", body: { txHash: hash } });

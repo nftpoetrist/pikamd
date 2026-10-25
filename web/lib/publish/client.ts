@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { useConnection } from "wagmi";
 import { getChainId, switchChain, waitForTransactionReceipt, writeContract } from "wagmi/actions";
+import { suggestedFees } from "@/lib/wallet/fees";
 import type { Draft } from "@/lib/publish/draft";
 import { REGISTRY_ABI } from "@/lib/registry-abi";
 import { sameWallet } from "@/lib/likes/rules";
@@ -91,6 +92,7 @@ export function usePublish(draft: Draft, update: (patch: Partial<Draft>) => void
         functionName: "register",
         args: [prepared.cid, prepared.contentHash, BigInt(0), 0],
         chainId: prepared.chainId,
+        ...(await suggestedFees()),
       });
       update({ publishTx: txHash });
 

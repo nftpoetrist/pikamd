@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { useConnection } from "wagmi";
 import { getChainId, switchChain, waitForTransactionReceipt, writeContract } from "wagmi/actions";
+import { suggestedFees } from "@/lib/wallet/fees";
 import { CHAIN, REGISTRY } from "@/lib/chain";
 import { useHydrated } from "@/lib/hydrated";
 import { LIBRARY_KEY } from "@/lib/library/client";
@@ -109,6 +110,7 @@ export function useVisibility() {
             functionName: "setHidden",
             args: [BigInt(id), hidden],
             chainId: CHAIN.id,
+            ...(await suggestedFees()),
           });
           setPendingTx(txHash);
 

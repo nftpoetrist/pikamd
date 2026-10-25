@@ -117,6 +117,8 @@ ve cüzdanda "pending" olarak takılı kalır. wagmi/viem normalde `eth_gasPrice
 
 **Kullanıcıya gösterim:** Ücreti Gwei olarak değil **USDC** olarak göster (`gasUsed × effectiveGasPrice / 1e18` USDC).
 
+**Cüzdanın kendi ücret seçimi (2026-10-25, ölçüldü):** testnette bir yayın 0,114 USDC tuttu (beklenen ≈0,0045): gas normaldi (219.781), taban 20 Gwei, ama cüzdan **520 Gwei bahşiş** koydu. Sebep: testnette bazı hesaplar 500–930 Gwei bahşiş veriyor, cüzdan önerisini son işlemlerden çıkarıyor; bloklar ise boş (son 1024 blokta en çok %15, ortalama %1,5 dolu; 1024 bloğun 140'ında 0 bahşişli işlem var). MetaMask'ın tahmin servisi (`gas.api.cx.metamask.io/networks/<id>/suggestedGasFees`) Arc mainnet'i destekliyor (o gün low: 21 Gwei üst sınır / 1 Gwei bahşiş), **testneti desteklemiyor** (400). **Bir sonraki bloğun taban ücreti son blok başlığının `extraData`'sında** (8 bayt big-endian; docs.arc.io gas-and-fees; ölçüldü `0x00000004a817c800` = 20 Gwei). PikaMd bu yüzden ücreti kendisi önerir: ARCHITECTURE §7.6. **MetaMask kuralı** (MetaMask/core `transaction-controller/src/utils/gas-fees.ts`, kaynak okundu): site `maxFeePerGas` **ve** `maxPriorityFeePerGas` verirse olduğu gibi kullanılır (kullanıcının kayıtlı özel ayarı da devreye girmez); tek istisna zincir başına uzaktan açılan `replaceUnderpricedDappGasFees` bayrağı: açıksa ve sitenin `maxFeePerGas`'ı MetaMask'ın "low" tahmininin altındaysa MetaMask kendi orta tahminine döner.
+
 **Yaygın hatalar:**
 | Hata | Çözüm |
 |---|---|

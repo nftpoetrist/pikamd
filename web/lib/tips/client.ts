@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BaseError, ContractFunctionRevertedError, WaitForTransactionReceiptTimeoutError, erc20Abi } from "viem";
 import { getChainId, readContract, simulateContract, switchChain, waitForTransactionReceipt, writeContract } from "wagmi/actions";
+import { suggestedFees } from "@/lib/wallet/fees";
 import { CHAIN, REGISTRY, TIPS, USDC } from "@/lib/chain";
 import { sameWallet } from "@/lib/likes/rules";
 import { messageFor } from "@/lib/publish/client";
@@ -113,7 +114,7 @@ export function useTipFlow() {
         if (allowance < amount) {
           setNeedsApproval(true);
           setPhase("approve");
-          const approval = await writeContract(wagmiConfig, { ...read, address: USDC.address, abi: erc20Abi, functionName: "approve", args: [tips, amount] });
+          const approval = await writeContract(wagmiConfig, { ...read, address: USDC.address, abi: erc20Abi, functionName: "approve", args: [tips, amount], ...(await suggestedFees()) });
           // Confirmed after the dialog closed: the approval stands (only this wallet can use it), nothing follows
           if (!alive()) return;
           setPhase("approving");
@@ -129,16 +130,11 @@ export function useTipFlow() {
         if (!alive()) return;
 
         setPhase("tip");
-        const { request } = await simulateContract(wagmiConfig, {
-          ...read,
-          address: tips,
-          abi: TIP_CALL_ABI,
-          functionName: "tip",
-          args: [BigInt(target.id), amount],
-          account: wallet,
-        });
+        const call = { ...read, address: tips, abi: TIP_CALL_ABI, functionName: "tip", args: [BigInt(target.id), amount], account: wallet } as const;
+        // Simulated without fee fields (eth_call stays a plain dry run); the same call is then sent with them
+        await simulateContract(wagmiConfig, call);
         if (!alive()) return;
-        const hash = await writeContract(wagmiConfig, request);
+        const hash = await writeContract(wagmiConfig, { ...call, ...(await suggestedFees()) });
         // Sent: from here it finishes even if the dialog closed
         if (alive()) {
           setTx(hash);
