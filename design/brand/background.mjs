@@ -20,7 +20,7 @@ const sharp = require("sharp");
 const [outPng, outWebp] = process.argv.slice(2);
 
 // ── Pixel maps, read from the site's own components ───────────────────────────────────────
-const { PIKA, PIKA_PALETTE, PIKA_HEAD } = await import(join(WEB, "components/brand/pika-art.ts"));
+const { PIKA, PIKA_PALETTE } = await import(join(WEB, "components/brand/pika-art.ts"));
 const src = (f) => readFileSync(join(WEB, f), "utf8");
 const arrayIn = (text, name) => {
   const m = text.match(new RegExp(`const ${name}\\s*=\\s*\\[([\\s\\S]*?)\\];`));
@@ -138,10 +138,27 @@ function featureCard(theme) {
     <div class="perks">${lines(2, "ln ln-light")}${lines(2, "ln ln-light")}</div>
   </div></div>`;
 }
+// The Arc blues of the plaque's running cat (web/components/brand/run-cat.ts → RUN_BLUE)
+const ARC_PALETTE = { ...PIKA_PALETTE, O: "#050A1C", K: "#050A1C", D: "#2E4183", S: "#4E66B8", M: "#6A86D8", B: "#8FAAF0", L: "#C9D6FF", C: "#EEF2FF" };
+// The full mascot in PikaMd gold and Arc blue, split down the middle of the face (either way round),
+// or all blue. Picked by card number, so it draws no random numbers and the layout stays the same.
+function splitCat(left, right, scale) {
+  const w = PIKA[0].length, h = PIKA.length;
+  let rects = "";
+  PIKA.forEach((row, y) => [...row].forEach((ch, x) => {
+    if (ch === ".") return;
+    rects += `<rect x="${x}" y="${y}" width="1" height="1" fill="${(x < w / 2 ? left : right)[ch]}"/>`;
+  }));
+  return `<svg width="${w * scale}" height="${h * scale}" viewBox="0 0 ${w} ${h}" shape-rendering="crispEdges">${rects}</svg>`;
+}
+const HEAD_VARIANTS = [[PIKA_PALETTE, ARC_PALETTE], [ARC_PALETTE, PIKA_PALETTE], [ARC_PALETTE, ARC_PALETTE]];
+// No. 061 is the sharp card at the front on the left: all Arc blue (user request 2026-10-25)
+const ALL_ARC = new Set([61]);
 function headCard(n) {
+  const [left, right] = ALL_ARC.has(n) ? [ARC_PALETTE, ARC_PALETTE] : HEAD_VARIANTS[n % HEAD_VARIANTS.length];
   return `<div class="card gold"><div class="in in-head">
     <div class="hd"><b>PikaMd</b><em>No. ${String(n).padStart(3, "0")}</em></div>
-    <div class="art art-head">${svg(PIKA_HEAD, PIKA_PALETTE, 6)}</div>
+    <div class="art art-head">${splitCat(left, right, 3)}</div>
     <div class="txt">${lines(2, "ln ln-dark")}</div>
   </div></div>`;
 }
