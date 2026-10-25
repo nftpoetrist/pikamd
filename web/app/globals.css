@@ -58,6 +58,14 @@ body {
 
 /* Fields you type in keep the text cursor, so it shows where typing goes. In the base layer, so a
    component's own cursor (not-allowed, wait…) still wins */
+/* A running cat's position on the home plaque (.hp-cat): registered so it can animate as a length
+   and be rounded to whole pixels */
+@property --cat-x {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
 @layer base {
   input:not([type="button"], [type="submit"], [type="reset"], [type="checkbox"], [type="radio"], [type="file"], [type="range"], [type="color"]),
   textarea,
@@ -1074,6 +1082,99 @@ body {
 .hp-swash-r { left: calc(50% + 88px); }
 .hp-swash-l { right: calc(50% + 88px); transform: scaleX(-1); }
 
+/* Two little cats on the top edge (HeroPlaque → RunningCat): the navbar mascot at 1:1, gold PikaMd
+   on the left, Arc blue on the right. Each track is the flat rim between the corner and the
+   swashes; paws (sprite row 33, --cat-foot from the top) stand on the frame's outer ink line, like
+   the swashes (--hp-crest below the frame top). The position (--cat-x) is rounded down to whole
+   steps of --cat-px, so a cat trots along the rim pixel by pixel instead of gliding; the legs, the
+   turn and the dust are transform and opacity. One loop: stand, run across, stand, turn, run back.
+   The maps face left, so the face is mirrored on the way right. */
+.hero-plaque { --hp-crest: 18px; --cat-px: 2px; --cat-w: 32px; --cat-h: 35px; --cat-foot: 34px; }
+.hp-track {
+  position: absolute;
+  z-index: 2;
+  top: calc(var(--hp-crest) - var(--hp-top) - var(--cat-foot));
+  height: var(--cat-h);
+  container-type: inline-size;
+  pointer-events: none;
+}
+.hp-track-l { left: calc(24px - var(--hp-side)); right: calc(50% + 190px); }
+.hp-track-r { left: calc(50% + 190px); right: calc(24px - var(--hp-side)); }
+.hp-cat {
+  --cat-loop: 11s;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: var(--cat-w);
+  height: var(--cat-h);
+  will-change: transform;
+  transform: translateX(var(--cat-x));
+  transform: translateX(round(down, var(--cat-x), var(--cat-px)));
+  animation: hp-cat-run var(--cat-loop) linear infinite;
+}
+/* The Arc cat starts at the far end, facing left, on a slightly longer loop: the two never sync */
+.hp-track-r .hp-cat { --cat-loop: 12.4s; }
+.hp-track-r .hp-cat,
+.hp-track-r .hp-cat-face,
+.hp-track-r .hp-cat-legs,
+.hp-track-r .hp-cat-still { animation-delay: calc(var(--cat-loop) * -0.5); }
+.hp-cat-face {
+  position: absolute;
+  inset: 0;
+  animation: hp-cat-turn var(--cat-loop) steps(1, end) infinite;
+}
+.hp-cat-legs {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  animation: hp-cat-moving var(--cat-loop) steps(1, end) infinite;
+}
+.hp-cat-strip {
+  display: block;
+  width: calc(4 * var(--cat-w));
+  height: var(--cat-h);
+  animation: hp-cat-gallop 0.44s steps(4) infinite;
+}
+.hp-cat-still {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  width: var(--cat-w);
+  height: var(--cat-h);
+  animation: hp-cat-standing var(--cat-loop) steps(1, end) infinite;
+}
+/* Too little rim to run on (a short screen shrinks the plaque): no cat rather than a squeezed one */
+@container (max-width: 79px) {
+  .hp-cat { display: none; }
+}
+@keyframes hp-cat-run {
+  0%, 8% { --cat-x: 0px; }
+  46%, 54% { --cat-x: calc(100cqw - var(--cat-w)); }
+  92%, 100% { --cat-x: 0px; }
+}
+@keyframes hp-cat-turn {
+  0% { transform: scaleX(-1); }
+  50% { transform: none; }
+  100% { transform: none; }
+}
+@keyframes hp-cat-moving {
+  0% { opacity: 0; } 8% { opacity: 1; } 46% { opacity: 0; } 54% { opacity: 1; } 92% { opacity: 0; } 100% { opacity: 0; }
+}
+@keyframes hp-cat-standing {
+  0% { opacity: 1; } 8% { opacity: 0; } 46% { opacity: 1; } 54% { opacity: 0; } 92% { opacity: 1; } 100% { opacity: 1; }
+}
+@keyframes hp-cat-gallop {
+  to { transform: translateX(-100%); }
+}
+/* Reduced motion: both cats stand at the outer ends, facing the gem */
+@media (prefers-reduced-motion: reduce) {
+  .hp-cat, .hp-cat-face, .hp-cat-legs, .hp-cat-strip, .hp-cat-still { animation: none; }
+  .hp-cat-legs { opacity: 0; }
+  .hp-track-l .hp-cat-face { transform: scaleX(-1); }
+  .hp-track-r .hp-cat { transform: translateX(calc(100cqw - var(--cat-w))); }
+}
+
 /* Short screens: the title as large as still lets the cards fit the first screen. Measured: the last
    card's bottom ≈ 633px + 1.9 × title size, so title ≤ (height − 641px) / 1.9 (≈ 41px at 720, 67px
    at 768, the full 76px from ~800) */
@@ -1085,7 +1186,7 @@ body {
 /* Phones: a smaller cartouche hugging the text, 2× ornaments, no swashes */
 @media (max-width: 639px) {
   .hero-plaque { --hp-side: 14px; --hp-top: 30px; --hp-bottom: 26px; margin-bottom: 56px; }
-  .page-center-high:has(> .hero-plaque) { padding-top: 34px; }
+  .page-center-high:has(> .hero-plaque) { padding-top: 42px; } /* the cats need head room under the navbar */
   .hp-ink { clip-path: var(--hp-ink-sm); }
   .hp-rim { clip-path: var(--hp-rim-sm); }
   .hp-gap { clip-path: var(--hp-gap-sm); }
@@ -1094,6 +1195,9 @@ body {
   .hp-orn .hp-x3 { display: none; }
   .hp-orn .hp-x2 { display: block; }
   .hp-swash { display: none; }
+  .hero-plaque { --hp-crest: 12px; }
+  .hp-track-l { left: calc(16px - var(--hp-side)); right: calc(50% + 64px); }
+  .hp-track-r { left: calc(50% + 64px); right: calc(16px - var(--hp-side)); }
   .hp-gem { top: -10px; }
   .hp-bead-l { left: -1px; }
   .hp-bead-r { right: -1px; }

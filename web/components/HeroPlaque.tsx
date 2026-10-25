@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { RUN_BLUE, RUN_FRAMES, RUN_GOLD, STAND } from "@/components/brand/run-cat";
 
 // Ornate title plaque behind the home hero (user request 2026-10-15): a dark espresso glass panel
 // in a double gold frame, shaped as a pixel cartouche (a raised crest on top, a pendant below,
@@ -204,6 +205,49 @@ function Ornament({ map, className }: { map: readonly string[]; className: strin
   );
 }
 
+// ── Two little cats on the top edge (2026-10-25): gold PikaMd on the left, Arc blue on the right.
+// Each is the navbar mascot trotting back and forth on its own stretch of the rim, between the
+// corner and the swashes, a pixel at a time, kicking up dust, and turning around at the ends.
+// Pure CSS (globals.css → .hp-track); 1:1 like the navbar logo.
+const FW = RUN_FRAMES[0][0].length;
+const FH = RUN_FRAMES[0].length;
+
+function frameRects(rows: readonly string[], palette: Record<string, string>, ox: number) {
+  const rects: { x: number; y: number; w: number; fill: string }[] = [];
+  rows.forEach((row, y) => {
+    let x = 0;
+    while (x < row.length) {
+      const ch = row[x];
+      let end = x + 1;
+      while (end < row.length && row[end] === ch) end++;
+      if (ch !== ".") rects.push({ x: ox + x, y, w: end - x, fill: palette[ch] });
+      x = end;
+    }
+  });
+  return rects.map((r) => <rect key={`${r.x}-${r.y}`} x={r.x} y={r.y} width={r.w} height={1} fill={r.fill} />);
+}
+
+function RunningCat({ side }: { side: "l" | "r" }) {
+  const palette = side === "l" ? RUN_GOLD : RUN_BLUE;
+  return (
+    <span className={`hp-track hp-track-${side}`} aria-hidden="true">
+      <span className="hp-cat">
+        <span className="hp-cat-face">
+          {/* The four gallop frames side by side, slid one frame at a time inside a one-frame window */}
+          <span className="hp-cat-legs">
+            <svg className="hp-cat-strip" width={FW * 4} height={FH} viewBox={`0 0 ${FW * 4} ${FH}`} shapeRendering="crispEdges">
+              {RUN_FRAMES.map((rows, i) => frameRects(rows, palette, i * FW))}
+            </svg>
+          </span>
+          <svg className="hp-cat-still" width={FW} height={FH} viewBox={`0 0 ${FW} ${FH}`} shapeRendering="crispEdges">
+            {frameRects(STAND, palette, 0)}
+          </svg>
+        </span>
+      </span>
+    </span>
+  );
+}
+
 export default function HeroPlaque({ children }: { children: ReactNode }) {
   return (
     <div className="hero-plaque">
@@ -218,6 +262,8 @@ export default function HeroPlaque({ children }: { children: ReactNode }) {
         <Ornament map={BEAD} className="hp-bead hp-bead-r" />
         <Ornament map={SPARKLE} className="hp-spark" />
       </span>
+      <RunningCat side="l" />
+      <RunningCat side="r" />
       {children}
     </div>
   );
