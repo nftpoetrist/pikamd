@@ -18,7 +18,24 @@ import {
 // One fresh server per HTTP request (stateless, MCP SDK v2 createMcpHandler).
 // `collection` is the caller's saved slugs when the request carried a valid key, otherwise null.
 export function buildMcpServer({ collection, connectUrl }: { collection: string[] | null; connectUrl: string }) {
-  const server = new McpServer({ name: "pikamd", version: "0.1.0" }, { instructions: SERVER_INSTRUCTIONS });
+  // Identity shown by clients that display it (MCP "icons": https, same origin as the server, PNG
+  // is the one format every client must render). The site's own icons: the cat head at 64 px and
+  // the full mascot at 180 px (web/app/icon.png, apple-icon.png).
+  const origin = new URL(connectUrl, "http://localhost").origin;
+  const server = new McpServer(
+    {
+      name: "pikamd",
+      title: "PikaMd",
+      version: "0.1.0",
+      description: "Community library of AI agent guidelines, recorded on Arc",
+      websiteUrl: origin,
+      icons: [
+        { src: `${origin}/apple-icon.png`, mimeType: "image/png", sizes: ["180x180"] },
+        { src: `${origin}/icon.png`, mimeType: "image/png", sizes: ["64x64"] },
+      ],
+    },
+    { instructions: SERVER_INSTRUCTIONS },
+  );
   const readOnly = { readOnlyHint: true, openWorldHint: false };
   const text = (t: string, isError = false) => ({ content: [{ type: "text" as const, text: t }], ...(isError ? { isError } : {}) });
 
