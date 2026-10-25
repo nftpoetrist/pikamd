@@ -5763,6 +5763,8 @@ button.wallet-mod:disabled { cursor: wait; opacity: 0.7; }
   line-height: 1.35;
   color: var(--t1);
 }
+/* The privacy page: the docs article on its own, without the table of contents */
+.privacy-body { width: min(900px, calc(100% - 40px)); margin: 4px auto 0; }
 .docs-section + .docs-section {
   margin-top: 44px;
   padding-top: 40px;
@@ -5912,6 +5914,15 @@ button.wallet-mod:disabled { cursor: wait; opacity: 0.7; }
   .docs-body h2 { font-size: 38px; }
   .docs-cards { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   .docs-table td:first-child { white-space: normal; }
+}
+/* Phones: each table row becomes a small card (its cells stacked), so nothing scrolls sideways */
+@media (max-width: 639px) {
+  .docs-table thead { display: none; }
+  .docs-table tr { display: block; padding: 10px 0; border-top: 2px solid rgba(255, 203, 5, 0.12); }
+  .docs-table tbody tr:first-child { border-top: none; }
+  .docs-table td { display: block; padding: 2px 14px; border-top: none; }
+  .docs-table td:first-child { color: var(--y2); }
+  .docs-table td:empty { display: none; }
 }
 
 }

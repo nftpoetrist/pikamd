@@ -603,7 +603,8 @@ export default function DocsPage() {
                   <dd>Some wallet scanners flag new *.vercel.app addresses by default. PikaMd asks your wallet only for a free sign-in signature and for the transactions you start yourself: publishing, hiding and tips. Check each request in your wallet before you approve it.</dd>
                 </dl>
                 <p className="docs-links">
-                  More: <Ext href="https://github.com/nftpoetrist/pikamd">GitHub</Ext> · <Ext href="https://x.com/PikaStake">PikaMd on X</Ext> ·{" "}
+                  More: <PageLink href="/privacy">Privacy</PageLink> · <Ext href="https://github.com/nftpoetrist/pikamd/issues">Support (GitHub Issues)</Ext> ·{" "}
+                  <Ext href="https://github.com/nftpoetrist/pikamd">GitHub</Ext> · <Ext href="https://x.com/PikaStake">PikaMd on X</Ext> ·{" "}
                   <Ext href="https://docs.arc.io">Arc docs</Ext>
                 </p>
               </Section>
