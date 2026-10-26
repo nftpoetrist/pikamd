@@ -17,8 +17,31 @@ const BASE = process.env.PIKAMD_URL ?? "http://localhost:3001";
 const ORIGIN = new URL(BASE).origin;
 const HOST = new URL(BASE).host;
 const CHAIN_ID = 5042002; // Arc testnet (ARC.md §2)
-// The registry's deploy transaction on Arc testnet (ARC.md §8): real, successful, no HiddenSet
-const DEPLOY_TX = "0xca4f410bf9e434edc542f6c2c118695458cdc197480a64e98b1190b51e04fb55";
+// A real, successful Arc testnet transaction that isn't PikaMd's (no HiddenSet, no Tipped), taken
+// from the latest blocks on each run: the public RPC stops serving old transactions by hash
+// (ARC.md §2), so a fixed hash (the registry's deploy) went stale.
+const ARC_RPC = "https://rpc.testnet.arc.io";
+const PIKAMD_CONTRACTS = [
+  "0x27cf926771b0a311a9574543ea29dc5e3ea59986", // GuidelineRegistry
+  "0x81a1a7d604f9771472d5ede0ef8736b7f75f874a", // GuidelineTips
+  "0x050f0556ce4ed9d195670673f580b2a22e3e40a3", // GuidelineReviews
+];
+async function arcRpc(method, params) {
+  const res = await fetch(ARC_RPC, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }) });
+  return (await res.json()).result;
+}
+async function recentArcTx() {
+  let n = Number(await arcRpc("eth_blockNumber", []));
+  for (let tries = 0; tries < 200; tries++, n--) {
+    const block = await arcRpc("eth_getBlockByNumber", ["0x" + n.toString(16), false]);
+    for (const hash of block?.transactions ?? []) {
+      const r = await arcRpc("eth_getTransactionReceipt", [hash]);
+      if (r?.status === "0x1" && !r.logs.some((l) => PIKAMD_CONTRACTS.includes(l.address.toLowerCase()))) return hash;
+    }
+  }
+  throw new Error("no recent Arc transaction found");
+}
+const ARC_TX = await recentArcTx();
 const STATEMENT = "Sign in to PikaMd. This is free: it doesn't send a transaction or cost gas.";
 const FILE = new URL("../.data/pikamd-dev.json", import.meta.url);
 
@@ -165,22 +188,22 @@ try {
     check((mineA.json?.guidelines ?? []).every((g) => g.author.address.toLowerCase() === alice.address.toLowerCase()), "it holds only alice's guidelines");
     const mineB2 = await call("GET", "/api/me/guidelines", { cookie: b.cookie });
     check((mineB2.json?.guidelines ?? []).every((g) => g.author.address.toLowerCase() === bob.address.toLowerCase()), "bob never sees alice's (hidden ones included)");
-    check((await call("POST", "/api/guidelines/visibility", { body: { txHash: DEPLOY_TX } })).status === 401, "hide sync needs a session");
-    check((await call("POST", "/api/guidelines/visibility", { cookie: a.cookie, origin: "https://evil.example", body: { txHash: DEPLOY_TX } })).status === 403, "hide sync from another site refused (CSRF)");
+    check((await call("POST", "/api/guidelines/visibility", { body: { txHash: ARC_TX } })).status === 401, "hide sync needs a session");
+    check((await call("POST", "/api/guidelines/visibility", { cookie: a.cookie, origin: "https://evil.example", body: { txHash: ARC_TX } })).status === 403, "hide sync from another site refused (CSRF)");
     check((await call("POST", "/api/guidelines/visibility", { cookie: a.cookie, body: { txHash: "0x12" } })).status === 400, "malformed transaction hash refused");
-    const notHide = await call("POST", "/api/guidelines/visibility", { cookie: a.cookie, body: { txHash: DEPLOY_TX } });
+    const notHide = await call("POST", "/api/guidelines/visibility", { cookie: a.cookie, body: { txHash: ARC_TX } });
     check(notHide.status === 400 && /No hide/.test(notHide.json?.error ?? ""), "a real Arc transaction without HiddenSet changes nothing");
 
     // ── Tip records (K21): no sign-in, but only Tipped events of our contract on Arc count ──
-    check((await call("POST", "/api/tips/record", { origin: "https://evil.example", body: { txHash: DEPLOY_TX } })).status === 403, "tip record from another site refused (CSRF)");
-    const text = await fetch(new URL("/api/tips/record", BASE), { method: "POST", headers: { Origin: ORIGIN, "Content-Type": "text/plain" }, body: DEPLOY_TX });
+    check((await call("POST", "/api/tips/record", { origin: "https://evil.example", body: { txHash: ARC_TX } })).status === 403, "tip record from another site refused (CSRF)");
+    const text = await fetch(new URL("/api/tips/record", BASE), { method: "POST", headers: { Origin: ORIGIN, "Content-Type": "text/plain" }, body: ARC_TX });
     check(text.status === 415, "tip record must be JSON");
     const badHash = await call("POST", "/api/tips/record", { body: { txHash: "0x12" } });
     if (badHash.status === 503) {
       check(/aren't recorded/.test(badHash.json?.error ?? ""), "no tips contract on this network: the record endpoint says so (503)");
     } else {
       check(badHash.status === 400, "malformed transaction hash refused");
-      const notTip = await call("POST", "/api/tips/record", { body: { txHash: DEPLOY_TX } });
+      const notTip = await call("POST", "/api/tips/record", { body: { txHash: ARC_TX } });
       check(notTip.status === 400 && /No tip found/.test(notTip.json?.error ?? ""), "a real Arc transaction without a tip records nothing");
     }
     const tipsProfile = (await call("GET", `/api/profile/${alice.address}`)).json;
@@ -242,7 +265,7 @@ try {
     check((await call("GET", "/api/mod/queue")).status === 401, "the queue needs a session");
     check((await call("POST", "/api/mod/action", { cookie: a.cookie, body: { guidelineId: 1, action: "dismiss" } })).status === 403, "a non-moderator can't dismiss reports");
     check((await call("POST", "/api/mod/action", { cookie: a.cookie, body: { guidelineId: 1, action: "unpin" } })).status === 403, "a non-moderator can't unpin");
-    check((await call("POST", "/api/mod/lock", { cookie: a.cookie, body: { txHash: DEPLOY_TX } })).status === 403, "a non-moderator can't sync a lock");
+    check((await call("POST", "/api/mod/lock", { cookie: a.cookie, body: { txHash: ARC_TX } })).status === 403, "a non-moderator can't sync a lock");
   }
 
   // ── Logout ──
