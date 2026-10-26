@@ -1260,19 +1260,22 @@ body {
   animation-play-state: paused;
 }
 
+/* One copy of the cards, in px (--lane-steps = cards × card px): a lane has as many copies as it
+   needs (MdLanes), so the loop slides by one copy, not by half the track */
 @keyframes md-scroll-left {
   from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
+  to   { transform: translateX(calc(var(--lane-steps) * -1px)); }
 }
 
 @keyframes md-scroll-right {
-  from { transform: translateX(-50%); }
+  from { transform: translateX(calc(var(--lane-steps) * -1px)); }
   to   { transform: translateX(0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .md-track { animation: none; }
   .md-lane { overflow-x: auto; }
+  .md-group[aria-hidden] { display: none; } /* standing still: each card once */
 }
 
 /* ── Explore: a pixel sea under the cards, edge to edge down to the footer (ArcSea, user request 2026-10-26) ──
@@ -1360,7 +1363,7 @@ body {
   .arc-sea-water * { animation: none; }
 }
 
-/* Fewer cards than a lane needs (MdLanes LANES_FROM): full-size cards stand on a centered shelf,
+/* Too few cards to flow (MdLanes SHELF_BELOW: under 4): full-size cards stand on a centered shelf,
    at most four a row, rows centered so a short last row stays symmetric */
 .md-shelf {
   --card-w: 304px;
