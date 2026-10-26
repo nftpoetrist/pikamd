@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { Geist, Geist_Mono, Jersey_10, VT323 } from "next/font/google";
 import Footer from "@/components/Footer";
+import NavScrollTop from "@/components/NavScrollTop";
 import Navbar from "@/components/Navbar";
 import WalletProvider from "@/components/wallet/WalletProvider";
 import bgImage from "@/public/bg/pikamd-cards.webp";
@@ -49,10 +50,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <div className="scene" aria-hidden="true">
           <div className="bg-strip">
             {/* placeholder="blur": tiny blurred preview until the image loads — no black flash */}
-            <Image src={bgImage} alt="" fill preload sizes="100vw" placeholder="blur" />
+            {/* sizes: the pile covers the screen (object-fit: cover), so on a screen narrower than the
+                image's 2880:1416 it's drawn as wide as 2.034 × the height, not 100vw: phones loaded a
+                828px file stretched over ~3,500 device pixels */}
+            <Image src={bgImage} alt="" fill preload sizes="(max-aspect-ratio: 2880/1416) 204vh, 100vw" placeholder="blur" />
           </div>
         </div>
         <WalletProvider>
+          <NavScrollTop />
           <Navbar />
           <div className="site-main relative z-10 flex flex-1 flex-col">{children}</div>
           <Footer />

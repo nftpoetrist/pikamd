@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useConnection } from "wagmi";
 import { getChainId, switchChain, waitForTransactionReceipt, writeContract } from "wagmi/actions";
 import { suggestedFees } from "@/lib/wallet/fees";
@@ -14,8 +14,10 @@ import { useSessionWallet, useSignIn } from "@/lib/wallet/session";
 
 // The real Publish flow in the browser (ARCHITECTURE §7.1): sign in → the server checks and pins
 // the file → the author's wallet registers it on Arc → the server reads the receipt and indexes it.
-// Once a transaction is sent its hash is kept in the draft, so a retry (or a reload) only confirms
-// it again and never registers the same file twice.
+// Once a transaction is sent its hash is kept in the draft, so a retry only confirms it again and
+// never registers the same file twice. The author can step back at any moment, even while the
+// wallet hasn't answered: the run is dropped (cancel), and a transaction already on its way still
+// lands, the indexer finishes it (§7.4).
 
 export const PHASES = [
   "Signing in with your wallet",
@@ -51,11 +53,14 @@ export function usePublish(draft: Draft, update: (patch: Partial<Draft>) => void
   const [phase, setPhase] = useState(-1); // -1 idle, 0..4 running, DONE finished
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Published | null>(null);
+  // Each start is a run; cancel or reset starts a new one, and a dropped run changes nothing
+  const run = useRef(0);
 
   const confirm = useCallback(
-    async (txHash: `0x${string}`) => {
+    async (txHash: `0x${string}`, alive: () => boolean) => {
       setPhase(4);
       const done = await api<Published>("/api/guidelines/confirm", { method: "POST", body: { txHash } });
+      if (!alive()) return;
       update({ publishTx: undefined });
       setResult(done);
       setPhase(DONE);
@@ -64,6 +69,8 @@ export function usePublish(draft: Draft, update: (patch: Partial<Draft>) => void
   );
 
   const start = useCallback(async () => {
+    const id = ++run.current;
+    const alive = () => run.current === id;
     setError(null);
     if (status !== "connected" || !address) {
       openWalletModal();
@@ -74,15 +81,17 @@ export function usePublish(draft: Draft, update: (patch: Partial<Draft>) => void
       // Signed in first in every case: a reload or a new browser session has no session cookie
       setPhase(0);
       if (!session.data || !sameWallet(session.data, address)) await signIn(address);
+      if (!alive()) return;
 
       // A transaction from an earlier try: only confirm it again
-      if (draft.publishTx) return await confirm(draft.publishTx);
+      if (draft.publishTx) return await confirm(draft.publishTx, alive);
 
       setPhase(1);
       const prepared = await api<Prepared>("/api/guidelines/prepare", {
         method: "POST",
         body: { content: draft.content, meta: { title: draft.meta.title, description: draft.meta.description, kind: draft.meta.kind, tags: draft.meta.tags } },
       });
+      if (!alive()) return;
 
       setPhase(2);
       if (getChainId(wagmiConfig) !== prepared.chainId) await switchChain(wagmiConfig, { chainId: prepared.chainId });
@@ -94,22 +103,27 @@ export function usePublish(draft: Draft, update: (patch: Partial<Draft>) => void
         chainId: prepared.chainId,
         ...(await suggestedFees()),
       });
+      if (!alive()) return; // stepped back meanwhile: the file may have changed, don't tie this hash to it
       update({ publishTx: txHash });
 
       setPhase(3);
       const receipt = await waitForTransactionReceipt(wagmiConfig, { hash: txHash, chainId: prepared.chainId });
+      if (!alive()) return;
       if (receipt.status !== "success") {
         update({ publishTx: undefined });
         throw new PublishError("The transaction failed on Arc, so nothing was published. Try again");
       }
-      await confirm(txHash);
+      await confirm(txHash, alive);
     } catch (e) {
+      if (!alive()) return;
       setError(messageFor(e));
       setPhase(-1);
     }
   }, [address, status, session.data, signIn, draft, update, confirm]);
 
+  /** Drops the running try (and any error): the author stepped back or left. */
   const reset = useCallback(() => {
+    run.current++;
     setPhase(-1);
     setError(null);
     setResult(null);

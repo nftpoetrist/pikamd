@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import { RUN_BLUE, RUN_FRAMES, RUN_GOLD, STAND } from "@/components/brand/run-cat";
+import { colorPaths, mergeRuns, type PixelRun } from "@/lib/pixel-path";
 
 // Ornate title plaque behind the home hero (user request 2026-10-15): a dark espresso glass panel
 // in a double gold frame, shaped as a pixel cartouche (a raised crest on top, a pendant below,
@@ -188,7 +189,9 @@ function Pixels({ map, scale, className }: { map: readonly string[]; scale: numb
   });
   return (
     <svg className={className} width={w * scale} height={h * scale} viewBox={`0 0 ${w} ${h}`} shapeRendering="crispEdges">
-      {rects.map((r) => (
+      {/* Rects, not one path per color: the gem, beads and sparkle are centered with -50% (half a
+          pixel when their width is odd), where a path gets soft edges and rects snap to the grid */}
+      {mergeRuns(rects).map((r) => (
         <rect key={`${r.x}-${r.y}`} x={r.x} y={r.y} width={r.w} height={1} fill={r.fill} />
       ))}
     </svg>
@@ -212,7 +215,7 @@ function Ornament({ map, className }: { map: readonly string[]; className: strin
 const FW = RUN_FRAMES[0][0].length;
 const FH = RUN_FRAMES[0].length;
 
-function frameRects(rows: readonly string[], palette: Record<string, string>, ox: number) {
+function frameRuns(rows: readonly string[], palette: Record<string, string>, ox: number) {
   const rects: { x: number; y: number; w: number; fill: string }[] = [];
   rows.forEach((row, y) => {
     let x = 0;
@@ -224,8 +227,11 @@ function frameRects(rows: readonly string[], palette: Record<string, string>, ox
       x = end;
     }
   });
-  return rects.map((r) => <rect key={`${r.x}-${r.y}`} x={r.x} y={r.y} width={r.w} height={1} fill={r.fill} />);
+  return rects;
 }
+
+// One path per color: the four frames sit side by side and never overlap
+const framePaths = (runs: PixelRun[]) => colorPaths(runs).map(({ fill, d }) => <path key={fill} d={d} fill={fill} />);
 
 function RunningCat({ side }: { side: "l" | "r" }) {
   const palette = side === "l" ? RUN_GOLD : RUN_BLUE;
@@ -236,11 +242,11 @@ function RunningCat({ side }: { side: "l" | "r" }) {
           {/* The four gallop frames side by side, slid one frame at a time inside a one-frame window */}
           <span className="hp-cat-legs">
             <svg className="hp-cat-strip" width={FW * 4} height={FH} viewBox={`0 0 ${FW * 4} ${FH}`} shapeRendering="crispEdges">
-              {RUN_FRAMES.map((rows, i) => frameRects(rows, palette, i * FW))}
+              {framePaths(RUN_FRAMES.flatMap((rows, i) => frameRuns(rows, palette, i * FW)))}
             </svg>
           </span>
           <svg className="hp-cat-still" width={FW} height={FH} viewBox={`0 0 ${FW} ${FH}`} shapeRendering="crispEdges">
-            {frameRects(STAND, palette, 0)}
+            {framePaths(frameRuns(STAND, palette, 0))}
           </svg>
         </span>
       </span>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import PageTransition from "@/components/PageTransition";
 import ModPanel from "@/components/mod/ModPanel";
@@ -27,6 +28,7 @@ export default function ModerationPage() {
 }
 
 async function Desk() {
+  await connection(); // per request: the session is read and checked against the clock
   const wallet = await sessionWallet();
   let allowed: boolean;
   try {

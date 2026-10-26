@@ -1,7 +1,7 @@
 import type { GuidelineKind, License } from "@/lib/types";
 
-// Unsent Publish draft, kept in this browser so a reload doesn't lose the work.
-// Per-viewer convenience only; nothing here is shared or sent anywhere.
+// The Publish draft lives in memory only: every visit starts a new guideline (2026-10-26, user
+// request). Earlier versions kept it in this browser under this key; clearDraft removes that copy.
 const KEY = "pikamd:publish-draft";
 
 export type Step = 1 | 2 | 3 | 4;
@@ -25,7 +25,7 @@ export interface Draft {
     tags: string[];
     license: License;
   };
-  /** Register transaction sent but not confirmed yet: a retry or reload only confirms it. */
+  /** Register transaction sent but not confirmed yet: a retry only confirms it. */
   publishTx?: `0x${string}`;
 }
 
@@ -45,27 +45,6 @@ export const EMPTY_DRAFT: Draft = {
 };
 
 export const keepKey = (rule: string, match: string) => `${rule}\u0000${match}`;
-
-export function loadDraft(): Draft | null {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return null;
-    const d = JSON.parse(raw) as Partial<Draft>;
-    if (typeof d.content !== "string") return null;
-    // Older drafts could carry another license from when it was a choice.
-    return { ...EMPTY_DRAFT, ...d, meta: { ...EMPTY_DRAFT.meta, ...d.meta, license: LICENSE } };
-  } catch {
-    return null;
-  }
-}
-
-export function saveDraft(d: Draft) {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(d));
-  } catch {
-    // Storage full or blocked: the draft still lives in memory for this visit.
-  }
-}
 
 export function clearDraft() {
   try {

@@ -427,7 +427,7 @@ export default function DocsPage() {
               </Section>
 
               <Section id="publish" eyebrow="Using PikaMd" title="Publish a guideline">
-                <p>Publishing takes four short steps on the <PageLink href="/new">Publish</PageLink> page. Your draft is kept in your browser until you finish.</p>
+                <p>Publishing takes four short steps on the <PageLink href="/new">Publish</PageLink> page. Nothing is saved along the way: leave the page or reload it and you start over.</p>
                 <Note title="Before you start">
                   You need a wallet with a little testnet USDC for the network fee, usually less than a cent. Ask your own agent for a clean copy
                   of your file first: the Publish page gives you a ready prompt that swaps names, paths and keys for placeholders.

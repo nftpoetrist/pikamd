@@ -4,23 +4,33 @@ import type { GuidelineCard } from "@/lib/types";
 
 type Direction = "left" | "right";
 
-// Two endless lanes: right→left, then left→right (from LANES_FROM cards; fewer stand on a shelf).
-// Each lane renders its cards twice and slides by exactly one copy (-50%),
-// so the loop is seamless. Pure CSS animation; only the collect buttons are client components.
-const LANES: { direction: Direction; seconds: number }[] = [
-  { direction: "left", seconds: 120 },
-  { direction: "right", seconds: 140 },
-];
+// Endless lanes of cards, sized to how many guidelines there are (user request 2026-10-26: flow
+// with fewer guidelines, and look right doing it):
+//   1–3 cards  a centered shelf: one to three cards circling would look odd
+//   4–7        one lane with every card
+//   8+         two lanes (right→left, left→right), cards dealt round-robin so each gets a mix
+// A lane renders its cards several times and slides by exactly one copy, so the loop is seamless.
+// It needs enough copies that the rest still covers the widest screen while one copy slides out:
+// (copies − 1) × copy width ≥ WIDEST. Pure CSS animation; only the collect buttons are client
+// components. The lane moves in whole device pixels on a 50ms clock (globals.css, .md-track): the
+// card count sets the distance of one loop.
+export const SHELF_BELOW = 4;
+const TWO_LANES_FROM = 8;
+const CARD_PX = 294; // the widest lane card + gap (globals.css: --card-w 272px + --card-gap 22px)
+const WIDEST = 3840; // ultra-wide screens included
 
-function Lane({ items, direction, seconds }: { items: GuidelineCard[]; direction: Direction; seconds: number }) {
-  const style = { "--lane-duration": `${seconds}s` } as CSSProperties;
+const copiesFor = (cards: number) => Math.ceil(WIDEST / (cards * CARD_PX)) + 1;
+
+function Lane({ items, direction }: { items: GuidelineCard[]; direction: Direction }) {
+  const copies = copiesFor(items.length);
+  const style = { "--lane-cards": items.length } as CSSProperties;
   return (
     <div className={`md-lane md-lane-${direction}`} style={style}>
       <div className="md-track">
-        {[0, 1].map((copy) => (
-          // The second copy only exists to close the loop: hidden from screen readers and
-          // out of the tab order, but still hoverable and clickable (inert would block the mouse).
-          <div key={copy} className="md-group" aria-hidden={copy === 1 ? true : undefined}>
+        {Array.from({ length: copies }, (_, copy) => (
+          // Copies after the first only close the loop: hidden from screen readers and out of the
+          // tab order, but still hoverable and clickable (inert would block the mouse).
+          <div key={copy} className="md-group" aria-hidden={copy > 0 ? true : undefined}>
             {items.map((g) => (
               <MdCard key={`${copy}-${g.id}`} guideline={g} focusable={copy === 0} />
             ))}
@@ -31,14 +41,8 @@ function Lane({ items, direction, seconds }: { items: GuidelineCard[]; direction
   );
 }
 
-/**
- * Below this many cards a lane's copy is narrower than a wide screen (9 cards × 294 px > 2560 px),
- * and the loop would show gaps: the cards stand still on a centered shelf instead.
- */
-export const LANES_FROM = 18;
-
 export default function MdLanes({ guidelines }: { guidelines: GuidelineCard[] }) {
-  if (guidelines.length < LANES_FROM) {
+  if (guidelines.length < SHELF_BELOW) {
     return (
       <section className="md-shelf" aria-label="Guidelines">
         {guidelines.map((g) => (
@@ -47,13 +51,14 @@ export default function MdLanes({ guidelines }: { guidelines: GuidelineCard[] })
       </section>
     );
   }
+  const directions: Direction[] = guidelines.length >= TWO_LANES_FROM ? ["left", "right"] : ["left"];
   // Deal cards round-robin so each lane gets a varied mix.
-  const lanes = LANES.map((_, i) => guidelines.filter((_, j) => j % LANES.length === i));
+  const lanes = directions.map((_, i) => guidelines.filter((_, j) => j % directions.length === i));
 
   return (
     <section className="md-lanes" aria-label="Guideline pool">
-      {LANES.map((lane, i) => (
-        <Lane key={i} items={lanes[i]} direction={lane.direction} seconds={lane.seconds} />
+      {directions.map((direction, i) => (
+        <Lane key={direction} items={lanes[i]} direction={direction} />
       ))}
     </section>
   );

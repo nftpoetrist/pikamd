@@ -18,6 +18,10 @@ const WEB = join(ROOT, "web");
 const require = createRequire(join(WEB, "package.json"));
 const sharp = require("sharp");
 const [outPng, outWebp] = process.argv.slice(2);
+// The site shows the background blurred. The blur is baked into the webp (2026-10-26) instead of a
+// CSS filter the GPU kept recomputing: Gaussian sigma in image px, matched against the old
+// filter: blur(2px) at 1440, 1920 and 390 px wide (mean difference under 2/255). The PNG stays sharp.
+const BLUR_SIGMA = 3.5;
 
 // ── Pixel maps, read from the site's own components ───────────────────────────────────────
 const { PIKA, PIKA_PALETTE } = await import(join(WEB, "components/brand/pika-art.ts"));
@@ -288,7 +292,7 @@ try {
   const shot = await send("Page.captureScreenshot", { format: "png" });
   const png = Buffer.from(shot.result.data, "base64");
   writeFileSync(outPng, png);
-  if (outWebp) await sharp(png).webp({ quality: 82, effort: 6 }).toFile(outWebp);
+  if (outWebp) await sharp(png).blur(BLUR_SIGMA).webp({ quality: 82, effort: 6 }).toFile(outWebp);
   console.log("cards:", cards.length);
   ws.close();
 } finally {
