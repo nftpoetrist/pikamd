@@ -68,13 +68,14 @@ type GuidelineRow = {
 
 const G_FIELDS = "id, slug, title, author_address, author_hidden, moderator_locked, latest_version, guideline_versions(version, pinata_id, scan_status)";
 
-/** Everything waiting for a moderator: open reports, files the scan flagged, locked guidelines. */
-export async function moderationQueue(): Promise<{ reported: QueueItem[]; flagged: QueueItem[]; locked: QueueItem[]; review: ReviewItem[] }> {
+/** Everything waiting for a moderator: open reports, files the scan flagged, locked and hidden guidelines. */
+export async function moderationQueue(): Promise<{ reported: QueueItem[]; flagged: QueueItem[]; locked: QueueItem[]; hidden: QueueItem[]; review: ReviewItem[] }> {
   const db = supabase()!;
-  const [reports, flagged, locked, listed] = await Promise.all([
+  const [reports, flagged, locked, hidden, listed] = await Promise.all([
     db.from("reports").select(`reason, note, reporter_address, created_at, guidelines(${G_FIELDS})`).eq("status", "open").order("created_at", { ascending: false }).limit(1000),
     db.from("listed_guidelines").select("id").eq("scan_status", "suspicious").limit(500),
     db.from("guidelines").select(G_FIELDS).eq("moderator_locked", true).order("id", { ascending: false }).limit(500),
+    db.from("guidelines").select(G_FIELDS).eq("author_hidden", true).eq("moderator_locked", false).order("id", { ascending: false }).limit(500),
     db.from("listed_guidelines").select("id, slug, title, author_address, latest_version, content_hash, scan_status, reviewed").order("block_number", { ascending: false }).limit(500),
   ]);
   const item = (g: GuidelineRow): QueueItem => {
@@ -105,6 +106,7 @@ export async function moderationQueue(): Promise<{ reported: QueueItem[]; flagge
     reported: [...byId.values()].sort((a, b) => b.reports.length - a.reports.length),
     flagged: flaggedRows.map(item),
     locked: ((check(locked, "locked") ?? []) as unknown as GuidelineRow[]).map(item),
+    hidden: ((check(hidden, "hidden") ?? []) as unknown as GuidelineRow[]).map(item),
     review: (
       (check(listed, "listed for review") ?? []) as unknown as {
         id: number; slug: string; title: string; author_address: string; latest_version: number; content_hash: string; scan_status: string; reviewed: boolean | null;
@@ -164,4 +166,32 @@ export async function unpinLocked(guidelineId: number, moderator: string): Promi
     done++;
   }
   return done;
+}
+
+export type PurgeResult = { purged: true; unpinned: number; kept: number } | { purged: false; reason: "listed" | "unknown" | "unpin" };
+
+/**
+ * Deletes a guideline from PikaMd for good (migration 20261026090000_purge.sql). Only one that is
+ * off the site on Arc right now (hidden by its author or locked), read from the chain, never the
+ * index. Files first: the ones nothing else uses are unpinned, and if Pinata fails nothing is
+ * deleted, so the moderator can try again. Then the rows, in one transaction.
+ */
+export async function purgeGuideline(guidelineId: number): Promise<PurgeResult> {
+  if (!REGISTRY) return { purged: false, reason: "unknown" };
+  const db = supabase()!;
+  let onChain;
+  try {
+    onChain = await arcClient.readContract({ address: REGISTRY.address, abi: REGISTRY_ABI, functionName: "getGuideline", args: [BigInt(guidelineId)] });
+  } catch {
+    return { purged: false, reason: "unknown" }; // the registry reverts for an id it never issued
+  }
+  if (!onChain.authorHidden && !onChain.moderatorLocked) return { purged: false, reason: "listed" };
+
+  const files = ((check(await db.rpc("purge_files", { p_guideline_id: guidelineId }), "purge_files") ?? []) as { pinata_id: string }[]).map((f) => f.pinata_id);
+  const all = (check(await db.from("guideline_versions").select("pinata_id").eq("guideline_id", guidelineId), "guideline files") ?? []) as { pinata_id: string | null }[];
+  for (const id of files) if (!(await unpin(id))) return { purged: false, reason: "unpin" };
+
+  const res = await db.rpc("purge_guideline", { p_guideline_id: guidelineId, p_hidden: onChain.authorHidden, p_locked: onChain.moderatorLocked });
+  if (check(res, "purge_guideline") !== true) return { purged: false, reason: "unknown" };
+  return { purged: true, unpinned: files.length, kept: new Set(all.map((v) => v.pinata_id).filter((v) => v && !files.includes(v))).size };
 }

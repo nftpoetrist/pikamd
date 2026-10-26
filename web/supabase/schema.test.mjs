@@ -725,3 +725,68 @@ test("public roles can't read or write anything OAuth", async () => {
     await assert.rejects(asRole(role, `select oauth_new_grant($1,'c','dcr','n',null,'s','r',$2,$3,1,1)`, [W, H("d"), H("e")]), /permission denied/);
   }
 });
+
+// Deleting a guideline for good (20261026090000_purge.sql): moderator only, off the site on Arc first
+const P = "0x" + "8".repeat(40);
+const purge = (id, hidden, locked) => asRole("service_role", `select purge_guideline($1, $2, $3) as ok`, [id, hidden, locked]);
+
+test("purge: a hidden guideline and everything about it go, its author keeps the PikaGold", async () => {
+  await addGuideline(70, "purge-hidden", P, { hidden: true });
+  await addGuideline(71, "purge-fork", B);
+  await db.query(`update guidelines set parent_id = 70 where id = 71`);
+  await db.query(`insert into stars (wallet_address, guideline_id) values ($1, 70), ($2, 70)`, [A, B]);
+  await db.query(`update stars set removed_at = now() where wallet_address = $1 and guideline_id = 70`, [B]);
+  await db.query(`insert into collections (wallet_address, guideline_id) values ($1, 70)`, [A]);
+  await db.query(`insert into reports (guideline_id, reporter_address, reason) values (70, $1, 'spam')`, [A]);
+  await db.query(`insert into moderation_log (guideline_id, moderator, action) values (70, $1, 'dismiss')`, [A]);
+  const gold = async () => (await db.query(`select pikagold from wallet_profile($1)`, [P])).rows[0].pikagold;
+  assert.equal(await gold(), 2);
+
+  assert.equal((await purge(70, true, false)).rows[0].ok, true);
+  for (const [table, col] of [["guidelines", "id"], ["guideline_versions", "guideline_id"], ["stars", "guideline_id"], ["collections", "guideline_id"], ["reports", "guideline_id"], ["moderation_log", "guideline_id"]]) {
+    assert.equal((await db.query(`select count(*)::int as n from ${table} where ${col} = 70`)).rows[0].n, 0, `${table} still has it`);
+  }
+  assert.equal((await db.query(`select * from author_guidelines($1)`, [P])).rows.length, 0, "gone from the author's own list");
+  assert.equal((await db.query(`select parent_id from guidelines where id = 71`)).rows[0].parent_id, null, "a fork keeps living, without a parent");
+  assert.equal(await gold(), 2, "both first likes still count (the removed one too)");
+  assert.equal((await purge(70, true, false)).rows[0].ok, false, "a second delete finds nothing");
+});
+
+test("purge: a locked guideline's PikaGold goes with it; a listed one is refused", async () => {
+  await addGuideline(72, "purge-locked", P, { locked: true });
+  await db.query(`insert into stars (wallet_address, guideline_id) values ($1, 72)`, [A]);
+  const before = (await db.query(`select pikagold from wallet_profile($1)`, [P])).rows[0].pikagold;
+  assert.equal((await purge(72, false, true)).rows[0].ok, true);
+  assert.equal((await db.query(`select pikagold from wallet_profile($1)`, [P])).rows[0].pikagold, before, "a lock already took it away");
+  await addGuideline(73, "purge-listed", P);
+  await assert.rejects(purge(73, false, false), /still listed/);
+  assert.equal((await db.query(`select count(*)::int as n from guidelines where id = 73`)).rows[0].n, 1);
+});
+
+test("purge: a deleted id can't be indexed again, by any path", async () => {
+  await assert.rejects(asRole("service_role", `insert into guidelines (id, slug, author_address, title, description, kind, license, latest_version, tx_hash, block_number)
+    values (70, 'purge-back', $1, 't', 'd', 'rules', 0, 1, $2, 1)`, [P, hex64("9")]), (e) => e.code === "23514");
+});
+
+test("purge: a shared file is unpinned only with its last user, never while an upload waits on it", async () => {
+  await addGuideline(74, "purge-share-a", P, { hidden: true });
+  await addGuideline(75, "purge-share-b", P, { hidden: true });
+  await db.query(`update guideline_versions set pinata_id = 'purge-file' where guideline_id in (74, 75)`);
+  const files = async (id) => (await asRole("service_role", `select * from purge_files($1)`, [id])).rows.map((r) => r.pinata_id);
+  assert.deepEqual(await files(74), [], "the other one (hidden, can come back) still uses it");
+  await purge(74, true, false);
+  assert.deepEqual(await files(75), ["purge-file"]);
+  await db.query(`insert into pending_uploads (wallet_address, slug, cid, pinata_id, content_hash, content, meta, scan_status, expires_at)
+    values ($1, 'purge-pending', 'bafy', 'purge-file', $2, '# x', '{}', 'clean', now() + interval '1 day')`, [B, hex64("e")]);
+  assert.deepEqual(await files(75), [], "an upload waiting on the same file keeps it");
+  await db.query(`delete from pending_uploads where slug = 'purge-pending'`);
+});
+
+test("public roles can't delete guidelines or read what was deleted", async () => {
+  for (const role of ["anon", "authenticated"]) {
+    await assert.rejects(asRole(role, `select purge_guideline(75, true, false)`), /permission denied/);
+    await assert.rejects(asRole(role, `select * from purge_files(75)`), /permission denied/);
+    await assert.rejects(asRole(role, `select * from purged_guidelines`), /permission denied/);
+    await assert.rejects(asRole(role, `select * from pikagold_kept`), /permission denied/);
+  }
+});

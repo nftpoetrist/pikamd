@@ -30,7 +30,7 @@ export type QueueItem = {
   reports: { reason: string; note: string | null; reporter: string; at: string }[];
 };
 export type ReviewItem = { id: number; slug: string; title: string; author: string; version: number; contentHash: string; flagged: boolean; reviewed: boolean };
-export type Queue = { reported: QueueItem[]; flagged: QueueItem[]; locked: QueueItem[]; review: ReviewItem[] };
+export type Queue = { reported: QueueItem[]; flagged: QueueItem[]; locked: QueueItem[]; hidden: QueueItem[]; review: ReviewItem[] };
 
 export function useIsModerator() {
   const { wallet, signed } = useSignedIn();
@@ -100,12 +100,13 @@ export function useModActions() {
   );
 
   const act = useCallback(
-    async (id: number, action: "dismiss" | "approve" | "unpin") => {
+    async (id: number, action: "dismiss" | "approve" | "unpin" | "purge") => {
       const result = await api<Record<string, number | boolean>>("/api/mod/action", { method: "POST", body: { guidelineId: id, action } });
       await refresh();
+      if (action === "purge") await client.invalidateQueries({ queryKey: LIBRARY_KEY });
       return result;
     },
-    [refresh],
+    [client, refresh],
   );
 
   return { setLock, setReview, act };
