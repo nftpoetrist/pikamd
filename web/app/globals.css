@@ -58,14 +58,6 @@ body {
 
 /* Fields you type in keep the text cursor, so it shows where typing goes. In the base layer, so a
    component's own cursor (not-allowed, wait…) still wins */
-/* A running cat's position on the home plaque (.hp-cat): registered so it can animate as a length
-   and be rounded to whole pixels */
-@property --cat-x {
-  syntax: "<length>";
-  inherits: false;
-  initial-value: 0px;
-}
-
 @layer base {
   input:not([type="button"], [type="submit"], [type="reset"], [type="checkbox"], [type="radio"], [type="file"], [type="range"], [type="color"]),
   textarea,
@@ -112,10 +104,9 @@ body {
   object-fit: cover;
   object-position: center;
   display: block;
-  /* blur + slight scale: hides blurred-edge artifacts */
-  filter: blur(2px);
+  /* The blur is baked into the image (design/brand/background.mjs, BLUR_SIGMA): a full-screen CSS
+     filter here was recomputed by the GPU while anything on the page moved. Same look (pixel-compared), half the file */
   transform: scale(1.01);
-  will-change: transform;
 }
 
 /* Izgara dokusu */
@@ -655,7 +646,16 @@ body {
 .tcg-agents {
   filter: drop-shadow(0 0 12px rgba(255, 203, 5, 0.35));
 }
+.pixel-agents {
+  position: relative;
+  display: inline-block;
+  vertical-align: top;
+}
+.pixel-agents svg { display: block; }
+/* One art pixel (--agents-px) per step, 11 steps along the cable; composited (HTML, not SVG) */
 .tcg-pulse {
+  position: absolute;
+  background: #FFFFFF;
   animation: tcg-pulse 1.1s steps(11) infinite;
 }
 .tcg-pulse-late {
@@ -663,7 +663,7 @@ body {
 }
 @keyframes tcg-pulse {
   from { transform: translateX(0); }
-  to   { transform: translateX(11px); }
+  to   { transform: translateX(calc(11 * var(--agents-px, 3px))); }
 }
 
 /* Keeps the 63:88 card ratio as a minimum; grows instead of clipping text */
@@ -1085,9 +1085,11 @@ body {
 /* Two little cats on the top edge (HeroPlaque → RunningCat): the navbar mascot at 1:1, gold PikaMd
    on the left, Arc blue on the right. Each track is the flat rim between the corner and the
    swashes; paws (sprite row 33, --cat-foot from the top) stand on the frame's outer ink line, like
-   the swashes (--hp-crest below the frame top). The position (--cat-x) is rounded down to whole
-   steps of --cat-px, so a cat trots along the rim pixel by pixel instead of gliding; the legs, the
-   turn and the dust are transform and opacity. One loop: stand, run across, stand, turn, run back.
+   the swashes (--hp-crest below the frame top). The run is a transform in steps of --cat-px (the
+   distance rounded down to whole steps, one step per --cat-px), so a cat trots along the rim pixel
+   by pixel instead of gliding, on the compositor: until 2026-10-26 it animated a registered
+   property (--cat-x) that the main thread recomputed every frame (measured: ~11% of a core). The
+   legs, the turn and the dust are transform and opacity. One loop: stand, run across, stand, turn, run back.
    The maps face left, so the face is mirrored on the way right. */
 .hero-plaque { --hp-crest: 18px; --cat-px: 2px; --cat-w: 32px; --cat-h: 35px; --cat-foot: 34px; }
 .hp-track {
@@ -1108,9 +1110,11 @@ body {
   width: var(--cat-w);
   height: var(--cat-h);
   will-change: transform;
-  transform: translateX(var(--cat-x));
-  transform: translateX(round(down, var(--cat-x), var(--cat-px)));
   animation: hp-cat-run var(--cat-loop) linear infinite;
+  /* Applies to each stretch between keyframes: the runs there and back take one step per 2px
+     (32px = --cat-w, 2px = --cat-px; written out so a browser without typed arithmetic drops only
+     this line and the cat glides) */
+  animation-timing-function: steps(calc(round(down, 100cqw - 32px, 2px) / 2px));
 }
 /* The Arc cat starts at the far end, facing left, on a slightly longer loop: the two never sync */
 .hp-track-r .hp-cat { --cat-loop: 12.4s; }
@@ -1149,9 +1153,9 @@ body {
   .hp-cat { display: none; }
 }
 @keyframes hp-cat-run {
-  0%, 8% { --cat-x: 0px; }
-  46%, 54% { --cat-x: calc(100cqw - var(--cat-w)); }
-  92%, 100% { --cat-x: 0px; }
+  0%, 8% { transform: translateX(0); }
+  46%, 54% { transform: translateX(round(down, 100cqw - var(--cat-w), var(--cat-px))); }
+  92%, 100% { transform: translateX(0); }
 }
 @keyframes hp-cat-turn {
   0% { transform: scaleX(-1); }
@@ -1222,10 +1226,16 @@ body {
   padding: 6px 0 20px; /* room for the outer pixel frame and drop shadow */
 }
 
+/* One loop = one copy of the cards = cards × (card + gap) px. The lane moves 1px every 50ms
+   (20px/s) in steps instead of a smooth slide: the screen updates 20 times a second instead of at
+   the display's rate (120 on many laptops), text never sits between pixels, and the sea steps on
+   the same 50ms clock, so their updates land on the same frames. Measured (headless, 60Hz): the
+   GPU process went from ~20% to ~7% of a core with the lanes still moving. */
 .md-track {
+  --lane-steps: calc(var(--lane-cards, 10) * var(--lane-card-px, 294));
   display: flex;
   width: max-content;
-  animation: md-scroll-left var(--lane-duration, 120s) linear infinite;
+  animation: md-scroll-left calc(var(--lane-steps) * 50ms) steps(var(--lane-steps)) infinite;
   will-change: transform;
 }
 
@@ -1277,6 +1287,13 @@ body {
 .arc-sea > section {
   position: relative;
   z-index: 1;
+}
+/* The cards' frosted backdrop (.pixel-panel) shows nothing here: measured pixel for pixel, on lanes
+   and shelf, with and without it, the page is identical. On moving cards it only made the GPU blur
+   their backdrop at every step */
+.arc-sea .md-card {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 .arc-sea-water {
   position: absolute;
@@ -3273,7 +3290,7 @@ body {
 /* Explore lanes: compact cards (user request 2026-10-12). Whole-pixel sizes only, so the pixel
    frames stay crisp (no zoom/scale). Other pages keep the full-size card. Measured: the four
    buttons still fit one row, "✓ Added" included. */
-.md-lanes { --card-w: 272px; }
+.md-lanes { --card-w: 272px; --lane-card-px: 294; } /* card + 22px gap: one lane step per pixel */
 .md-lanes .md-card { gap: 7px; padding: 10px 12px 9px; }
 .md-lanes .md-file { font-size: 15px; }
 .md-lanes .md-badge { font-size: 12px; }
@@ -3292,7 +3309,7 @@ body {
 .md-lanes .md-card-actions .md-collect { gap: 6px; padding: 0 6px 1px; font-size: 17px; }
 
 @media (max-width: 639px) {
-  .md-lanes { --card-w: 264px; }
+  .md-lanes { --card-w: 264px; --lane-card-px: 286; }
 }
 
 /* ── Connect your agent: key → prompt → manual setup → try it (ARCHITECTURE §8.1) ── */

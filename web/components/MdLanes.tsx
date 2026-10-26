@@ -7,13 +7,12 @@ type Direction = "left" | "right";
 // Two endless lanes: right→left, then left→right (from LANES_FROM cards; fewer stand on a shelf).
 // Each lane renders its cards twice and slides by exactly one copy (-50%),
 // so the loop is seamless. Pure CSS animation; only the collect buttons are client components.
-const LANES: { direction: Direction; seconds: number }[] = [
-  { direction: "left", seconds: 120 },
-  { direction: "right", seconds: 140 },
-];
+// The lane moves in whole pixels, one every 50ms (globals.css, .md-track): the card count sets
+// how many steps one loop takes.
+const LANES: { direction: Direction }[] = [{ direction: "left" }, { direction: "right" }];
 
-function Lane({ items, direction, seconds }: { items: GuidelineCard[]; direction: Direction; seconds: number }) {
-  const style = { "--lane-duration": `${seconds}s` } as CSSProperties;
+function Lane({ items, direction }: { items: GuidelineCard[]; direction: Direction }) {
+  const style = { "--lane-cards": items.length } as CSSProperties;
   return (
     <div className={`md-lane md-lane-${direction}`} style={style}>
       <div className="md-track">
@@ -53,7 +52,7 @@ export default function MdLanes({ guidelines }: { guidelines: GuidelineCard[] })
   return (
     <section className="md-lanes" aria-label="Guideline pool">
       {LANES.map((lane, i) => (
-        <Lane key={i} items={lanes[i]} direction={lane.direction} seconds={lane.seconds} />
+        <Lane key={i} items={lanes[i]} direction={lane.direction} />
       ))}
     </section>
   );

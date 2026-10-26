@@ -80,7 +80,7 @@ export default function ArcSea() {
               backgroundSize: `${tile(f.width)} ${FOAM_ROWS * P}px`,
               width: `calc(100% + ${tile(f.width)})`,
               marginLeft: `-${tile(f.width)}`,
-              animationDuration: `${[18, 24][i]}s`,
+              animationDuration: `${[16, 24][i]}s`, // 250ms and 300ms a step: on the lanes' 50ms clock
               animationTimingFunction: `steps(${f.width})`,
               ["--sea-tile" as string]: tile(f.width),
             }}
@@ -97,7 +97,7 @@ export default function ArcSea() {
             backgroundRepeat: "repeat-x, no-repeat",
             width: `calc(100% + ${tile(SURFACE.width)})`,
             marginLeft: `-${tile(SURFACE.width)}`,
-            animationDuration: "14s",
+            animationDuration: "12.8s", // 200ms a step: on the lanes' 50ms clock
             animationTimingFunction: `steps(${SURFACE.width})`,
             ["--sea-tile" as string]: tile(SURFACE.width),
           }}

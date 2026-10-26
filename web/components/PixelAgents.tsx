@@ -91,14 +91,20 @@ function fill2(g: string[][], x0: number, y0: number, x1: number, y1: number, c:
 const SCENE = scene();
 
 export default function PixelAgents({ scale = 3 }: { scale?: number }) {
+  // The two data pixels are HTML boxes over the picture, not SVG rects: a transform on an SVG
+  // element isn't composited, so every step repainted all of the scene's rects on the main thread.
+  // As boxes they move on the compositor and the scene is painted once.
+  const pulse = { left: CABLE_FROM * scale, top: CABLE_Y * scale, width: scale, height: scale };
   return (
-    <svg width={W * scale} height={H * scale} viewBox={`0 0 ${W} ${H}`} shapeRendering="crispEdges" aria-hidden="true">
-      {SCENE.flatMap((row, y) =>
-        row.map((c, x) => (c === "." ? null : <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} style={{ fill: PALETTE[c] }} />)),
-      )}
+    <span className="pixel-agents" style={{ width: W * scale, height: H * scale, ["--agents-px" as string]: `${scale}px` }}>
+      <svg width={W * scale} height={H * scale} viewBox={`0 0 ${W} ${H}`} shapeRendering="crispEdges" aria-hidden="true">
+        {SCENE.flatMap((row, y) =>
+          row.map((c, x) => (c === "." ? null : <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} style={{ fill: PALETTE[c] }} />)),
+        )}
+      </svg>
       {/* Data running from the page to the agent: white pixels stepping along the gold cable */}
-      <rect className="tcg-pulse" x={CABLE_FROM} y={CABLE_Y} width={1} height={1} style={{ fill: "#FFFFFF" }} />
-      <rect className="tcg-pulse tcg-pulse-late" x={CABLE_FROM} y={CABLE_Y} width={1} height={1} style={{ fill: "#FFFFFF" }} />
-    </svg>
+      <span className="tcg-pulse" style={pulse} aria-hidden="true" />
+      <span className="tcg-pulse tcg-pulse-late" style={pulse} aria-hidden="true" />
+    </span>
   );
 }
