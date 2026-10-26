@@ -1260,14 +1260,17 @@ body {
   .md-lane { overflow-x: auto; }
 }
 
-/* ── Explore: a pixel sea under the cards (ArcSea, user request 2026-10-26) ──
+/* ── Explore: a pixel sea under the cards, edge to edge down to the footer (ArcSea, user request 2026-10-26) ──
    Arc blues only (the Arc card 002 and the blue cat). The water between the wave rows is one static
    stepped gradient; each wave row is a thin strip that slides one tile per cycle in steps, so it
    moves one art pixel (3px) at a time. Only transform/opacity animate: compositor-only, no repaints. */
+/* Grows to the bottom of the page (the hero column is at least a screen tall and ends at the
+   footer), so the sea runs edge to edge and all the way down to the footer */
 .arc-sea {
   position: relative;
   z-index: 0;
   align-self: stretch;
+  flex: 1 0 auto;
 }
 .explore-hero .arc-sea:has(> .md-lanes) { margin-top: -18px; } /* takes over the lanes' pull toward the search box */
 .explore-hero .arc-sea > .md-lanes { margin-top: 0; }
@@ -1277,7 +1280,9 @@ body {
 }
 .arc-sea-water {
   position: absolute;
-  inset: -12px 20px -18px; /* the navbar's width; a little above and below the cards */
+  /* A little above the cards; below, over the column's 24px bottom padding and the footer's 28px
+     top margin (.site-footer), so the water meets the footer */
+  inset: -12px 0 -52px;
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
@@ -1286,19 +1291,11 @@ body {
     180deg,
     transparent 0 24px,
     #2E4183 24px 60px,
-    #25397A 60px 34%,
-    #1C3272 34% 67%,
-    #142658 67% 100%
+    #25397A 60px 30%,
+    #1C3272 30% 58%,
+    #142658 58% 84%,
+    #0C1A3E 84% 100%
   );
-  /* Edges fade in pixel steps, not a blur: 4 steps of 6px at the sides, 3 of 6px at the bottom */
-  -webkit-mask-image:
-    linear-gradient(90deg, transparent 0 6px, rgb(0 0 0 / 0.25) 6px 12px, rgb(0 0 0 / 0.5) 12px 18px, rgb(0 0 0 / 0.75) 18px 24px, #000 24px calc(100% - 24px), rgb(0 0 0 / 0.75) calc(100% - 24px) calc(100% - 18px), rgb(0 0 0 / 0.5) calc(100% - 18px) calc(100% - 12px), rgb(0 0 0 / 0.25) calc(100% - 12px) calc(100% - 6px), transparent calc(100% - 6px)),
-    linear-gradient(180deg, #000 0 calc(100% - 18px), rgb(0 0 0 / 0.66) calc(100% - 18px) calc(100% - 12px), rgb(0 0 0 / 0.33) calc(100% - 12px) calc(100% - 6px), transparent calc(100% - 6px));
-  -webkit-mask-composite: source-in;
-  mask-image:
-    linear-gradient(90deg, transparent 0 6px, rgb(0 0 0 / 0.25) 6px 12px, rgb(0 0 0 / 0.5) 12px 18px, rgb(0 0 0 / 0.75) 18px 24px, #000 24px calc(100% - 24px), rgb(0 0 0 / 0.75) calc(100% - 24px) calc(100% - 18px), rgb(0 0 0 / 0.5) calc(100% - 18px) calc(100% - 12px), rgb(0 0 0 / 0.25) calc(100% - 12px) calc(100% - 6px), transparent calc(100% - 6px)),
-    linear-gradient(180deg, #000 0 calc(100% - 18px), rgb(0 0 0 / 0.66) calc(100% - 18px) calc(100% - 12px), rgb(0 0 0 / 0.33) calc(100% - 12px) calc(100% - 6px), transparent calc(100% - 6px));
-  mask-composite: intersect;
 }
 /* The surface along the top edge: 24px crest (8 art px) and 12px of its own water; it bobs a pixel */
 .arc-sea-surface {

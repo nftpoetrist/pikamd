@@ -1,8 +1,9 @@
-// A pixel sea behind Explore's cards (user request 2026-10-26: Arc blues, waves that move pixel by
-// pixel, light on the page). The tiles are SVGs drawn here from periodic height profiles, so they
-// repeat seamlessly; CSS slides each layer by exactly one tile with steps(), one art pixel per
-// step. Only transform animates: the compositor moves three layers, nothing is repainted, no
-// JavaScript runs after render. The water itself is a static stepped gradient (.arc-sea-water).
+// A pixel sea behind Explore's cards, edge to edge down to the footer (user request 2026-10-26:
+// Arc blues, waves that move pixel by pixel, light on the page). The tiles are SVGs drawn here
+// from periodic height profiles, so they repeat seamlessly; CSS slides each layer by exactly one
+// tile with steps(), one art pixel per step. Only transform animates: the compositor moves three
+// layers, nothing is repainted, no JavaScript runs after render. The water itself is a static
+// stepped gradient (.arc-sea-water).
 //
 // Layers: the surface (a crest row with its own water, along the top edge), then two layers of
 // thin foam lines over the whole sea, a row every 48px each, offset by 24px and drifting in
