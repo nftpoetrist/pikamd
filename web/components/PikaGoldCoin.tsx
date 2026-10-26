@@ -1,3 +1,5 @@
+import { colorPaths, runsPath } from "@/lib/pixel-path";
+
 // 15×15 PikaGold coin: the PikaMd cat's head (components/brand/pika-art.ts) embossed on a gold
 // coin, in the logo's palette (ink outline, gold rim, recessed face, raised head with pointed ears
 // lit from the top left with a drop shadow, peach inner ears and nose). Drawn from an ASCII map at
@@ -36,7 +38,7 @@ const COLORS: Record<string, string> = {
 
 const N = MAP.length;
 
-// One rect per horizontal run of the same color keeps the DOM small
+// Horizontal runs of the same color, drawn as one path per color (lib/pixel-path.ts)
 const RUNS: { x: number; y: number; w: number; fill: string }[] = [];
 MAP.forEach((row, y) => {
   let x = 0;
@@ -56,7 +58,11 @@ const INSIDE: { x: number; y: number; w: number }[] = MAP.map((row, y) => {
 }).filter((r) => r.w > 0);
 
 // "/" stripe two pixels wide (cells with x + y ∈ {0, 1}); CSS slides it right across the coin
-const STRIPE = Array.from({ length: N }, (_, y) => ({ x: -y, y }));
+const STRIPE = Array.from({ length: N }, (_, y) => ({ x: -y, y, w: 2 }));
+
+const FACE = colorPaths(RUNS);
+const INSIDE_D = runsPath(INSIDE);
+const STRIPE_D = runsPath(STRIPE);
 
 export default function PikaGoldCoin({ scale = 2, clipId }: { scale?: number; clipId: string }) {
   // useId output may hold characters that break url(#…)
@@ -72,19 +78,15 @@ export default function PikaGoldCoin({ scale = 2, clipId }: { scale?: number; cl
     >
       <defs>
         <clipPath id={id}>
-          {INSIDE.map(({ x, y, w }) => (
-            <rect key={y} x={x} y={y} width={w} height={1} />
-          ))}
+          <path d={INSIDE_D} />
         </clipPath>
       </defs>
-      {RUNS.map(({ x, y, w, fill }) => (
-        <rect key={`${x}-${y}`} x={x} y={y} width={w} height={1} fill={fill} />
+      {FACE.map(({ fill, d }) => (
+        <path key={fill} d={d} fill={fill} />
       ))}
       <g clipPath={`url(#${id})`}>
         <g className="pg-shine">
-          {STRIPE.map(({ x, y }) => (
-            <rect key={y} x={x} y={y} width={2} height={1} />
-          ))}
+          <path d={STRIPE_D} />
         </g>
       </g>
       {/* Sparkle on the upper-right rim: a dot, then a plus, then a dot */}

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { colorPaths } from "@/lib/pixel-path";
 
 // PikaMd feature card: a platform feature presented as a collectible pixel card, in PikaMd's own
 // layout: a kicker chip and the name, a stat plaque, the art window, a ribbon banner, then perks
@@ -36,23 +37,15 @@ const GEM = [
   "...O...",
 ];
 
+const GEM_FILL: Record<string, string> = { O: "var(--ink)", h: "var(--frame-light)", g: "var(--stat)" };
+const GEM_PATHS = colorPaths(GEM.flatMap((row, y) => [...row].flatMap((c, x) => (c === "." ? [] : [{ x, y, fill: GEM_FILL[c] }]))));
+
 function Gem() {
   return (
     <svg className="tcg-gem" width="14" height="12" viewBox="0 0 7 6" shapeRendering="crispEdges" aria-hidden="true">
-      {GEM.flatMap((row, y) =>
-        [...row].map((c, x) =>
-          c === "." ? null : (
-            <rect
-              key={`${x}-${y}`}
-              x={x}
-              y={y}
-              width={1}
-              height={1}
-              style={{ fill: c === "O" ? "var(--ink)" : c === "h" ? "var(--frame-light)" : "var(--stat)" }}
-            />
-          ),
-        ),
-      )}
+      {GEM_PATHS.map(({ fill, d }) => (
+        <path key={fill} d={d} style={{ fill }} />
+      ))}
     </svg>
   );
 }

@@ -1,3 +1,5 @@
+import { colorPaths } from "@/lib/pixel-path";
+
 // Small pixel icons drawn from ASCII maps, same bevel and outline language as the coin, heart and Arc logo.
 // "#" = face pixel (lit top-left edge, shaded bottom-right edge), "-" = ink detail inside the shape.
 // Colors come from CSS: --glyph-face, --glyph-light, --glyph-shade, --glyph-ink.
@@ -81,8 +83,8 @@ export default function PixelGlyph({ name, scale = 5 }: { name: GlyphName; scale
 
   return (
     <svg width={(W + 2) * scale} height={(H + 2) * scale} viewBox={`-1 -1 ${W + 2} ${H + 2}`} shapeRendering="crispEdges" aria-hidden="true">
-      {rects.map(({ x, y, c }, i) => (
-        <rect key={i} x={x} y={y} width={1} height={1} style={{ fill: c }} />
+      {colorPaths(rects.map(({ x, y, c }) => ({ x, y, fill: c }))).map(({ fill, d }) => (
+        <path key={fill} d={d} style={{ fill }} />
       ))}
     </svg>
   );

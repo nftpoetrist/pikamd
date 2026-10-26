@@ -1,3 +1,5 @@
+import { colorPaths, type ColorPath } from "@/lib/pixel-path";
+
 // Original pixel blocks (design/brand/blocks.mjs): three isometric blocks with a gold "final"
 // check, for the "Built on Arc" card (fast blocks, final in one confirmation), and one small gold
 // block for the footer. Not Arc's logo: Arc's brand rules allow only the official files, unaltered
@@ -78,15 +80,15 @@ function runs(map: readonly string[], colors: Record<string, string>) {
   return out;
 }
 
-const BLOCKS_RUNS = runs(BLOCKS, BLOCKS_COLORS);
-const BLOCK_RUNS = runs(BLOCK, BLOCK_COLORS);
+const BLOCKS_RUNS = colorPaths(runs(BLOCKS, BLOCKS_COLORS));
+const BLOCK_RUNS = colorPaths(runs(BLOCK, BLOCK_COLORS));
 
-function Pixels({ map, cells, scale, className }: { map: readonly string[]; cells: ReturnType<typeof runs>; scale: number; className?: string }) {
+function Pixels({ map, cells, scale, className }: { map: readonly string[]; cells: ColorPath[]; scale: number; className?: string }) {
   const w = map[0].length, h = map.length;
   return (
     <svg className={className} width={w * scale} height={h * scale} viewBox={`0 0 ${w} ${h}`} shapeRendering="crispEdges" aria-hidden="true">
-      {cells.map(({ x, y, w: rw, fill }) => (
-        <rect key={`${x}-${y}`} x={x} y={y} width={rw} height={1} fill={fill} />
+      {cells.map(({ fill, d }) => (
+        <path key={fill} d={d} fill={fill} />
       ))}
     </svg>
   );

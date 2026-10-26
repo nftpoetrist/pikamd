@@ -1,3 +1,5 @@
+import { mergeRuns } from "@/lib/pixel-path";
+
 // 16×16 pixel coin with a "0" on its face. Drawn from an ASCII map; the rim gets a
 // light bevel on the top-left and a dark bevel on the bottom-right, like the navbar buttons.
 const COIN = [
@@ -59,8 +61,9 @@ export default function PixelCoin({ size = 128 }: { size?: number }) {
 
   return (
     <svg width={size} height={size} viewBox={`0 0 ${N} ${N}`} shapeRendering="crispEdges" aria-hidden="true">
-      {rects.map(({ x, y, fill }) => (
-        <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill={fill} />
+      {/* Rects, not one path per color: drawn at 56px (3.5× a 16px map), a path would get soft edges */}
+      {mergeRuns(rects).map(({ x, y, w, fill }) => (
+        <rect key={`${x}-${y}`} x={x} y={y} width={w} height={1} fill={fill} />
       ))}
     </svg>
   );

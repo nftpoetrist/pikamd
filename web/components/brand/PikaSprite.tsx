@@ -1,7 +1,8 @@
 import { PIKA, PIKA_LIDS, PIKA_PALETTE } from "@/components/brand/pika-art";
+import { colorPaths } from "@/lib/pixel-path";
 
-// The PikaMd cat (components/brand/pika-art.ts) as crisp SVG: one rect per horizontal run of
-// the same color, at an integer scale so every pixel stays sharp. `blink`: the eyes close for a
+// The PikaMd cat (components/brand/pika-art.ts) as crisp SVG: one path per color (lib/pixel-path.ts),
+// at an integer scale so every pixel stays sharp. `blink`: the eyes close for a
 // moment every few seconds (globals.css → .pika-lids; off with prefers-reduced-motion).
 
 const N = PIKA.length;
@@ -18,7 +19,8 @@ PIKA.forEach((row, y) => {
   }
 });
 
-const LIDS = PIKA_LIDS.map(({ x, y, c }) => ({ x, y, fill: PIKA_PALETTE[c] }));
+const BODY = colorPaths(RUNS);
+const LIDS = colorPaths(PIKA_LIDS.map(({ x, y, c }) => ({ x, y, fill: PIKA_PALETTE[c] })));
 
 export default function PikaSprite({ scale = 1, blink = false, className }: { scale?: number; blink?: boolean; className?: string }) {
   return (
@@ -30,13 +32,13 @@ export default function PikaSprite({ scale = 1, blink = false, className }: { sc
       shapeRendering="crispEdges"
       aria-hidden="true"
     >
-      {RUNS.map(({ x, y, w, fill }) => (
-        <rect key={`${x}-${y}`} x={x} y={y} width={w} height={1} fill={fill} />
+      {BODY.map(({ fill, d }) => (
+        <path key={fill} d={d} fill={fill} />
       ))}
       {blink && (
         <g className="pika-lids">
-          {LIDS.map(({ x, y, fill }) => (
-            <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill={fill} />
+          {LIDS.map(({ fill, d }) => (
+            <path key={fill} d={d} fill={fill} />
           ))}
         </g>
       )}

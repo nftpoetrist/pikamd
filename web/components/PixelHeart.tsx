@@ -1,3 +1,5 @@
+import { colorPaths } from "@/lib/pixel-path";
+
 // 9×8 pixel heart with the same bevel and outline language as the coin and Arc logo.
 const HEART = [
   ".##...##.",
@@ -32,8 +34,8 @@ export default function PixelHeart({ scale = 6 }: { scale?: number }) {
 
   return (
     <svg width={(W + 2) * scale} height={(H + 2) * scale} viewBox={`-1 -1 ${W + 2} ${H + 2}`} shapeRendering="crispEdges" aria-hidden="true">
-      {rects.map(({ x, y, c }, i) => (
-        <rect key={i} x={x} y={y} width={1} height={1} style={{ fill: c }} />
+      {colorPaths(rects.map(({ x, y, c }) => ({ x, y, fill: c }))).map(({ fill, d }) => (
+        <path key={fill} d={d} style={{ fill }} />
       ))}
     </svg>
   );
