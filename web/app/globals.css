@@ -1260,6 +1260,87 @@ body {
   .md-lane { overflow-x: auto; }
 }
 
+/* ── Explore: a pixel sea under the cards (ArcSea, user request 2026-10-26) ──
+   Arc blues only (the Arc card 002 and the blue cat). The water between the wave rows is one static
+   stepped gradient; each wave row is a thin strip that slides one tile per cycle in steps, so it
+   moves one art pixel (3px) at a time. Only transform/opacity animate: compositor-only, no repaints. */
+.arc-sea {
+  position: relative;
+  z-index: 0;
+  align-self: stretch;
+}
+.explore-hero .arc-sea:has(> .md-lanes) { margin-top: -18px; } /* takes over the lanes' pull toward the search box */
+.explore-hero .arc-sea > .md-lanes { margin-top: 0; }
+.arc-sea > section {
+  position: relative;
+  z-index: 1;
+}
+.arc-sea-water {
+  position: absolute;
+  inset: -12px 20px -18px; /* the navbar's width; a little above and below the cards */
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  contain: paint;
+  background: linear-gradient(
+    180deg,
+    transparent 0 24px,
+    #2E4183 24px 60px,
+    #25397A 60px 34%,
+    #1C3272 34% 67%,
+    #142658 67% 100%
+  );
+  /* Edges fade in pixel steps, not a blur: 4 steps of 6px at the sides, 3 of 6px at the bottom */
+  -webkit-mask-image:
+    linear-gradient(90deg, transparent 0 6px, rgb(0 0 0 / 0.25) 6px 12px, rgb(0 0 0 / 0.5) 12px 18px, rgb(0 0 0 / 0.75) 18px 24px, #000 24px calc(100% - 24px), rgb(0 0 0 / 0.75) calc(100% - 24px) calc(100% - 18px), rgb(0 0 0 / 0.5) calc(100% - 18px) calc(100% - 12px), rgb(0 0 0 / 0.25) calc(100% - 12px) calc(100% - 6px), transparent calc(100% - 6px)),
+    linear-gradient(180deg, #000 0 calc(100% - 18px), rgb(0 0 0 / 0.66) calc(100% - 18px) calc(100% - 12px), rgb(0 0 0 / 0.33) calc(100% - 12px) calc(100% - 6px), transparent calc(100% - 6px));
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(90deg, transparent 0 6px, rgb(0 0 0 / 0.25) 6px 12px, rgb(0 0 0 / 0.5) 12px 18px, rgb(0 0 0 / 0.75) 18px 24px, #000 24px calc(100% - 24px), rgb(0 0 0 / 0.75) calc(100% - 24px) calc(100% - 18px), rgb(0 0 0 / 0.5) calc(100% - 18px) calc(100% - 12px), rgb(0 0 0 / 0.25) calc(100% - 12px) calc(100% - 6px), transparent calc(100% - 6px)),
+    linear-gradient(180deg, #000 0 calc(100% - 18px), rgb(0 0 0 / 0.66) calc(100% - 18px) calc(100% - 12px), rgb(0 0 0 / 0.33) calc(100% - 12px) calc(100% - 6px), transparent calc(100% - 6px));
+  mask-composite: intersect;
+}
+/* The surface along the top edge: 24px crest (8 art px) and 12px of its own water; it bobs a pixel */
+.arc-sea-surface {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 36px;
+  overflow: hidden;
+  animation: arc-sea-bob 3.6s steps(1, end) infinite;
+}
+/* Foam lines over the whole sea: a row every 48px per layer, the second layer 24px lower and drifting
+   the other way */
+.arc-sea-foam {
+  position: absolute;
+  inset: 36px 0 0;
+  overflow: hidden;
+}
+.arc-sea-roll {
+  height: 100%;
+  background-repeat: repeat;
+  animation-name: arc-sea-roll;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+.arc-sea-foam-1 .arc-sea-roll {
+  background-position: 0 24px;
+  animation-direction: reverse;
+}
+@keyframes arc-sea-roll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(var(--sea-tile)); }
+}
+@keyframes arc-sea-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+:root[data-md-preview] .arc-sea-water * { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .arc-sea-water * { animation: none; }
+}
+
 /* Fewer cards than a lane needs (MdLanes LANES_FROM): full-size cards stand on a centered shelf,
    at most four a row, rows centered so a short last row stays symmetric */
 .md-shelf {

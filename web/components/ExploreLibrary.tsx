@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import ExploreEmpty from "@/components/ExploreEmpty";
+import ArcSea from "@/components/explore/ArcSea";
 import MdLanes from "@/components/MdLanes";
 import ExploreSearch, { SearchBoxShell } from "@/components/search/ExploreSearch";
 import { useLibrary } from "@/lib/library/client";
@@ -30,7 +31,10 @@ export default function ExploreLibrary({ initial }: { initial: GuidelineCard[] }
       <Suspense fallback={<SearchBoxShell />}>
         <ExploreSearch topTags={topTags(guidelines)} />
       </Suspense>
-      <MdLanes guidelines={guidelines} />
+      <div className="arc-sea">
+        <ArcSea />
+        <MdLanes guidelines={guidelines} />
+      </div>
     </>
   );
 }
