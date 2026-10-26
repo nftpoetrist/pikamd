@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { Geist, Geist_Mono, Jersey_10, VT323 } from "next/font/google";
 import Footer from "@/components/Footer";
+import NavScrollTop from "@/components/NavScrollTop";
 import Navbar from "@/components/Navbar";
 import WalletProvider from "@/components/wallet/WalletProvider";
 import bgImage from "@/public/bg/pikamd-cards.webp";
@@ -53,6 +54,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </div>
         </div>
         <WalletProvider>
+          <NavScrollTop />
           <Navbar />
           <div className="site-main relative z-10 flex flex-1 flex-col">{children}</div>
           <Footer />
