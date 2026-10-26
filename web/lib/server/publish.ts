@@ -77,3 +77,21 @@ export async function confirmRegistration(wallet: string, r: Registration): Prom
   }
   return check(res, "confirm_guideline") as string;
 }
+
+/**
+ * Whether a name is taken, the way prepare_check sees it: by any guideline in the index (hidden and
+ * locked ones too, which the public list leaves out) or by another wallet's unfinished upload.
+ * Without a session only guidelines count: the wallet's own reservations can't be told apart.
+ */
+export async function nameTaken(slug: string, wallet: string | null): Promise<boolean> {
+  const db = supabase()!;
+  const used = check(await db.from("guidelines").select("id").eq("slug", slug).limit(1), "name in guidelines") ?? [];
+  if (used.length > 0) return true;
+  if (!wallet) return false;
+  const reserved =
+    check(
+      await db.from("pending_uploads").select("id").eq("slug", slug).neq("wallet_address", wallet.toLowerCase()).gt("expires_at", new Date().toISOString()).limit(1),
+      "name in pending uploads",
+    ) ?? [];
+  return reserved.length > 0;
+}

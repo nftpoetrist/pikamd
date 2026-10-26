@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 // lib/server/ratelimit.ts (IPs are HMAC'd), next.config.ts (the outside hosts the browser talks to).
 // Change it when any of those change. Styled with the docs page's classes.
 
-const UPDATED = "October 25, 2026";
+const UPDATED = "October 26, 2026";
 const ISSUES = "https://github.com/nftpoetrist/pikamd/issues";
 
 function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
@@ -130,7 +130,6 @@ export default function PrivacyPage() {
                 rows={[
                   [<code key="n">pikamd_session</code>, "Cookie, 7 days", "Keeps you signed in after the sign-in signature. HttpOnly, SameSite=Strict"],
                   [<code key="n">pikamd:query-cache</code>, "Local storage, 7 days", "Your own recent data (session, collection, likes, profile) so pages open instantly"],
-                  [<code key="n">pikamd:publish-draft</code>, "Local storage", "The guideline you're writing, until you publish or discard it"],
                   [<span key="n">Wallet connection</span>, "Local storage", "Which wallet you connected last, so it reconnects. WalletConnect, if you use it, keeps its own session in your browser"],
                 ]}
               />
