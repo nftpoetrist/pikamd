@@ -47,15 +47,15 @@ export default function TipDialog() {
 
 function TipPanel({ target }: { target: TipRequest }) {
   const titleId = useId();
-  const otherRef = useRef<HTMLInputElement>(null);
+  const amountRef = useRef<HTMLInputElement>(null);
   const { address, status } = useConnection();
   const connected = status === "connected" && !!address;
   const flow = useTipFlow();
-  const [choice, setChoice] = useState<bigint | "other">(TIP_PRESETS[0]);
-  const [other, setOther] = useState("");
+  // One source of truth: the amount field. The presets only fill it in, and light up when it holds one
+  const [text, setText] = useState(formatUsdc(TIP_PRESETS[0]));
   const [checked, setChecked] = useState(false); // show the typed amount's problem after a try or a blur
 
-  const parsed = choice === "other" ? parseTipAmount(other) : { units: choice };
+  const parsed = parseTipAmount(text);
   const amount = "units" in parsed ? parsed.units : null;
 
   // Shown while choosing; the flow reads both again from Arc right before sending
@@ -81,7 +81,7 @@ function TipPanel({ target }: { target: TipRequest }) {
   const send = () => {
     setChecked(true);
     if (!connected) return openWalletModal();
-    if (amount === null) return otherRef.current?.focus();
+    if (amount === null) return amountRef.current?.focus();
     void flow.send(target, amount, address);
   };
 
@@ -146,43 +146,37 @@ function TipPanel({ target }: { target: TipRequest }) {
         <div className="tip-chips">
           {TIP_PRESETS.map((p) => (
             <label key={p.toString()} className="tip-chip">
-              <input type="radio" name="tip-amount" checked={choice === p} onChange={() => setChoice(p)} />
+              <input
+                type="radio"
+                name="tip-amount"
+                checked={amount === p}
+                onChange={() => {
+                  setText(formatUsdc(p));
+                  setChecked(false);
+                }}
+              />
               <span>{formatUsdc(p)}</span>
             </label>
           ))}
-          <label className="tip-chip">
-            <input
-              type="radio"
-              name="tip-amount"
-              checked={choice === "other"}
-              onChange={() => {
-                setChoice("other");
-                window.requestAnimationFrame(() => otherRef.current?.focus());
-              }}
-            />
-            <span>Other</span>
-          </label>
-        </div>
-        {choice === "other" && (
           <label className="tip-other">
-            <span className="sr-only">Other amount in USDC</span>
+            <span className="sr-only">Amount in USDC</span>
             <input
-              ref={otherRef}
+              ref={amountRef}
               type="text"
               inputMode="decimal"
               autoComplete="off"
-              placeholder="2.50"
+              placeholder="1.30"
               maxLength={8}
-              value={other}
+              value={text}
               aria-invalid={checked && amount === null}
               aria-describedby={checked && "error" in parsed ? `${titleId}-amount` : undefined}
-              onChange={(e) => setOther(e.target.value)}
-              onBlur={() => other && setChecked(true)}
+              onChange={(e) => setText(e.target.value)}
+              onBlur={() => setChecked(true)}
               onKeyDown={(e) => e.key === "Enter" && send()}
             />
             <span aria-hidden="true">USDC</span>
           </label>
-        )}
+        </div>
         {checked && "error" in parsed && (
           <p id={`${titleId}-amount`} className="tip-warn">
             {parsed.error}
