@@ -58,12 +58,18 @@ export default function ModPanel() {
   if (queue.isError) return gate("Couldn't load the queue", messageFor(queue.error));
   if (!queue.data) return <section className="mod-panel pixel-panel" aria-busy="true" />;
 
-  const { reported, flagged, locked, review } = queue.data;
+  const { reported, flagged, locked, hidden, review } = queue.data;
   return (
     <section className="mod-panel pixel-panel" aria-label="Moderation">
       <ModSection title="Reports" empty="No open reports" items={reported} />
       <ModSection title="Flagged by the scan" empty="Nothing flagged" hint="Not served to agents until you approve them" items={flagged} />
       <ModSection title="Locked" empty="Nothing locked" hint="Off Explore, search and MCP. Remove the file from IPFS once you're sure" items={locked} />
+      <ModSection
+        title="Hidden by the author"
+        empty="Nothing hidden"
+        hint="Off the site; the author can show it again. Delete it from PikaMd to remove it for good"
+        items={hidden}
+      />
       <LiveSections review={review} />
     </section>
   );
@@ -82,7 +88,7 @@ function LiveSections({ review }: { review: ReviewItem[] }) {
           On the site <span>{review.length}</span>
         </h2>
         <p className="mod-hint">
-          Lock a harmful guideline on Arc and it leaves Explore, search, its page and agents at once; then remove its file from IPFS under Locked.
+          Lock a harmful guideline on Arc and it leaves Explore, search, its page and agents at once; then delete it from PikaMd under Locked.
           The record on Arc stays: nothing on a blockchain can be deleted
         </p>
         <input
@@ -327,6 +333,24 @@ function ModRow({ g }: { g: QueueItem }) {
         {g.flagged && !g.locked && (
           <button type="button" className="btn-ghost" disabled={!!busy} onClick={() => void run("approve", async () => void (await act(g.id, "approve")))}>
             {busy === "approve" ? "Working…" : "Approve for agents"}
+          </button>
+        )}
+        {(g.locked || g.hidden) && (
+          <button
+            type="button"
+            className="btn-gold mod-lock"
+            disabled={!!busy}
+            onClick={() => {
+              if (
+                !window.confirm(
+                  `Delete "${g.title}" from PikaMd for good? Its file leaves our IPFS pins and it disappears from the site, including its author's list. The record on Arc stays. This can't be undone.`,
+                )
+              )
+                return;
+              void run("purge", async () => void (await act(g.id, "purge")));
+            }}
+          >
+            {busy === "purge" ? "Deleting…" : "Delete from PikaMd"}
           </button>
         )}
         {g.locked && g.pinned && (
