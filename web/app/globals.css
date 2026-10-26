@@ -1233,11 +1233,16 @@ body {
    GPU process went from ~20% to ~7% of a core with the lanes still moving. */
 .md-track {
   --lane-steps: calc(var(--lane-cards, 10) * var(--lane-card-px, 294));
+  --lane-substeps: 1; /* steps per CSS pixel: one per device pixel (below) */
   display: flex;
   width: max-content;
-  animation: md-scroll-left calc(var(--lane-steps) * 50ms) steps(var(--lane-steps)) infinite;
+  animation: md-scroll-left calc(var(--lane-steps) * 50ms) steps(calc(var(--lane-steps) * var(--lane-substeps))) infinite;
   will-change: transform;
 }
+/* High-density screens: a step per device pixel, same speed, so the slide looks smoother (40 or 60
+   updates a second instead of 20) and text still lands on whole device pixels (user: "fps a bit low") */
+@media (min-resolution: 2dppx) { .md-track { --lane-substeps: 2; } }
+@media (min-resolution: 3dppx) { .md-track { --lane-substeps: 3; } }
 
 .md-lane-right .md-track {
   animation-name: md-scroll-right;
