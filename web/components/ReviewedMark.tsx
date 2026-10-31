@@ -6,7 +6,7 @@
 export const REVIEWED_NOTE =
   "Verified: a PikaMd moderator read this exact version and approved it on Arc. A review lowers the risk; it isn't a guarantee";
 
-export default function ReviewedMark({ size = "card" }: { size?: "card" | "page" }) {
+export default function ReviewedMark({ size = "card" }: { size?: "card" | "page" | "foot" }) {
   return (
     <span className={`md-reviewed is-${size}`} aria-label={REVIEWED_NOTE} role="img">
       {/* 8×7 pixel check at a whole-number scale (2× on cards, 3× on the page), so its edges stay sharp */}

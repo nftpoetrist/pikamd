@@ -44,6 +44,8 @@ export interface Guideline {
    * checks it on Arc itself.
    */
   reviewed?: boolean;
+  /** Agents the author tested this version with ("Tested with"; not stored anywhere yet). */
+  testedWith?: string[];
   /** Where the latest version is recorded: Arc transaction, IPFS CID and the sha256 the chain holds.
    * Absent for the sample data used in development. */
   record?: { txHash: `0x${string}`; cid: string; contentHash: `0x${string}` };

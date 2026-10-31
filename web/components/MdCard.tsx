@@ -8,6 +8,8 @@ import { KIND_LABEL, shortAddress } from "@/components/md-format";
 import MdPreview from "@/components/MdPreview";
 import AuthorAction from "@/components/AuthorAction";
 import ReviewedMark from "@/components/ReviewedMark";
+import TestedNote from "@/components/TestedNote";
+import { previewTestedWith } from "@/lib/data/tested-preview";
 import type { Guideline, GuidelineCard, OwnedGuideline } from "@/lib/types";
 import { api } from "@/lib/wallet/api";
 
@@ -26,7 +28,8 @@ const isOwned = (g: GuidelineCard | Guideline | OwnedGuideline): g is OwnedGuide
 export default function MdCard({ guideline, focusable = true }: { guideline: GuidelineCard | Guideline | OwnedGuideline; focusable?: boolean }) {
   const owned = isOwned(guideline) ? guideline : null;
   const off = owned?.locked ? "locked" : owned?.hidden ? "hidden" : undefined;
-  const { slug, title, description, kind, tags, author, latestVersion, stars, reviewed } = guideline;
+  const { slug, title, description, kind, author, latestVersion, stars, reviewed } = guideline;
+  const testedWith = guideline.testedWith ?? previewTestedWith(slug);
   const authorName = author.handle ? `@${author.handle}` : shortAddress(author.address);
   const cardRef = useRef<HTMLElement>(null);
   const viewRef = useRef<HTMLButtonElement>(null);
@@ -75,7 +78,7 @@ export default function MdCard({ guideline, focusable = true }: { guideline: Gui
     <>
       <article
         ref={cardRef}
-        className={off ? "md-card pixel-panel is-off" : "md-card pixel-panel"}
+        className={`md-card pixel-panel${off ? " is-off" : ""}${testedWith?.length ? " has-note" : ""}`}
         aria-label={`${title} by ${authorName}${off === "hidden" ? " (hidden)" : off === "locked" ? " (locked by a moderator)" : ""}`}
       >
         <header className="md-card-head">
@@ -85,26 +88,22 @@ export default function MdCard({ guideline, focusable = true }: { guideline: Gui
               {off === "hidden" ? "HIDDEN" : "LOCKED"}
             </span>
           )}
-          <span className="md-badge">{KIND_LABEL[kind]}</span>
-          <span className="md-version">v{latestVersion}</span>
         </header>
 
-        {/* The Reviewed badge sits at the right, under the type badge, without making the card taller */}
-        <div className="md-title-row">
-          <h3 className="md-title">{title}</h3>
-          {reviewed && <ReviewedMark />}
-        </div>
+        {/* "Tested with": a slip clipped to the top-right corner (no storage yet) */}
+        <TestedNote agents={testedWith} version={latestVersion} />
+
+        <h3 className="md-title">{title}</h3>
 
         <p className="md-summary">{description}</p>
 
         <footer className="md-card-foot">
           <span className="md-author">{authorName}</span>
-          <span className="md-tags">
-            {tags.slice(0, 2).map((tag) => (
-              <span key={tag} className="md-tag">
-                {tag}
-              </span>
-            ))}
+          {/* Verified, type and version at the bottom right; the tags are in the preview */}
+          <span className="md-meta">
+            {reviewed && <ReviewedMark size="foot" />}
+            <span className="md-badge">{KIND_LABEL[kind]}</span>
+            <span className="md-version">v{latestVersion}</span>
           </span>
         </footer>
 

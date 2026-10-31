@@ -1616,6 +1616,133 @@ body {
   background: rgba(255, 248, 231, 0.06);
 }
 
+/* Bottom right of a card (2026-10-31): Verified, type and version; the tags are in the preview.
+   Kept apart from .md-tags, which the preview still uses */
+/* The bottom line keeps its old height (a line of text plus the 1px the tag boxes added, measured):
+   the badges are taller and overflow it evenly into the gaps around it, so every card keeps its height */
+.md-card > .md-card-foot { height: calc(1em + 1px); }
+/* The title row keeps the 22px the Verified badge used to give it */
+.md-card > .md-title { line-height: 22px; }
+.md-meta {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+/* Verified on the bottom line: same green badge, smaller, so it's no taller than the type badge;
+   its note opens upward (below it the lane would cut it off) */
+.md-reviewed.is-foot {
+  margin: 0;
+  gap: 4px;
+  padding: 1px 4px 1px 3px;
+  font-size: 12px;
+}
+.md-reviewed.is-foot .md-reviewed-tip {
+  top: auto;
+  bottom: calc(100% + 10px);
+}
+
+/* "Tested with": a small slip of the mascot's .md page clipped to the card's top-right corner. It
+   stays inside the card; only the clip rests on the top frame (3px, within the lane's room). The
+   file name and title rows keep clear of it, so the card's height never changes */
+.md-card { --note-w: 70px; }
+.md-card.has-note .md-card-head,
+.md-card.has-note .md-title {
+  padding-right: calc(var(--note-w) + 4px);
+}
+.md-tested {
+  position: absolute;
+  top: 5px;
+  right: 10px;
+  z-index: 2;
+  width: var(--note-w);
+  cursor: help;
+}
+.md-tested-paper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 3px 6px 4px 7px;
+  font-family: var(--font-vt323);
+  font-size: 12px;
+  line-height: 11px;
+  color: var(--ink);
+  /* Faint ruled lines under the text rows, like the page the mascot holds */
+  background:
+    repeating-linear-gradient(180deg, transparent 0 11px, rgba(176, 138, 74, 0.3) 11px 12px) 0 3px / 100% calc(100% - 7px) no-repeat,
+    #FFF8E7;
+  box-shadow:
+    inset 0 2px 0 0 #FFFFFF,
+    inset 0 -2px 0 0 #E9D9B4,
+    inset -2px 0 0 0 #E9D9B4;
+  /* Folded bottom-right corner, in 2px steps */
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 2px) calc(100% - 6px), calc(100% - 2px) calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) calc(100% - 2px), calc(100% - 6px) calc(100% - 2px), calc(100% - 6px) 100%, 0 100%);
+  /* Hard pixel shadow, no blur, like the site's text shadows */
+  filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.55));
+}
+.md-tested-paper::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 6px;
+  height: 6px;
+  /* The folded flap: the paper's clip-path cuts this square down to the stepped triangle */
+  background: #D6C08E;
+}
+.md-tested-label {
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--g4);
+}
+.md-tested-agent {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.md-tested-agent b {
+  font-weight: normal;
+  color: var(--g4);
+}
+/* The clip rests on the card's top frame and holds the slip by its left edge, half off the paper,
+   so it never covers the text */
+.md-tested-clip {
+  position: absolute;
+  top: -8px;
+  left: -4px;
+  z-index: 1;
+}
+/* Hover note: same timing as the Verified note (0.25 s in, out at once) */
+.md-tested-tip {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: -4px;
+  z-index: 30;
+  width: 240px;
+  padding: 8px 10px;
+  font-family: var(--font-vt323);
+  font-size: 16px;
+  line-height: 1.2;
+  color: var(--t0);
+  background: #120B02;
+  box-shadow:
+    0 -2px 0 0 var(--g3),
+    0 2px 0 0 var(--g3),
+    -2px 0 0 0 var(--g3),
+    2px 0 0 0 var(--g3),
+    0 10px 24px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+}
+.md-tested-tip b { font-weight: normal; color: var(--y1); }
+.md-tested:hover .md-tested-tip {
+  visibility: visible;
+  opacity: 1;
+  transition: visibility 0s 0.25s, opacity 0s 0.25s;
+}
+
 /* Card button row: view + collect. Frames (3px) and the 3D base (4px) sit outside each box,
    so the row margins keep them off the card edge and the gap = two frames + 12px clear space. */
 .md-card-actions {
