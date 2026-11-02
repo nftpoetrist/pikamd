@@ -6,7 +6,7 @@ import { ARC_TRADEMARK } from "@/components/VisionCards";
 // Left: wordmark · center: Built on Arc · right: PikaMd on X, Arc on X, PikaMd docs (/docs; the Arc
 // docs link moved into PikaMd's docs, 2026-10-25) (navbar button skeleton).
 // Arc link verified on arc.io (2026-10-10): x.com/arc.
-// PikaMd's X account is @PikaStake for now; the button shows "@pikamd" (user's choice, 2026-10-10).
+// PikaMd's X account: @PikaMd0x (2026-11-02).
 // Brand rules (checked 2026-10-15): Arc's logo may only be the official file, unaltered, at least
 // 50 px tall, so the footer uses the approved words "Built on Arc" with our own pixel block. X's
 // logo must keep its form, white on black or black on white, so the X buttons use X's own mark.
@@ -49,7 +49,7 @@ export default function Footer() {
         </p>
 
         <div className="footer-right">
-          <XButton href="https://x.com/PikaStake" label="@pikamd" srLabel="PikaMd on X" />
+          <XButton href="https://x.com/PikaMd0x" label="@PikaMd0x" srLabel="PikaMd on X" />
           <XButton href="https://x.com/arc" label="@arc" srLabel="Arc on X" />
           <PageLink href="/docs" className="btn-ghost">
             <span className="nav-dot" />

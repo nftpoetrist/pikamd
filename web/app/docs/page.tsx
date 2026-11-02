@@ -604,7 +604,7 @@ export default function DocsPage() {
                 </dl>
                 <p className="docs-links">
                   More: <PageLink href="/privacy">Privacy</PageLink> · <Ext href="https://github.com/nftpoetrist/pikamd/issues">Support (GitHub Issues)</Ext> ·{" "}
-                  <Ext href="https://github.com/nftpoetrist/pikamd">GitHub</Ext> · <Ext href="https://x.com/PikaStake">PikaMd on X</Ext> ·{" "}
+                  <Ext href="https://github.com/nftpoetrist/pikamd">GitHub</Ext> · <Ext href="https://x.com/PikaMd0x">PikaMd on X</Ext> ·{" "}
                   <Ext href="https://docs.arc.io">Arc docs</Ext>
                 </p>
               </Section>
