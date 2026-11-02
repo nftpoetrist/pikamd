@@ -1642,20 +1642,23 @@ body {
   bottom: calc(100% + 10px);
 }
 
-/* "Tested with": a small slip of the mascot's .md page clipped to the card's top-right corner. It
-   stays inside the card; only the clip rests on the top frame (3px, within the lane's room). The
-   file name and title rows keep clear of it, so the card's height never changes */
-.md-card { --note-w: 70px; }
-.md-card.has-note .md-card-head,
-.md-card.has-note .md-title {
-  padding-right: calc(var(--note-w) + 4px);
+/* "Tested with": a small tag of the mascot's .md page clipped beside the summary in the full preview
+   (2026-11-02, moved off the cards). Two short lines, no taller than the summary, so the file box
+   keeps its height; on phones it sits under the summary */
+.mdp-intro {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+.mdp-intro > .mdp-summary {
+  flex: 1;
+  min-width: 0;
 }
 .md-tested {
-  position: absolute;
-  top: 5px;
-  right: 10px;
-  z-index: 2;
-  width: var(--note-w);
+  position: relative;
+  flex: none;
+  max-width: 250px;
+  margin: 2px 2px 0 0;
   cursor: help;
 }
 .md-tested-paper {
@@ -1663,15 +1666,12 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1px;
-  padding: 3px 6px 4px 7px;
+  padding: 4px 12px 5px 14px;
   font-family: var(--font-vt323);
-  font-size: 12px;
-  line-height: 11px;
+  font-size: 17px;
+  line-height: 17px;
   color: var(--ink);
-  /* Faint ruled lines under the text rows, like the page the mascot holds */
-  background:
-    repeating-linear-gradient(180deg, transparent 0 11px, rgba(176, 138, 74, 0.3) 11px 12px) 0 3px / 100% calc(100% - 7px) no-repeat,
-    #FFF8E7;
+  background: #FFF8E7;
   box-shadow:
     inset 0 2px 0 0 #FFFFFF,
     inset 0 -2px 0 0 #E9D9B4,
@@ -1679,7 +1679,7 @@ body {
   /* Folded bottom-right corner, in 2px steps */
   clip-path: polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 2px) calc(100% - 6px), calc(100% - 2px) calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) calc(100% - 2px), calc(100% - 6px) calc(100% - 2px), calc(100% - 6px) 100%, 0 100%);
   /* Hard pixel shadow, no blur, like the site's text shadows */
-  filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.55));
+  filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.6));
 }
 .md-tested-paper::after {
   content: "";
@@ -1692,55 +1692,32 @@ body {
   background: #D6C08E;
 }
 .md-tested-label {
-  font-size: 11px;
-  letter-spacing: 1px;
+  font-size: 13px;
+  letter-spacing: 2px;
   color: var(--g4);
+}
+.md-tested-agents {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 10px;
 }
 .md-tested-agent {
-  overflow: hidden;
   white-space: nowrap;
-  text-overflow: ellipsis;
 }
-.md-tested-agent b {
-  font-weight: normal;
-  color: var(--g4);
+.md-tested-agent::before {
+  content: "\2713  ";
+  color: #2E8A57;
 }
-/* The clip rests on the card's top frame and holds the slip by its left edge, half off the paper,
-   so it never covers the text */
+/* The clip holds the tag by its left edge, half off the paper, so it never covers the text */
 .md-tested-clip {
   position: absolute;
   top: -8px;
   left: -4px;
   z-index: 1;
 }
-/* Hover note: same timing as the Verified note (0.25 s in, out at once) */
-.md-tested-tip {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: -4px;
-  z-index: 30;
-  width: 240px;
-  padding: 8px 10px;
-  font-family: var(--font-vt323);
-  font-size: 16px;
-  line-height: 1.2;
-  color: var(--t0);
-  background: #120B02;
-  box-shadow:
-    0 -2px 0 0 var(--g3),
-    0 2px 0 0 var(--g3),
-    -2px 0 0 0 var(--g3),
-    2px 0 0 0 var(--g3),
-    0 10px 24px rgba(0, 0, 0, 0.6);
-  pointer-events: none;
-  visibility: hidden;
-  opacity: 0;
-}
-.md-tested-tip b { font-weight: normal; color: var(--y1); }
-.md-tested:hover .md-tested-tip {
-  visibility: visible;
-  opacity: 1;
-  transition: visibility 0s 0.25s, opacity 0s 0.25s;
+@media (max-width: 639px) {
+  .mdp-intro { flex-direction: column; gap: 12px; }
+  .md-tested { margin-left: 4px; }
 }
 
 /* Card button row: view + collect. Frames (3px) and the 3D base (4px) sit outside each box,

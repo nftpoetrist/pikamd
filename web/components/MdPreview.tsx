@@ -8,6 +8,8 @@ import LikeButton from "@/components/LikeButton";
 import { KIND_LABEL, shortAddress } from "@/components/md-format";
 import AuthorAction from "@/components/AuthorAction";
 import ReviewedMark from "@/components/ReviewedMark";
+import TestedNote from "@/components/TestedNote";
+import { previewTestedWith } from "@/lib/data/tested-preview";
 import type { Guideline } from "@/lib/types";
 
 const OPEN_MS = 240;
@@ -145,7 +147,11 @@ export default function MdPreview({ guideline, card, focusLine, closing, onClose
           </h3>
           {reviewed && <ReviewedMark />}
         </div>
-        <p className="mdp-summary">{description}</p>
+        {/* The summary, with the "Tested with" slip clipped beside it (no storage yet) */}
+        <div className="mdp-intro">
+          <p className="mdp-summary">{description}</p>
+          <TestedNote agents={guideline.testedWith ?? previewTestedWith(slug)} version={latestVersion} />
+        </div>
 
         <pre ref={sourceRef} className="mdp-source" tabIndex={0} aria-label={`${slug}.md`}>
           {content.split("\n").map((line, i) => (

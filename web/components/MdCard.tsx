@@ -8,8 +8,6 @@ import { KIND_LABEL, shortAddress } from "@/components/md-format";
 import MdPreview from "@/components/MdPreview";
 import AuthorAction from "@/components/AuthorAction";
 import ReviewedMark from "@/components/ReviewedMark";
-import TestedNote from "@/components/TestedNote";
-import { previewTestedWith } from "@/lib/data/tested-preview";
 import type { Guideline, GuidelineCard, OwnedGuideline } from "@/lib/types";
 import { api } from "@/lib/wallet/api";
 
@@ -29,7 +27,6 @@ export default function MdCard({ guideline, focusable = true }: { guideline: Gui
   const owned = isOwned(guideline) ? guideline : null;
   const off = owned?.locked ? "locked" : owned?.hidden ? "hidden" : undefined;
   const { slug, title, description, kind, author, latestVersion, stars, reviewed } = guideline;
-  const testedWith = guideline.testedWith ?? previewTestedWith(slug);
   const authorName = author.handle ? `@${author.handle}` : shortAddress(author.address);
   const cardRef = useRef<HTMLElement>(null);
   const viewRef = useRef<HTMLButtonElement>(null);
@@ -78,7 +75,7 @@ export default function MdCard({ guideline, focusable = true }: { guideline: Gui
     <>
       <article
         ref={cardRef}
-        className={`md-card pixel-panel${off ? " is-off" : ""}${testedWith?.length ? " has-note" : ""}`}
+        className={`md-card pixel-panel${off ? " is-off" : ""}`}
         aria-label={`${title} by ${authorName}${off === "hidden" ? " (hidden)" : off === "locked" ? " (locked by a moderator)" : ""}`}
       >
         <header className="md-card-head">
@@ -89,9 +86,6 @@ export default function MdCard({ guideline, focusable = true }: { guideline: Gui
             </span>
           )}
         </header>
-
-        {/* "Tested with": a slip clipped to the top-right corner (no storage yet) */}
-        <TestedNote agents={testedWith} version={latestVersion} />
 
         <h3 className="md-title">{title}</h3>
 
