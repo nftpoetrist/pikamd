@@ -186,6 +186,24 @@ event LicenseAdded(uint8 indexed license, string name);
 - **Doğrulandı:** yerel `arc-anvil --network arc` üzerinde deploy + `register` (**219.803 gas** ≈ 20 Gwei'de 0,0044 USDC; yerel düğüm 20 Gwei tabanını uygulamıyor). Gerçek Arc testnet'e karşı yayınsız simülasyon başarılı: deploy ≈1,87M gas, forge'un tahmini **≈0,078 USDC** (gas fiyatını ~2× tahmin ediyor; deploy cüzdanında ≥0,1 USDC olsun).
 - ✅ **Düzeltilmiş sürüm testnet'te (2026-10-14):** `0x27cf926771B0A311A9574543ea29dc5e3ea59986`, blok 67092487; kullanıcı keystore ile deploy etti; Sourcify `exact_match`, explorer'da doğrulanmış. Terk edilen ilk deploy (delist hatası, kayıt yok): `0x8dA7825634079ce232141B8EDeD0682557c8b4A1`, blok 67003886, admin = deployer = `0xd76B…7cDe`; Sourcify ile doğrulandı (exact match), explorer'da doğrulanmış görünüyor. Ayrıntı ARC.md §8. Web: `lib/chain.ts` → `REGISTRY`.
 
+### 5.2 Mainnet öncesi zincir incelemesi (2026-11-01, kullanıcı isteği: "mainnet'te kontrat değiştirmek zorunda kalırsak itibar zedelenir")
+Kontratlar ve sitenin zincire yazan kodu (`lib/publish/client.ts`, `lib/owned/client.ts`, `lib/tips/client.ts`, `lib/moderation/client.ts`, `lib/chain.ts`, `contracts/script/*`) satır satır okundu; `arc-forge test` 60 geçti, 8 fork testi atlandı. Zincire işlem gönderilmedi, test cüzdanı oluşturulmadı. **Ana sonuç:** geri dönüşü olmayan risk yalnızca `GuidelineRegistry`'de (yazar, CID, hash, sürümler; değişirse tüm kayıtlar ikiye bölünür). `GuidelineTips` ve `GuidelineReviews` çevre kontratlar: yeni adrese deploy edilebilir, indexer her kontratı kendi imleciyle okur, kimse bir şey kaybetmez.
+
+**Karar bekleyenler (registry'yi etkiler, mainnet deploy'undan önce; kullanıcıya soruldu, cevap yok):**
+1. **Yazarlık devri yok.** Cüzdanını kaybeden yazarın bağışları sonsuza kadar eski adrese gider; cüzdanı ele geçiren `publishVersion` ile zararlı yeni sürüm yazabilir (sitede yeni sürüm akışı yok ama kontratta var; tek savunma tüm yönergeyi kapatan moderatör kilidi). Öneri: iki adımlı `transferAuthorship` (yeni adres kabul eder).
+2. **Tek yönetici anahtarı + düz `AccessControl`.** Admin = moderatör = tek EOA (`0xd76B…`, düz metin kopyası aylarca PikaStake `.env`'deydi, §9.4). Yanlışlıkla `renounceRole`, anahtar kaybı ya da hırsızlık geri alınamaz (hırsız kendine rol verir, senin rolünü alır, zararlı yönergelere Verified verir). Öneri: OpenZeppelin `AccessControlDefaultAdminRules` (iki adımlı, gecikmeli admin devri, tek admin) + constructor'da **admin ve moderatör ayrı parametre** (soğuk admin, günlük moderatör) + mainnet'te yepyeni anahtar. Safe'in Arc'ta varlığı hâlâ doğrulanmadı.
+3. **"Gas'ı kim öder?" kontratı etkiler:** yazar öderse ya da ERC-4337 / EIP-7702 ile sponsorluk yapılırsa registry olduğu gibi çalışır; sunucunun ödediği ERC-2771 aracı seçilirse `msg.sender` aracı olur, desteği registry'ye baştan konmalı.
+4. **Kilit yönerge başına, sürüm başına değil** (orta; yazarlık devri gelirse yükü azalır).
+5. **Testnet → mainnet taşıma:** `register` yalnızca çağıranı yazar yapar; testnet yönergeleri ancak her yazar kendisi yeniden yayınlarsa geçer (bilinçli karar olmalı).
+
+**Site tarafı (düzeltilecek, karar gerekmez):**
+6. Yalnızca bağış gönderilmeden simüle ediliyor (`simulateContract`); yayın, Hide/Show ve moderatör işlemleri doğrudan cüzdana gidiyor → reddedilecek işlem gas yakar, ham hata görünür.
+7. Mainnet deploy betiği `PIKAMD_ADMIN`'in gerçekten bizim elimizde olduğunu kontrol etmiyor (yanlış adres geri alınamaz). Öneri: betik beklenen adresi açıkça istesin, aynı betik önce mainnet fork'unda provası yapılsın, duyurudan önce admin cüzdanından bir deneme işlemi.
+
+**Sağlam bulunanlar:** adresler ağa göre ayrı (`lib/chain.ts`; mainnet adresi girilmedikçe o ağda işlem gönderilmez, yanlış adrese işlem gidemez), hiçbir kontrat fon tutmuyor, bağış alıcısı zincirden okunuyor, hiçbir kontrat güncellenebilir değil.
+
+**Önerilen sıra:** kullanıcı 1–3'e karar verir (öneri: yazarlık devri evet, `AccessControlDefaultAdminRules` + ayrı admin/moderatör, gas şimdilik yazarda) → registry v2 ayrı dalda testleriyle (çalınan cüzdan, kaybolan admin, yanlış adrese devir senaryoları) → iki test cüzdanıyla testnet'te gerçek işlemler. **Test cüzdanı planı (konuşuldu, kullanıcı onayı bekliyor):** `arc-cast wallet new` ile iki cüzdan (A yazar, B bağışçı; `SelfTip` yüzünden iki), şifreli keystore, şifre yalnızca oturum scratchpad'inde; yalnızca testnet; ≈2–3 USDC; yayın localhost'tan (geliştirme DB'si: işlemler gerçek testnet'e gider ama canlı site hazırlanmamış kaydı indekslemez, Directory incelemesi sürerken canlı kütüphane temiz kalır); bağışlar kendi test yönergelerine (canlı #9–12'nin toplamı değişmesin); moderatör işleri yalnızca `arc-anvil` fork'unda; bitince kalan USDC iade, keystore silinir. Bedel: v2 testnet'e de gelirse canlı #9–12 v2'de yeniden yayınlanmalı (Directory'deki `/mcp` adresi etkilenmez).
+
 ---
 
 ## 6. Depolama — IPFS
