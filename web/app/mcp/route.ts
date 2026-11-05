@@ -35,8 +35,18 @@ const handler = createMcpHandler(
       connectUrl: requestInfo ? new URL("/connect", requestInfo.url).toString() : "/connect",
     });
   },
-  // Reporting only. Never log request headers: they carry the user's key or token.
-  { onerror: (error) => console.error(`[mcp] ${error.message}`), maxRequestBodySize: MAX_BODY },
+  {
+    // Reporting only. Never log request headers: they carry the user's key or token.
+    onerror: (error) => {
+      if (!error.message.startsWith("subscriptions/listen refused")) console.error(`[mcp] ${error.message}`);
+    },
+    maxRequestBodySize: MAX_BODY,
+    // No subscriptions/listen streams (2026-07-28): the stream stays open until the server shuts
+    // down, which on Vercel meant every listen ran to the function's time limit with its memory
+    // billed (2026-11-05: a new one every 2-3 minutes, each 300 s). The tool list never changes,
+    // so a listener would never receive anything; a limit of 0 refuses it at once.
+    maxSubscriptions: 0,
+  },
 );
 
 /** Tools that act on the user's own data; everything else is public. */
