@@ -29,5 +29,9 @@ export async function GET(request: Request) {
   const report = (r: PromiseSettledResult<unknown>) =>
     r.status === "fulfilled" ? r.value : { error: r.reason instanceof Error ? r.reason.message : String(r.reason) };
   const failed = [registry, tips, reviews].some((r) => r.status === "rejected");
+  // The response body goes only to Vercel's cron runner; the reason has to reach the logs too
+  for (const [name, r] of [["registry", registry], ["tips", tips], ["reviews", reviews]] as const) {
+    if (r.status === "rejected") console.error(`[cron] ${name} sync failed: ${(report(r) as { error: string }).error}`);
+  }
   return Response.json({ registry: report(registry), tips: report(tips), reviews: report(reviews) }, { status: failed ? 500 : 200, headers: NO_STORE });
 }
