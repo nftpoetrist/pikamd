@@ -8,6 +8,9 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 let client: SupabaseClient | null | undefined;
 
+/** Longest a single Data API request may take; real queries finish in well under a second. */
+const QUERY_TIMEOUT_MS = 10_000;
+
 /** The client, or null when SUPABASE_URL / SUPABASE_SECRET_KEY aren't set. */
 export function supabase(): SupabaseClient | null {
   if (client !== undefined) return client;
@@ -17,7 +20,14 @@ export function supabase(): SupabaseClient | null {
   if (key.startsWith("sb_publishable_")) throw new Error("SUPABASE_SECRET_KEY holds a publishable key; use the project's secret key");
   client = createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-    global: { fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }) },
+    // A stalled query must not hold the function open: on Vercel, memory is billed for as long as it waits
+    global: {
+      fetch: (input, init) => {
+        const timeout = AbortSignal.timeout(QUERY_TIMEOUT_MS);
+        const signal = init?.signal ? AbortSignal.any([init.signal, timeout]) : timeout;
+        return fetch(input, { ...init, cache: "no-store", signal });
+      },
+    },
   });
   return client;
 }
