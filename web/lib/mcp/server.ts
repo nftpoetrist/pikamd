@@ -34,7 +34,13 @@ export function buildMcpServer({ collection, connectUrl }: { collection: string[
         { src: `${origin}/icon.png`, mimeType: "image/png", sizes: ["64x64"] },
       ],
     },
-    { instructions: SERVER_INSTRUCTIONS },
+    {
+      instructions: SERVER_INSTRUCTIONS,
+      // The three tools never change, so the server never tells clients they might: without
+      // listChanged, clients have no reason to open a subscriptions/listen stream (route.ts also
+      // refuses one; 2026-11-05 each open stream held a Vercel function for 300 s)
+      capabilities: { tools: { listChanged: false } },
+    },
   );
   // Read-only, and the title again inside the annotations: the Connectors Directory reads it there
   const readOnly = (title: string) => ({ title, readOnlyHint: true, openWorldHint: false });
