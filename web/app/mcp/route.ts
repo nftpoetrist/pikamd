@@ -196,7 +196,7 @@ async function serve(request: Request): Promise<Response> {
 
 // Every MCP answer takes a second or two; without a cap a stuck request ran to the platform's
 // 300 s default and Vercel billed its memory the whole time (2026-11-05: half of /mcp timed out).
-export const maxDuration = 30;
+export const maxDuration = 15;
 
 export const POST = serve;
 export const GET = serve;

@@ -3,6 +3,9 @@ import { authorizationServerMetadata } from "@/lib/oauth/core";
 import { metadataResponse, preflight } from "@/lib/server/oauth-http";
 import { originOf } from "@/lib/server/oauth";
 
+// Answers in well under a second; capped so a stalled call can't run to the platform's 300 s (ARCHITECTURE §12.1)
+export const maxDuration = 10;
+
 // RFC 8414 authorization server metadata. The issuer has no path, so this is its only well-known
 // location (MCP discovery tries it first).
 export async function GET(request: Request) {

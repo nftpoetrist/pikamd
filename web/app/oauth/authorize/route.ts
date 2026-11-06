@@ -14,6 +14,9 @@ import {
 import { createRequest, originOf, resolveClient } from "@/lib/server/oauth";
 import { rateLimited } from "@/lib/server/ratelimit";
 
+// Answers in well under a second; capped so a stalled call can't run to the platform's 300 s (ARCHITECTURE §12.1)
+export const maxDuration = 10;
+
 // Authorization endpoint (RFC 6749 §4.1.1, OAuth 2.1, MCP authorization). Checks the request and
 // parks it for the consent screen at /oauth/consent. Until the client and its redirect URI are
 // known to be genuine, problems are shown on PikaMd's own page and never redirected anywhere

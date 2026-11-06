@@ -8,6 +8,9 @@ import { NO_STORE, notConfigured, readJson, sameOriginGuard } from "@/lib/server
 import { rateLimited } from "@/lib/server/ratelimit";
 import { getStore } from "@/lib/server/store";
 
+// Answers in well under a second; capped so a stalled call can't run to the platform's 300 s (ARCHITECTURE §12.1)
+export const maxDuration = 10;
+
 const SIGNATURE_RE = /^0x[0-9a-fA-F]{130,20000}$/; // 65-byte ECDSA, or a longer smart-wallet signature
 
 // Step 2 of sign-in: checks the signed message and starts the session (HttpOnly cookie).

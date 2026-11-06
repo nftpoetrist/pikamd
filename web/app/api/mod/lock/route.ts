@@ -9,6 +9,9 @@ import { moderatorWallet } from "@/lib/server/mod-guard";
 import { applyLock } from "@/lib/server/moderation";
 import { rateLimited } from "@/lib/server/ratelimit";
 
+// Vercel bills a function for as long as it runs; this one reads a receipt and the guideline from Arc. Defaults: ARCHITECTURE §12.1
+export const maxDuration = 30;
+
 // After a moderator's setModeratorLock transaction: read it from Arc and copy the guideline's
 // flags to the index at once (the indexer would catch it later too, §7.4). Only the chain counts:
 // the registry's ModeratorLockSet event (only role holders can emit it) naming this moderator,

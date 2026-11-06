@@ -6,6 +6,9 @@ import { rateLimited } from "@/lib/server/ratelimit";
 import { supabase } from "@/lib/server/supabase";
 import { recordTips } from "@/lib/server/tips";
 
+// Vercel bills a function for as long as it runs; this one reads a receipt from Arc. Defaults: ARCHITECTURE §12.1
+export const maxDuration = 30;
+
 // Right after a tip, the browser sends its transaction hash and the server copies the tip into the
 // index at once (the indexer would find it later too, ARCHITECTURE §7.4). Only the chain counts:
 // Tipped events emitted by our tips contract in a successful transaction; nothing else is read from

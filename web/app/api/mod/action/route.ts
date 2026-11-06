@@ -5,6 +5,9 @@ import { moderatorWallet } from "@/lib/server/mod-guard";
 import { approveFlagged, dismissReports, purgeGuideline, unpinLocked } from "@/lib/server/moderation";
 import { rateLimited } from "@/lib/server/ratelimit";
 
+// Vercel bills a function for as long as it runs; this one may unpin files on Pinata (10 s timeout each). Defaults: ARCHITECTURE §12.1
+export const maxDuration = 30;
+
 // The moderator actions that live in the index only (locking is the moderator's own Arc
 // transaction, see /api/mod/lock): dismiss a guideline's open reports, approve a flagged file for
 // agents after reading it, remove a locked guideline's files from our IPFS pins, delete a guideline

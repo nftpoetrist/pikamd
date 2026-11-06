@@ -8,6 +8,9 @@ import { moderatorWallet } from "@/lib/server/mod-guard";
 import { rateLimited } from "@/lib/server/ratelimit";
 import { logReviews, recordReviews } from "@/lib/server/reviews";
 
+// Vercel bills a function for as long as it runs; this one reads a receipt from Arc. Defaults: ARCHITECTURE §12.1
+export const maxDuration = 30;
+
 // After a moderator's approve / revoke on GuidelineReviews: read it from Arc and copy it to the
 // index at once (the indexer would catch it later too, §7.4). Only the chain counts: the reviews
 // contract's own events (only MODERATOR_ROLE holders can emit them) naming this moderator.

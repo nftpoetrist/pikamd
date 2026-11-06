@@ -3,6 +3,9 @@ import { jsonResponse, oauthError, preflight, readForm, usesClientSecret } from 
 import { exchangeCode, originOf, refreshTokens, type TokenOutcome } from "@/lib/server/oauth";
 import { rateLimited } from "@/lib/server/ratelimit";
 
+// Answers in well under a second; capped so a stalled call can't run to the platform's 300 s (ARCHITECTURE §12.1)
+export const maxDuration = 10;
+
 // Token endpoint (RFC 6749 §3.2, OAuth 2.1 §4.1.3 and §4.3). Form-encoded only; every client is
 // public, so PKCE (authorization_code) and the client_id binding (refresh_token) are the proof.
 // Refresh tokens rotate on every use (MCP security considerations, public clients).

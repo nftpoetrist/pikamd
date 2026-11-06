@@ -3,6 +3,9 @@ import { SEARCH_LIMIT_MAX } from "@/lib/search/engine";
 import { QUERY_MAX_LENGTH } from "@/lib/search/query";
 import { toSearchResponse } from "@/lib/search/response";
 
+// Answers in well under a second; capped so a stalled call can't run to the platform's 300 s (ARCHITECTURE §12.1)
+export const maxDuration = 10;
+
 // Public guideline search for the Explore search bar (query language: lib/search/query.ts).
 // GET /api/search?q=…&limit=8. Read-only and the same for everyone; no sign-in.
 export async function GET(request: Request) {

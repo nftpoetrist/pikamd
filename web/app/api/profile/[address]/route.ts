@@ -3,6 +3,9 @@ import { NO_STORE, notConfigured } from "@/lib/server/guard";
 import { profileFor } from "@/lib/server/likes";
 import { getStore } from "@/lib/server/store";
 
+// Answers in well under a second; capped so a stalled call can't run to the platform's 300 s (ARCHITECTURE §12.1)
+export const maxDuration = 10;
+
 // Public profile numbers for any wallet: PikaGold and guideline count. Public data, so no
 // sign-in needed; the navbar shows it as soon as a wallet connects.
 export async function GET(_request: Request, ctx: RouteContext<"/api/profile/[address]">) {

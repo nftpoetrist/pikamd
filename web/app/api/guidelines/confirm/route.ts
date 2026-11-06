@@ -7,6 +7,9 @@ import { NO_STORE, readJson, sameOriginGuard } from "@/lib/server/guard";
 import { confirmRegistration, publishDatabase } from "@/lib/server/publish";
 import { rateLimited } from "@/lib/server/ratelimit";
 
+// Vercel bills a function for as long as it runs; this one waits for the transaction's receipt on Arc. Defaults: ARCHITECTURE §12.1
+export const maxDuration = 30;
+
 // Publish, step 2 (ARCHITECTURE §7.1): after the wallet's register transaction, read the receipt
 // from Arc and index the guideline. Only what the chain says counts (lib/publish/receipt.ts).
 const TX_RE = /^0x[0-9a-fA-F]{64}$/;

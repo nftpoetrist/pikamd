@@ -3,6 +3,9 @@ import { sameWallet } from "@/lib/likes/rules";
 import { endSession, sessionWallet } from "@/lib/server/auth";
 import { NO_STORE, readJson, sameOriginGuard } from "@/lib/server/guard";
 
+// Answers in well under a second; capped so a stalled call can't run to the platform's 300 s (ARCHITECTURE §12.1)
+export const maxDuration = 10;
+
 // Ends the session. With { address }, only if the session belongs to that wallet: when the user
 // switches accounts, a late "end the old session" call can't end the new one.
 export async function POST(request: Request) {

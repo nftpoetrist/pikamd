@@ -4,6 +4,9 @@ import { NO_STORE, notConfigured, sameOriginGuard } from "@/lib/server/guard";
 import { rateLimited } from "@/lib/server/ratelimit";
 import { getStore } from "@/lib/server/store";
 
+// Answers in well under a second; capped so a stalled call can't run to the platform's 300 s (ARCHITECTURE §12.1)
+export const maxDuration = 10;
+
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 // Like (PUT) or take back a like (DELETE) as the signed-in wallet (K22). No body: the wallet comes

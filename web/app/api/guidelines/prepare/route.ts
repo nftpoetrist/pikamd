@@ -7,6 +7,9 @@ import { pinMarkdown, pinataConfigured } from "@/lib/server/pinata";
 import { prepareCheck, publishDatabase, savePending, type PrepareStatus } from "@/lib/server/publish";
 import { rateLimited } from "@/lib/server/ratelimit";
 
+// Vercel bills a function for as long as it runs; this one uploads the file to Pinata (20 s timeout). Defaults: ARCHITECTURE §12.1
+export const maxDuration = 30;
+
 // Publish, step 1 (ARCHITECTURE §7.1): check the file again on the server, pin it to IPFS and
 // reserve its name for the signed-in wallet. Returns what the wallet then registers on Arc.
 const MAX_BODY = 640 * 1024; // the 512 KB file plus its details, as JSON

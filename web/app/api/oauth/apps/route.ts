@@ -4,6 +4,9 @@ import { NO_STORE } from "@/lib/server/guard";
 import { connectedApps } from "@/lib/server/oauth";
 import { supabase } from "@/lib/server/supabase";
 
+// Answers in well under a second; capped so a stalled call can't run to the platform's 300 s (ARCHITECTURE §12.1)
+export const maxDuration = 10;
+
 // The signed-in wallet's connected apps: agents it allowed through sign-in (ARCHITECTURE §8.2).
 export async function GET() {
   await connection();

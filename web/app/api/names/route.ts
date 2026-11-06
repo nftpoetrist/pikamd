@@ -3,6 +3,9 @@ import { sessionWallet } from "@/lib/server/auth";
 import { NO_STORE } from "@/lib/server/guard";
 import { nameTaken, publishDatabase } from "@/lib/server/publish";
 
+// Answers in well under a second; capped so a stalled call can't run to the platform's 300 s (ARCHITECTURE §12.1)
+export const maxDuration = 10;
+
 // Publish → Details: is this name free? The page's own list only has listed guidelines, so a
 // hidden or locked guideline's name (or one another wallet is publishing right now) used to pass
 // Details and fail only at the last step. Answers with the same rules as /api/guidelines/prepare.

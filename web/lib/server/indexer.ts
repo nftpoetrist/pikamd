@@ -6,7 +6,7 @@ import { GUIDELINES_TAG } from "@/lib/data/guidelines";
 import { registryActions } from "@/lib/registry-events";
 import { moderatorRoleEvents, reviewEvents } from "@/lib/reviews/events";
 import { tipEvents } from "@/lib/tips/events";
-import { arcClient } from "@/lib/server/auth";
+import { arcIndexerClient as arc } from "@/lib/server/auth";
 import { confirmRegistration } from "@/lib/server/publish";
 import { check, supabase } from "@/lib/server/supabase";
 import { recordModeratorRoles, recordReviews } from "@/lib/server/reviews";
@@ -30,9 +30,25 @@ export type SyncResult =
 type Source = { name: string; address: `0x${string}`; deployBlock: bigint; apply: (logs: Log[]) => Promise<number> };
 
 /** Reads the contract's logs from where its cursor stopped, in ranges, until caught up or out of time. */
+/**
+ * When this server instance last asked to run each sync. Explore calls /api/likes on every visit;
+ * without this, each call would cost three database round trips just to learn that another run
+ * happened a minute ago. The database lease (claim_indexer) still decides across instances.
+ */
+const lastClaim = new Map<string, number>();
+
+/**
+ * One getLogs call takes at most the client's 5 s timeout, so a run ends at most that long after
+ * its budget; the route that runs it allows for that (maxDuration).
+ */
 async function sync(source: Source, { budgetMs, minIntervalS }: { budgetMs: number; minIntervalS: number }): Promise<SyncResult> {
   const db = supabase()!;
   const key = `${source.name}:${CHAIN.id}:${source.address.toLowerCase()}`;
+  if (minIntervalS > 0) {
+    const previous = lastClaim.get(key);
+    if (previous !== undefined && Date.now() - previous < minIntervalS * 1000) return { skipped: "recent" };
+    lastClaim.set(key, Date.now());
+  }
   const last = check(
     await db.rpc("claim_indexer", { p_key: key, p_start: (source.deployBlock - BigInt(1)).toString(), p_min_interval_seconds: minIntervalS }),
     "claim_indexer",
@@ -40,14 +56,14 @@ async function sync(source: Source, { budgetMs, minIntervalS }: { budgetMs: numb
   if (last === null || last === undefined) return { skipped: "recent" };
 
   const started = Date.now();
-  const latest = await arcClient.getBlockNumber();
+  const latest = await arc.getBlockNumber();
   const first = BigInt(last as number | string) + BigInt(1);
   let from = first;
   let applied = 0;
 
   while (from <= latest && Date.now() - started < budgetMs) {
     const to = from + MAX_RANGE - BigInt(1) < latest ? from + MAX_RANGE - BigInt(1) : latest;
-    const logs = await arcClient.getLogs({ address: source.address, fromBlock: from, toBlock: to });
+    const logs = await arc.getLogs({ address: source.address, fromBlock: from, toBlock: to });
     applied += await source.apply(logs);
     check(await db.rpc("save_indexer", { p_key: key, p_last_block: to.toString() }), "save_indexer");
     from = to + BigInt(1);

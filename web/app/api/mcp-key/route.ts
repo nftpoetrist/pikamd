@@ -4,6 +4,9 @@ import { NO_STORE, readJson, sameOriginGuard } from "@/lib/server/guard";
 import { rateLimited } from "@/lib/server/ratelimit";
 import { supabase } from "@/lib/server/supabase";
 
+// Answers in well under a second; capped so a stalled call can't run to the platform's 300 s (ARCHITECTURE §12.1)
+export const maxDuration = 10;
+
 // The signed-in wallet's MCP key (K11, ARCHITECTURE §8). The browser makes the key and sends only
 // its SHA-256 and masked form ("pmd_3f9a…c21e"): the key itself never reaches this server, and it
 // can't be shown again. One active key per wallet; a new one revokes the old.

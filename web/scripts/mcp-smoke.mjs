@@ -105,6 +105,33 @@ for (const [name, bad] of [["wrong key", `pmd_${"0".repeat(40)}`], ["replaced ke
   check(res.status === 401 && www.includes('error="invalid_token"') && www.includes("resource_metadata="), `[${name}] refused with 401 invalid_token and resource_metadata`);
 }
 
+// No request may stay open (ARCHITECTURE §8.0, 2026-11-05): a subscriptions/listen stream used to
+// stay open until the platform killed it at 300 s, and Vercel billed every second of it.
+{
+  const meta = {
+    "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+    "io.modelcontextprotocol/clientInfo": { name: "smoke", version: "1" },
+    "io.modelcontextprotocol/clientCapabilities": {},
+  };
+  const modern = (method, params) =>
+    fetch(new URL("/mcp", BASE), {
+      method: "POST",
+      signal: AbortSignal.timeout(5_000),
+      headers: { "Content-Type": "application/json", Accept: "application/json, text/event-stream", "MCP-Protocol-Version": "2026-07-28", "Mcp-Method": method },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params: { _meta: meta, ...params } }),
+    });
+  const discover = await (await modern("server/discover", {})).json();
+  check(discover?.result?.capabilities?.tools?.listChanged === false, "[limits] the server never says its tool list may change");
+  const started = Date.now();
+  try {
+    const listen = await modern("subscriptions/listen", { notifications: { toolsListChanged: true } });
+    const body = await listen.text();
+    check(body.includes("Subscription limit reached") && Date.now() - started < 5_000, `[limits] subscriptions/listen is refused at once (${Date.now() - started} ms)`);
+  } catch {
+    check(false, "[limits] subscriptions/listen stayed open for 5 s");
+  }
+}
+
 try {
   const [info] = await rpc(db, "mcp_key_info", { p_wallet: WALLET });
   check(!!info?.last_used_at, "the key is marked as used by an agent");

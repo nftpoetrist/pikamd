@@ -4,6 +4,9 @@ import { secret } from "@/lib/server/auth";
 import { NO_STORE, notConfigured, sameOriginGuard } from "@/lib/server/guard";
 import { getStore } from "@/lib/server/store";
 
+// Answers in well under a second; capped so a stalled call can't run to the platform's 300 s (ARCHITECTURE §12.1)
+export const maxDuration = 10;
+
 // Step 1 of sign-in: a server-signed nonce (lib/auth/nonce.ts) and the issue time for the message
 // the wallet signs. Nothing is stored here, so this public endpoint can't fill the database.
 // POST, so the browser sends an Origin header the guard can check.

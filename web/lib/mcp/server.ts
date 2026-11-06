@@ -2,7 +2,7 @@ import "server-only";
 import { McpServer } from "@modelcontextprotocol/server";
 import * as z from "zod/v4";
 import { CHAIN } from "@/lib/chain";
-import { listGuidelinesForAgents } from "@/lib/data/guidelines";
+import { getGuidelineForAgents, listCardsForAgents, listGuidelinesForAgents } from "@/lib/data/guidelines";
 import {
   SEARCH_LIMIT_MAX,
   SERVER_INSTRUCTIONS,
@@ -87,7 +87,7 @@ export function buildMcpServer({ collection, connectUrl }: { collection: string[
     async ({ slug, version }) => {
       const ref = parseGuidelineRef(slug, version);
       if ("error" in ref) return text(ref.error, true);
-      const g = (await listGuidelinesForAgents()).find((x) => x.slug === ref.slug);
+      const g = await getGuidelineForAgents(ref.slug);
       if (!g) return text(`No guideline is called "${ref.slug}". Use search_guidelines to find one.`, true);
       if (ref.version !== undefined && ref.version !== g.latestVersion) {
         return text(
@@ -115,7 +115,7 @@ export function buildMcpServer({ collection, connectUrl }: { collection: string[
       annotations: readOnly("List my PikaMd collection"),
     },
     async () =>
-      collection === null ? text(missingKeyMessage(connectUrl), true) : text(formatCollection(await listGuidelinesForAgents(), collection)),
+      collection === null ? text(missingKeyMessage(connectUrl), true) : text(formatCollection(await listCardsForAgents(), collection)),
   );
 
   return server;

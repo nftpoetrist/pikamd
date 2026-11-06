@@ -17,7 +17,7 @@ export function useConnectedApps() {
     queryFn: async () => (await api<{ apps: ConnectedApp[] }>("/api/oauth/apps")).apps,
     enabled: signed,
     staleTime: 15_000,
-    refetchInterval: 60_000, // "last used" follows the agent
+    refetchOnWindowFocus: true, // "last used" follows the agent when the user comes back to the tab, with no polling
     retry: false,
   });
 }

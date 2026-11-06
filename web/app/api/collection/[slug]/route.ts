@@ -4,6 +4,9 @@ import { NO_STORE, sameOriginGuard } from "@/lib/server/guard";
 import { rateLimited } from "@/lib/server/ratelimit";
 import { supabase } from "@/lib/server/supabase";
 
+// Answers in well under a second; capped so a stalled call can't run to the platform's 300 s (ARCHITECTURE §12.1)
+export const maxDuration = 10;
+
 // Save (PUT) or remove (DELETE) a guideline in the signed-in wallet's collection (K12). No body:
 // the wallet comes from the session cookie only. Both are idempotent.
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;

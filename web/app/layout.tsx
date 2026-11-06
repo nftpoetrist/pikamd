@@ -8,6 +8,10 @@ import WalletProvider from "@/components/wallet/WalletProvider";
 import bgImage from "@/public/bg/pikamd-cards.webp";
 import "./globals.css";
 
+// Pages are prerendered or render in well under a second; a cap for the ones rendered on request
+// (a new guideline's page, /mod) so none can run to the platform's 300 s (ARCHITECTURE §12.1)
+export const maxDuration = 15;
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],

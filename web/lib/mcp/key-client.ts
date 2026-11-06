@@ -20,7 +20,7 @@ export function useMcpKey() {
     queryFn: async () => (await api<{ key: KeyInfo | null }>("/api/mcp-key")).key,
     enabled: signed,
     staleTime: 15_000,
-    refetchInterval: 60_000, // "last used" follows the agent
+    refetchOnWindowFocus: true, // "last used" follows the agent when the user comes back to the tab, with no polling
     retry: false,
   });
 }

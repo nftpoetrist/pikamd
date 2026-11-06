@@ -1,5 +1,8 @@
 import { createHash } from "node:crypto";
-import { listGuidelinesForAgents } from "@/lib/data/guidelines";
+import { getGuidelineForAgents } from "@/lib/data/guidelines";
+
+// Answers in well under a second; capped so a stalled call can't run to the platform's 300 s (ARCHITECTURE §12.1)
+export const maxDuration = 10;
 
 // The raw file (ARCHITECTURE §9.2): /raw/<slug>.md as plain Markdown, for agents and anyone who
 // prefers a URL to MCP. No JavaScript, no sign-in. Same rules as MCP: flagged guidelines aren't
@@ -12,7 +15,7 @@ const notFound = () =>
 export async function GET(_request: Request, ctx: RouteContext<"/raw/[file]">) {
   const match = FILE_RE.exec((await ctx.params).file);
   if (!match) return notFound();
-  const g = (await listGuidelinesForAgents()).find((x) => x.slug === match[1]);
+  const g = await getGuidelineForAgents(match[1]);
   if (!g) return notFound();
   if (g.record) {
     const sha = "0x" + createHash("sha256").update(g.content, "utf8").digest("hex");

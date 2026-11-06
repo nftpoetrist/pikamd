@@ -4,6 +4,9 @@ import { jsonResponse, oauthError, preflight } from "@/lib/server/oauth-http";
 import { originOf, registerClient } from "@/lib/server/oauth";
 import { rateLimited } from "@/lib/server/ratelimit";
 
+// Answers in well under a second; capped so a stalled call can't run to the platform's 300 s (ARCHITECTURE §12.1)
+export const maxDuration = 10;
+
 // Dynamic Client Registration (RFC 7591). Deprecated in MCP in favour of Client ID Metadata
 // Documents, which Claude uses; kept for VS Code, Cursor, Codex and other clients that register.
 // Every client is public (token_endpoint_auth_method "none", no secret is ever issued), and only

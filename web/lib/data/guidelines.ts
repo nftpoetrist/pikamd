@@ -18,7 +18,7 @@ import { check, supabase } from "@/lib/server/supabase";
 //   put it in the App Shell), so a navigation shows the cards at once, never an empty fallback;
 // - the browser then asks GET /api/guidelines (lib/library/client.ts), which reads a list that
 //   lives for one second, and swaps in whatever changed.
-// Search, MCP and /raw use the one-second list; a guideline's page reads just its own row
+// Search uses the one-second list; MCP reads and /raw read one row at a time, and a guideline's page reads just its own row
 // (getGuideline), cached so a link can prefetch it.
 
 export const GUIDELINES_TAG = "guidelines";
@@ -93,17 +93,43 @@ export async function listGuidelinesForAgents(): Promise<Guideline[]> {
 /**
  * One listed guideline with its file (its page, the preview). Only that row is read, and it's
  * cached long enough (stale ≥ 5 minutes) for a `<Link prefetch>` to bring the page along before
- * the click. Agents and /raw don't use it: they read the one-second list.
+ * the click. Agents and /raw use getGuidelineForAgents (the same row, at most a second old).
  */
 export async function getGuideline(slug: string): Promise<Guideline | null> {
   "use cache";
   cacheLife("minutes");
   cacheTag(GUIDELINES_TAG);
 
+  return readGuideline(slug);
+}
+
+/**
+ * One guideline for an agent or /raw, at most a second old (a lock or hide must reach agents
+ * quickly) and never a flagged one. Reads only that row: reading one file never costs the whole
+ * library (2026-11-07; it used to scan the full list with every file in it).
+ */
+export async function getGuidelineForAgents(slug: string): Promise<Guideline | null> {
+  const g = await readFreshGuideline(slug);
+  return g && !g.flagged ? g : null;
+}
+
+async function readFreshGuideline(slug: string): Promise<Guideline | null> {
+  "use cache";
+  cacheLife("seconds");
+  cacheTag(GUIDELINES_TAG);
+  return readGuideline(slug);
+}
+
+async function readGuideline(slug: string): Promise<Guideline | null> {
   const db = supabase();
   if (!db) return process.env.NODE_ENV !== "production" ? (MOCK_GUIDELINES.find((g) => g.slug === slug) ?? null) : null;
   const rows = check(await db.from("listed_guidelines").select(GUIDELINE_COLUMNS).eq("slug", slug).limit(1), "get guideline") as GuidelineRow[];
   return mapRows(rows, rowToGuideline)[0] ?? null;
+}
+
+/** The cards an agent may see (no files): enough for my_collection. */
+export async function listCardsForAgents(): Promise<GuidelineCard[]> {
+  return forAgents(await listFreshGuidelineCards());
 }
 
 /**

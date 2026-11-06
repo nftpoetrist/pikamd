@@ -35,7 +35,21 @@ export async function endSession(): Promise<void> {
 
 // Server-side RPC for signature checks of smart-contract wallets (ERC-1271 / ERC-6492).
 // Plain wallets are verified locally. ARC_RPC_URL can hold a keyed provider URL (server only).
-export const arcClient = createPublicClient({ chain: CHAIN, transport: http(process.env.ARC_RPC_URL || RPC_URL) });
+// viem's defaults are a 10 s timeout and 3 retries per call (viem 2.57.4, createTransport.js):
+// one stalled call could hold a function for 40 s. Arc answers in well under a second.
+export const arcClient = createPublicClient({
+  chain: CHAIN,
+  transport: http(process.env.ARC_RPC_URL || RPC_URL, { timeout: 5_000, retryCount: 1 }),
+});
+
+/**
+ * For the background indexer: no retries, since the next run picks up where this one stopped
+ * (the cursor only moves past what was applied).
+ */
+export const arcIndexerClient = createPublicClient({
+  chain: CHAIN,
+  transport: http(process.env.ARC_RPC_URL || RPC_URL, { timeout: 5_000, retryCount: 0 }),
+});
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 

@@ -6,6 +6,9 @@ import { answerRequest, originOf, requestInfo } from "@/lib/server/oauth";
 import { rateLimited } from "@/lib/server/ratelimit";
 import { supabase } from "@/lib/server/supabase";
 
+// Answers in well under a second; capped so a stalled call can't run to the platform's 300 s (ARCHITECTURE §12.1)
+export const maxDuration = 10;
+
 // The consent screen's API (app/oauth/consent). Same-origin only: the screen is reached by a
 // cross-site redirect from the agent, which doesn't carry the SameSite=Strict session cookie, so
 // the page asks here after it loads, and these same-site requests do carry it.

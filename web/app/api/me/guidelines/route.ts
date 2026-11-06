@@ -3,6 +3,9 @@ import { NO_STORE } from "@/lib/server/guard";
 import { ownedGuidelines } from "@/lib/server/owned";
 import { supabase } from "@/lib/server/supabase";
 
+// Answers in well under a second; capped so a stalled call can't run to the platform's 300 s (ARCHITECTURE §12.1)
+export const maxDuration = 10;
+
 // "Shared by me" on My Collection: the signed-in wallet's own guidelines, hidden and locked ones
 // too. Hidden guidelines are for their author only, so this needs the session (one free signature).
 const fail = (status: number, error: string) => Response.json({ error }, { status, headers: NO_STORE });

@@ -2,6 +2,9 @@ import { jsonResponse, oauthError, preflight, readForm, usesClientSecret } from 
 import { originOf, revokeToken } from "@/lib/server/oauth";
 import { rateLimited } from "@/lib/server/ratelimit";
 
+// Answers in well under a second; capped so a stalled call can't run to the platform's 300 s (ARCHITECTURE §12.1)
+export const maxDuration = 10;
+
 // Token revocation (RFC 7009): a client signs out. A refresh token ends the whole connection, an
 // access token only itself. Unknown tokens, or tokens of another client, are answered with 200
 // too (§2.2), so the endpoint says nothing about which tokens exist.
