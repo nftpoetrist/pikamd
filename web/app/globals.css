@@ -6395,6 +6395,110 @@ button.wallet-mod:disabled { cursor: wait; opacity: 0.7; }
   text-transform: none;
 }
 .tip-send { font-size: 14px; }
+/* A file name inside a button keeps its exact spelling (and the reading font) */
+.btn-file {
+  font-family: var(--font-vt323);
+  font-size: 20px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* ── Cards: a slimmer frame that fits the lanes' measured room (6px above, 12–20px below) ──
+   Gold edge and a 6px dark base, no halo: a card lifts 3px on hover, a halo would be clipped */
+.md-card {
+  --card-edge: rgba(240, 165, 0, 0.72);
+  box-shadow:
+    0 -3px 0 0 var(--card-edge), 0 3px 0 0 var(--card-edge), -3px 0 0 0 var(--card-edge), 3px 0 0 0 var(--card-edge),
+    0 6px 0 0 var(--fr-base),
+    inset 0 3px 0 0 var(--fr-hi),
+    inset 0 -3px 0 0 var(--fr-lo),
+    0 12px 22px rgba(0, 0, 0, 0.45);
+}
+.md-card:hover {
+  --card-edge: var(--y1);
+  box-shadow:
+    0 -3px 0 0 var(--card-edge), 0 3px 0 0 var(--card-edge), -3px 0 0 0 var(--card-edge), 3px 0 0 0 var(--card-edge),
+    0 6px 0 0 var(--fr-base),
+    inset 0 3px 0 0 var(--fr-hi),
+    inset 0 -3px 0 0 var(--fr-lo),
+    0 0 22px rgba(255, 203, 5, 0.22);
+}
+
+/* Small labels (type, hidden/locked): Silkscreen at its own 8px size, one font pixel per screen pixel */
+.md-badge {
+  font-family: var(--font-label);
+  font-size: 8px;
+  line-height: 1;
+  letter-spacing: 0.1em;
+  padding: 3px 5px 3px 6px;
+}
+
+/* Section titles inside panels: Squeaksy's uppercase pixel titles. Content titles (pages,
+   guidelines, cards) keep Jersey 10, PikaMd's display face */
+.collection-empty-title,
+.connect-step-title,
+.pub-howto-title,
+.pub-prompt-title,
+.scan-summary-title,
+.scan-section-title,
+.gl-side h2,
+.mod-section h2,
+.wallet-head h2 {
+  font-family: var(--font-label);
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 1.25;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.7);
+}
+.docs-body h2 {
+  font-family: var(--font-label);
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Tiny letter-spaced labels over groups (Squeaksy's "2 cards owned · Genesis set"): Silkscreen at
+   its own 8px size, sharp at every screen density */
+.vision-term-label,
+.report-reasons legend,
+.tip-amounts legend,
+.connect-or,
+.connect-app-flag,
+.connect-tools-title,
+.docs-toc-title,
+.docs-table th {
+  font-family: var(--font-label);
+  font-weight: 400;
+  font-size: 8px;
+  line-height: 1.5;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/* Eyebrow labels: a raised gold badge, like Squeaksy's "Top hamsters" */
+.vision-eyebrow,
+.docs-eyebrow {
+  display: inline-block;
+  padding: 7px 12px 6px;
+  font-family: var(--font-label);
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: linear-gradient(180deg, #FFE680 0%, var(--y1) 52%, var(--g1) 100%);
+  box-shadow:
+    0 -3px 0 0 var(--g4), 0 3px 0 0 var(--g4), -3px 0 0 0 var(--g4), 3px 0 0 0 var(--g4),
+    inset 0 2px 0 0 #FFF4C2,
+    inset 0 -2px 0 0 var(--g3),
+    0 6px 0 0 #3d2100;
+}
+.docs-eyebrow { margin-bottom: 14px; }
 
 /* ── Footer: a floating panel like the navbar, a napping cat, and grass under it ── */
 .site-footer {

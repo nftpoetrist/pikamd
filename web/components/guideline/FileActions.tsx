@@ -23,7 +23,13 @@ export default function FileActions({ slug, content }: { slug: string; content: 
     <div className="gl-file-actions">
       <CopyButton text={content} label="Copy file" />
       <button type="button" className={saved ? "btn-gold" : "btn-ghost"} onClick={download}>
-        {saved ? "✓ Saved" : `Download ${slug}.md`}
+        {saved ? (
+          "✓ Saved"
+        ) : (
+          <>
+            Download <span className="btn-file">{slug}.md</span>
+          </>
+        )}
       </button>
       <CopyButton text={link} label="Copy link" disabled={!link} />
     </div>
