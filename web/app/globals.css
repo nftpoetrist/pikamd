@@ -1036,22 +1036,33 @@ body {
   .explore-hero .md-card { gap: 6px; }
 }
 
-/* ── Home: ornate title plaque behind the hero (HeroPlaque, user request 2026-10-15) ──
-   Dark espresso glass in a double gold frame, shaped as a pixel cartouche (crest, pendant, side
-   scoops, stepped corners), with a gem, filigree swashes, beads and a sparkle. Drawn outside the
-   text's box (.hp-frame insets), so the title and subtitle keep their own layout. */
+/* ── Home: the title's floating grass island (HeroPlaque, user request 2026-11-10: "exactly like
+   this image, nothing more, nothing less") ──
+   A dark panel in a thin gold frame, a mossy grass band on top (a step down near the right end),
+   the cat peeking over it, a book in a gold orbit, daisies, tufts, a gold badge on each side line,
+   and under the panel a band of dirt bricks over a dark underside with stalactites. Sizes come
+   from the reference (design/brand/hero-island.mjs): one art pixel = --a. All of it is drawn
+   around the text's box (.hp-island insets), so the title and subtitle keep their own layout. */
+/* The island's measures, on the hero column too (its top padding makes room for the cat) */
+.page-center-high:has(> .hero-plaque),
 .hero-plaque {
-  --hp-side: 64px;   /* how far the frame reaches beyond the text: sides */
-  --hp-top: 42px;    /* above the text, crest included */
-  --hp-bottom: 36px; /* below the text, pendant included */
+  --a: 4px;
+  --hp-side: calc(13 * var(--a));   /* text → frame, sides (measured: 13 art pixels) */
+  --hp-top: 17px;                   /* title box top → frame top (the frame is 26px above the title's letters) */
+  --hp-bottom: 22px;                /* subtitle box bottom → frame bottom (28px below its letters) */
+  --hp-star-px: 3px;                /* the divider's stars are drawn 3px per pixel */
+}
+.hero-plaque {
   position: relative;
   width: fit-content;
-  max-width: calc(100% - 2 * (var(--hp-side) + 16px));
-  margin: 0 auto 70px; /* below: pendant, sparkle and clear space before the card frames */
+  /* the underside's ends reach 11 art pixels beyond the frame */
+  max-width: calc(100% - 2 * (var(--hp-side) + 11 * var(--a) + 8px));
+  /* below the frame: the underside (its stalactites reach 30 art pixels down) and clear space before the card frames */
+  margin: 0 auto calc(var(--hp-bottom) + 30 * var(--a) + 22px);
 }
 
-/* Room for the crest and gem under the navbar: the plaque replaces the hero's 32px lift */
-.page-center-high:has(> .hero-plaque) { padding-top: 48px; }
+/* Room above the frame for the grass, the cat and its marks (50 art pixels) */
+.page-center-high:has(> .hero-plaque) { padding-top: calc(var(--hp-top) + 50 * var(--a) + 4px); }
 
 .hero-plaque .hero-title,
 .hero-plaque .hero-sub {
@@ -1060,181 +1071,121 @@ body {
   top: 0;
 }
 
-.hero-plaque .hero-title { margin: 0 0 18px; }
+/* Room between the title and the subtitle for the divider (measured: 28px under the title's
+   letters, 24px over the subtitle's) */
+.hero-plaque .hero-title { margin: 0 0 44px; }
 .hero-plaque .hero-sub { margin: 0; padding: 0; }
 
-.hp-frame {
+/* The divider: a thin bronze line across the text's width with a gold star in a gap, and a small
+   star either side of it */
+.hero-plaque .hero-sub::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -30px;
+  height: calc(7 * var(--hp-star-px));
+  background:
+    var(--hp-star) center / calc(7 * var(--hp-star-px)) calc(7 * var(--hp-star-px)) no-repeat,
+    var(--hp-star-s) calc(50% - 26px) center / calc(3 * var(--hp-star-px)) calc(3 * var(--hp-star-px)) no-repeat,
+    var(--hp-star-s) calc(50% + 26px) center / calc(3 * var(--hp-star-px)) calc(3 * var(--hp-star-px)) no-repeat,
+    linear-gradient(#d79a52 0 2px, #8c5d34 2px 3px) left center / calc(50% - 35px) 3px no-repeat,
+    linear-gradient(#d79a52 0 2px, #8c5d34 2px 3px) right center / calc(50% - 35px) 3px no-repeat;
+  filter: drop-shadow(0 0 6px rgba(255, 206, 61, 0.35));
+  pointer-events: none;
+}
+
+.hp-island {
   position: absolute;
   inset: calc(-1 * var(--hp-top)) calc(-1 * var(--hp-side)) calc(-1 * var(--hp-bottom));
   z-index: 0;
   pointer-events: none;
-  filter: drop-shadow(0 18px 32px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 28px rgba(255, 203, 5, 0.16));
+}
+.hp-island > *,
+.hp-grass > * { position: absolute; display: block; }
+.hp-sprite { overflow: visible; }
+
+/* Dark panel, under the grass too (the strip between the grass and the frame's corners) */
+.hp-panel {
+  inset: calc(-5 * var(--a)) 0 0;
+  background: linear-gradient(180deg, #221b2e 0%, #1b162a 55%, #151325 100%);
+  clip-path: polygon(
+    calc(10 * var(--a)) 0, calc(100% - 9 * var(--a)) 0, calc(100% - 9 * var(--a)) calc(6 * var(--a)),
+    calc(100% - 3 * var(--a)) calc(6 * var(--a)), calc(100% - var(--a)) calc(8 * var(--a)),
+    calc(100% - var(--a)) calc(100% - var(--a)), var(--a) calc(100% - var(--a)), var(--a) calc(8 * var(--a)),
+    calc(3 * var(--a)) calc(6 * var(--a)), calc(9 * var(--a)) calc(6 * var(--a)), calc(9 * var(--a)) 0
+  );
 }
 
-/* Frame layers, outside in; each clip-path comes from HeroPlaque (--hp-*) */
-.hp-layer { position: absolute; }
-.hp-ink { inset: 0; clip-path: var(--hp-ink); background: var(--ink); }
-.hp-rim {
-  inset: 3px;
-  clip-path: var(--hp-rim);
-  background: linear-gradient(180deg, #FFF1B0 0%, var(--y2) 22%, var(--y1) 48%, var(--g1) 74%, var(--g3) 100%);
-}
-.hp-gap { inset: 6px; clip-path: var(--hp-gap); background: #160D00; }
-.hp-inlay {
-  inset: 8px;
-  clip-path: var(--hp-inlay);
-  background: linear-gradient(180deg, rgba(255, 230, 128, 0.85), rgba(240, 165, 0, 0.6));
-}
-/* Espresso glass: a gold sheen from the crest, faint scanlines, the card pile blurred behind */
-.hp-fill {
-  inset: 9px;
-  clip-path: var(--hp-fill);
-  background:
-    radial-gradient(ellipse 60% 70% at 50% 0%, rgba(255, 203, 5, 0.2) 0%, transparent 70%),
-    radial-gradient(ellipse 50% 60% at 50% 100%, rgba(240, 165, 0, 0.1) 0%, transparent 70%),
-    repeating-linear-gradient(0deg, rgba(255, 203, 5, 0.035) 0 1px, transparent 1px 3px),
-    linear-gradient(180deg, rgba(34, 19, 2, 0.93) 0%, rgba(17, 9, 1, 0.94) 55%, rgba(8, 4, 0, 0.95) 100%);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-}
+/* The frame's straight lines: lit sides, the darker bottom (sampled #f1b34e, #b07024) */
+.hp-line { background: #f1b34e; box-shadow: 0 0 8px rgba(241, 179, 78, 0.3); }
+.hp-line-l { left: 0; width: var(--a); top: calc(4 * var(--a)); bottom: var(--a); }
+.hp-line-r { right: 0; width: var(--a); top: calc(5 * var(--a)); bottom: var(--a); }
+.hp-line-b { bottom: 0; height: var(--a); left: calc(3 * var(--a)); right: calc(3 * var(--a)); background: #b07024; }
 
-/* Ornaments: 3× on wide screens, 2× on phones (integer scales keep pixels crisp) */
-.hp-orn { position: absolute; display: block; line-height: 0; }
-.hp-orn svg { display: block; }
-.hp-orn .hp-x2 { display: none; } /* (0,2,0): beats the svg rule above */
-.hp-gem { left: 50%; top: -14px; transform: translateX(-50%); filter: drop-shadow(0 0 10px rgba(255, 241, 194, 0.55)); }
-.hp-bead { top: 50%; transform: translateY(-50%); filter: drop-shadow(0 0 8px rgba(255, 203, 5, 0.45)); }
-.hp-bead-l { left: -2px; }
-.hp-bead-r { right: -2px; }
-.hp-spark { left: 50%; bottom: -16px; transform: translateX(-50%); filter: drop-shadow(0 0 8px rgba(255, 241, 194, 0.5)); }
-.hp-swash { top: -3px; filter: drop-shadow(0 0 6px rgba(255, 203, 5, 0.35)); }
-.hp-swash-r { left: calc(50% + 88px); }
-.hp-swash-l { right: calc(50% + 88px); transform: scaleX(-1); }
-
-/* Two little cats on the top edge (HeroPlaque → RunningCat): the navbar mascot at 1:1, gold PikaMd
-   on the left, Arc blue on the right. Each track is the flat rim between the corner and the
-   swashes; paws (sprite row 33, --cat-foot from the top) stand on the frame's outer ink line, like
-   the swashes (--hp-crest below the frame top). The run is a transform in steps of --cat-px (the
-   distance rounded down to whole steps, one step per --cat-px), so a cat trots along the rim pixel
-   by pixel instead of gliding, on the compositor: until 2026-10-26 it animated a registered
-   property (--cat-x) that the main thread recomputed every frame (measured: ~11% of a core). The
-   legs, the turn and the dust are transform and opacity. One loop: stand, run across, stand, turn, run back.
-   The maps face left, so the face is mirrored on the way right. */
-.hero-plaque { --hp-crest: 18px; --cat-px: 2px; --cat-w: 32px; --cat-h: 35px; --cat-foot: 34px; }
-.hp-track {
-  position: absolute;
-  z-index: 2;
-  top: calc(var(--hp-crest) - var(--hp-top) - var(--cat-foot));
-  height: var(--cat-h);
-  container-type: inline-size;
-  pointer-events: none;
+/* Top grass: from x 10 to R−9, its surface 10 art pixels over the frame */
+.hp-grass {
+  left: calc(10 * var(--a));
+  right: calc(9 * var(--a));
+  top: calc(-10 * var(--a));
+  height: calc(13 * var(--a));
 }
-.hp-track-l { left: calc(24px - var(--hp-side)); right: calc(50% + 190px); }
-.hp-track-r { left: calc(50% + 190px); right: calc(24px - var(--hp-side)); }
-.hp-cat {
-  --cat-loop: 11s;
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: var(--cat-w);
-  height: var(--cat-h);
-  will-change: transform;
-  animation: hp-cat-run var(--cat-loop) linear infinite;
-  /* Applies to each stretch between keyframes: the runs there and back take one step per 2px
-     (32px = --cat-w, 2px = --cat-px; written out so a browser without typed arithmetic drops only
-     this line and the cat glides) */
-  animation-timing-function: steps(calc(round(down, 100cqw - 32px, 2px) / 2px));
-}
-/* The Arc cat starts at the far end, facing left, on a slightly longer loop: the two never sync */
-.hp-track-r .hp-cat { --cat-loop: 12.4s; }
-.hp-track-r .hp-cat,
-.hp-track-r .hp-cat-face,
-.hp-track-r .hp-cat-legs,
-.hp-track-r .hp-cat-still { animation-delay: calc(var(--cat-loop) * -0.5); }
-.hp-cat-face {
-  position: absolute;
-  inset: 0;
-  animation: hp-cat-turn var(--cat-loop) steps(1, end) infinite;
-}
-.hp-cat-legs {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  animation: hp-cat-moving var(--cat-loop) steps(1, end) infinite;
-}
-.hp-cat-strip {
-  display: block;
-  width: calc(4 * var(--cat-w));
-  height: var(--cat-h);
-  animation: hp-cat-gallop 0.44s steps(4) infinite;
-}
-.hp-cat-still {
-  position: absolute;
-  left: 0;
+.hp-grass-hi {
+  left: calc(6 * var(--a));
+  right: calc(41 * var(--a));
   top: 0;
-  display: block;
-  width: var(--cat-w);
-  height: var(--cat-h);
-  animation: hp-cat-standing var(--cat-loop) steps(1, end) infinite;
+  height: calc(9 * var(--a));
+  background: var(--hp-grass-hi) left top / calc(24 * var(--a)) calc(9 * var(--a)) repeat-x;
 }
-/* Too little rim to run on (a short screen shrinks the plaque): no cat rather than a squeezed one */
-@container (max-width: 79px) {
-  .hp-cat { display: none; }
-}
-@keyframes hp-cat-run {
-  0%, 8% { transform: translateX(0); }
-  46%, 54% { transform: translateX(round(down, 100cqw - var(--cat-w), var(--cat-px))); }
-  92%, 100% { transform: translateX(0); }
-}
-@keyframes hp-cat-turn {
-  0% { transform: scaleX(-1); }
-  50% { transform: none; }
-  100% { transform: none; }
-}
-@keyframes hp-cat-moving {
-  0% { opacity: 0; } 8% { opacity: 1; } 46% { opacity: 0; } 54% { opacity: 1; } 92% { opacity: 0; } 100% { opacity: 0; }
-}
-@keyframes hp-cat-standing {
-  0% { opacity: 1; } 8% { opacity: 0; } 46% { opacity: 1; } 54% { opacity: 0; } 92% { opacity: 1; } 100% { opacity: 1; }
-}
-@keyframes hp-cat-gallop {
-  to { transform: translateX(-100%); }
-}
-/* Reduced motion: both cats stand at the outer ends, facing the gem */
-@media (prefers-reduced-motion: reduce) {
-  .hp-cat, .hp-cat-face, .hp-cat-legs, .hp-cat-strip, .hp-cat-still { animation: none; }
-  .hp-cat-legs { opacity: 0; }
-  .hp-track-l .hp-cat-face { transform: scaleX(-1); }
-  .hp-track-r .hp-cat { transform: translateX(calc(100cqw - var(--cat-w))); }
+.hp-grass-lo {
+  right: calc(6 * var(--a));
+  width: calc(26 * var(--a));
+  top: calc(4 * var(--a));
+  height: calc(9 * var(--a));
+  background: var(--hp-grass-lo) right top / calc(20 * var(--a)) calc(9 * var(--a)) repeat-x;
 }
 
-/* Short screens: the title as large as still lets the cards fit the first screen. Measured: the last
-   card's bottom ≈ 633px + 1.9 × title size, so title ≤ (height − 641px) / 1.9 (≈ 41px at 720, 67px
-   at 768, the full 76px from ~800) */
+/* Under the panel: grass strip, brick band, dark underside; the ends are sprites */
+.hp-under {
+  left: calc(31 * var(--a));
+  right: calc(40 * var(--a));
+  top: calc(100% - 14 * var(--a));
+  height: calc(46 * var(--a));
+  background: var(--hp-under) left top / calc(44 * var(--a)) calc(46 * var(--a)) repeat-x;
+}
+
+/* Soft light where the image glows: around the cat, the marks, the book and its orbit, the badges */
+.hp-cat { filter: drop-shadow(0 0 14px rgba(253, 171, 48, 0.28)); }
+.hp-mark { filter: drop-shadow(0 0 8px rgba(251, 197, 25, 0.45)); }
+.hp-book { filter: drop-shadow(0 0 12px rgba(255, 206, 61, 0.22)); }
+.hp-orbit { filter: drop-shadow(0 0 4px rgba(230, 177, 77, 0.6)); }
+.hp-gem { filter: drop-shadow(0 0 8px rgba(250, 206, 78, 0.35)); }
+
+/* Short screens: a smaller title (as before the island). Measured before 2026-11-10: the last card's
+   bottom ≈ 633px + 1.9 × title size, so the cards fitted the first screen; the island (cat above,
+   underside below) is taller, so since 2026-11-10 the cards start lower and are reached by scrolling */
 @media (max-height: 820px) {
   /* Each px of title costs 1.9px of height: a taller navbar takes it back from the title */
   .hero-compact .hero-plaque .hero-title { font-size: clamp(34px, calc(52.6svh - 337px - var(--nav-extra) / 1.9), 76px); }
 }
 
-/* Phones: a smaller cartouche hugging the text, 2× ornaments, no swashes */
+/* Phones: the same island at 2px per art pixel; the text keeps its width */
 @media (max-width: 639px) {
-  .hero-plaque { --hp-side: 14px; --hp-top: 30px; --hp-bottom: 26px; margin-bottom: 56px; }
-  .page-center-high:has(> .hero-plaque) { padding-top: 42px; } /* the cats need head room under the navbar */
-  .hp-ink { clip-path: var(--hp-ink-sm); }
-  .hp-rim { clip-path: var(--hp-rim-sm); }
-  .hp-gap { clip-path: var(--hp-gap-sm); }
-  .hp-inlay { clip-path: var(--hp-inlay-sm); }
-  .hp-fill { clip-path: var(--hp-fill-sm); }
-  .hp-orn .hp-x3 { display: none; }
-  .hp-orn .hp-x2 { display: block; }
-  .hp-swash { display: none; }
-  .hero-plaque { --hp-crest: 12px; }
-  .hp-track-l { left: calc(16px - var(--hp-side)); right: calc(50% + 64px); }
-  .hp-track-r { left: calc(50% + 64px); right: calc(16px - var(--hp-side)); }
-  .hp-gem { top: -10px; }
-  .hp-bead-l { left: -1px; }
-  .hp-bead-r { right: -1px; }
-  .hp-spark { bottom: -11px; }
+  .page-center-high:has(> .hero-plaque),
+  .hero-plaque {
+    --a: 2px;
+    --hp-side: 14px;
+    --hp-top: 12px;
+    --hp-bottom: 14px;
+    --hp-star-px: 2px;
+  }
+  .hero-plaque .hero-title { margin-bottom: 30px; }
+  .hero-plaque .hero-sub::before { top: -21px; }
+  /* A narrow panel: the book and its orbit move right so they clear the cat and its marks */
+  .hp-book,
+  .hp-orbit { translate: calc(26 * var(--a)) 0; }
+  /* …and the left daisy moves left, clear of the one by the cat */
+  .hp-flower-l { translate: calc(-16 * var(--a)) 0; }
 }
 
 /* ── Explore: two endless lanes of MD cards ─────────────────── */
