@@ -19,7 +19,7 @@ function NavLinks({ pathname, onNavigate }: { pathname: string | null; onNavigat
   return LINKS.map(({ href, label, icon }) => (
     <PageLink key={href} href={href} className="nav-link" aria-current={isActive(href) ? "page" : undefined} onClick={onNavigate}>
       {isActive(href) && <span className="nav-dot" />}
-      <span className="nav-icon">
+      <span className={`nav-icon nav-icon-${icon}`}>
         <PixelGlyph name={icon} scale={2} />
       </span>
       {label}

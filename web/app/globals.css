@@ -24,11 +24,6 @@
   --orange: #FF9F43; /* needs review */
   --green: #7BD88F;  /* done / clean */
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
-  /* Night sky (components/PixelSky.tsx): warm, PikaMd's ink and amber */
-  --sky-top: #120b02;
-  --sky-mid: #1c1305;
-  --sky-low: #160e03;
-  --sky-bottom: #0b0601;
 }
 
 /* Two-row navbar (640–1119px, see .nav-inner): a 56px menu row, its 3px divider included (measured). Unlayered like the
@@ -72,9 +67,13 @@ body {
 }
 
 /* ══════════════════════════════════════════════
-   BACKGROUND: a warm pixel night sky with blocky clouds (components/PixelSky.tsx, the Squeaksy-style
-   skin, 2026-11-10). Until 2026-11-10 PikaMd's card pile (public/bg/pikamd-cards.webp,
-   design/brand/background.mjs) lay here; the file stays in the repo. Unlayered, like the tokens.
+   BACKGROUND: a minimalist starry night sky, the site's base background on every page (user
+   requests 2026-11-10: first on Explore, "in tune with the pool the cards float in, a minimalist
+   starry night", then "on every page: it is our base background now"). The Arc sea's blues, pixel
+   stars on two tiles of different sizes (no visible repeat), a faint blue glow low down and a few
+   twinkling sparkles (components/PixelSky.tsx). Until 2026-11-09 PikaMd's card pile lay here
+   (public/bg/pikamd-cards.webp, design/brand/background.mjs; both kept in the repo). Unlayered,
+   like the tokens.
 ══════════════════════════════════════════════ */
 .scene {
   position: fixed;
@@ -82,31 +81,15 @@ body {
   z-index: 0;
   overflow: hidden;
   background:
-    radial-gradient(ellipse 75% 55% at 50% 18%, rgba(240, 165, 0, 0.09) 0%, transparent 70%),
-    linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 32%, var(--sky-low) 66%, var(--sky-bottom) 100%);
-  pointer-events: none;
-  view-transition-name: site-bg;
-}
-
-/* Explore: a minimalist starry night sky in the Arc sea's blues (SQUEAKSY SKIN → Explore) */
-body:has(.explore-hero) .scene {
-  background:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='220' shape-rendering='crispEdges'%3E%3Crect x='157' y='167' width='2' height='6' fill='%23e4ebff'/%3E%3Crect x='155' y='169' width='6' height='2' fill='%23e4ebff'/%3E%3Crect x='245' y='188' width='2' height='6' fill='%23cdd8ff'/%3E%3Crect x='243' y='190' width='6' height='2' fill='%23cdd8ff'/%3E%3Crect x='165' y='48' width='2' height='2' fill='%23cdd8ff'/%3E%3Crect x='169' y='138' width='3' height='3' fill='%23ffe9a0'/%3E%3Crect x='73' y='92' width='3' height='3' fill='%23ffe9a0'/%3E%3Crect x='207' y='210' width='2' height='2' fill='%23e4ebff'/%3E%3Crect x='256' y='140' width='2' height='2' fill='%23e4ebff'/%3E%3Crect x='85' y='54' width='3' height='3' fill='%23cdd8ff'/%3E%3Crect x='35' y='20' width='2' height='2' fill='%23cdd8ff'/%3E%3C/svg%3E") 0 0 / 280px 220px repeat,
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='193' height='167' shape-rendering='crispEdges'%3E%3Crect x='15' y='22' width='3' height='3' fill='%238fa6e8'/%3E%3Crect x='101' y='63' width='2' height='2' fill='%236f86cf'/%3E%3Crect x='24' y='57' width='2' height='2' fill='%23b7c6f2'/%3E%3Crect x='113' y='23' width='2' height='2' fill='%23b7c6f2'/%3E%3Crect x='9' y='22' width='2' height='2' fill='%236f86cf'/%3E%3Crect x='39' y='57' width='2' height='2' fill='%23b7c6f2'/%3E%3Crect x='79' y='36' width='2' height='2' fill='%238fa6e8'/%3E%3Crect x='14' y='152' width='3' height='3' fill='%236f86cf'/%3E%3Crect x='7' y='161' width='2' height='2' fill='%236f86cf'/%3E%3C/svg%3E") 61px 37px / 193px 167px repeat,
     radial-gradient(ellipse 70% 45% at 50% 100%, rgba(46, 65, 131, 0.55) 0%, transparent 70%),
     linear-gradient(180deg, #050a1c 0%, #0a1534 40%, #0c1a3e 70%, #142658 100%);
+  pointer-events: none;
+  view-transition-name: site-bg;
 }
 
-/* Izgara dokusu */
-.scene::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255, 203, 5, 0.015) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 203, 5, 0.015) 1px, transparent 1px);
-  background-size: 40px 40px;
-}
+
 
 /* ══════════════════════════════════════════════
    NAVBAR — near-black pixel panel
@@ -6238,15 +6221,12 @@ button.wallet-mod:disabled { cursor: wait; opacity: 0.7; }
    no border-radius, frames drawn with box-shadows OUTSIDE the box, so no element changes size or
    place. Everything below only restyles existing classes; the rules above stay the source of the
    layout. Remove this section and the site looks as it did before (except components/PixelSky,
-   the nav icons and the footer nap, which are new markup).
+   the nav icons, the footer nap and the night sky in .scene, which are new).
 ══════════════════════════════════════════════ */
 :root {
   /* Labels: menu, buttons, badges, section titles. Body text stays VT323, display titles Jersey 10 */
   --font-label: var(--font-silk), var(--font-vt323), ui-monospace, monospace;
 
-  --cloud: #33240a;
-  --cloud-shade: #281b07;
-  --cloud-lit: #4a340f;
 
   /* The frame every panel shares (see .pixel-panel below) */
   --fr-edge: var(--g1);
@@ -6257,29 +6237,16 @@ button.wallet-mod:disabled { cursor: wait; opacity: 0.7; }
 }
 
 /* ── The sky (components/PixelSky.tsx; the sky itself is .scene, above) ── */
-.sky-cloud { position: absolute; display: block; }
-.sky-cloud-body { fill: var(--cloud); }
-.sky-cloud-shade { fill: var(--cloud-shade); }
-.sky-cloud-lit { fill: var(--cloud-lit); }
-/* Loose gold pixels: a 3px gold frame, dark middle, one lit pixel */
-.sky-bit {
-  position: absolute;
-  background:
-    linear-gradient(#5c3f0c, #5c3f0c) 3px 3px / 3px 3px no-repeat,
-    #1e1404;
-  box-shadow: inset 0 0 0 3px #4a3209;
-  opacity: 0.9;
-}
 /* Four-point sparkles; they blink in steps (opacity only, on the compositor) */
 .sky-spark {
   position: absolute;
   width: 3px;
   height: 3px;
-  background: #FFE680;
+  background: #ffffff;
   box-shadow:
-    0 -3px 0 0 var(--g1), 0 3px 0 0 var(--g1), -3px 0 0 0 var(--g1), 3px 0 0 0 var(--g1),
-    0 -6px 0 0 rgba(240, 165, 0, 0.45), 0 6px 0 0 rgba(240, 165, 0, 0.45),
-    -6px 0 0 0 rgba(240, 165, 0, 0.45), 6px 0 0 0 rgba(240, 165, 0, 0.45);
+    0 -3px 0 0 #cdd8ff, 0 3px 0 0 #cdd8ff, -3px 0 0 0 #cdd8ff, 3px 0 0 0 #cdd8ff,
+    0 -6px 0 0 rgba(143, 166, 232, 0.5), 0 6px 0 0 rgba(143, 166, 232, 0.5),
+    -6px 0 0 0 rgba(143, 166, 232, 0.5), 6px 0 0 0 rgba(143, 166, 232, 0.5);
   animation: sky-twinkle 4.8s steps(1, end) infinite;
 }
 @keyframes sky-twinkle {
@@ -6292,22 +6259,7 @@ button.wallet-mod:disabled { cursor: wait; opacity: 0.7; }
   .sky-spark { animation: none; }
 }
 
-/* ── Explore: a minimalist starry night sky (user requests 2026-11-10: "Explore's background in
-   tune with the pool the cards float in, like a sky, true to the game-like pixel style"; "a
-   minimalist starry night sky"). The Arc sea's blues; pixel stars on two tiles of different sizes
-   (no visible repeat), the sparkles in white and blue; no clouds, gold bits or grid. CSS only:
-   the fixed sky (.scene) changes while Explore's hero is on the page (the sky's colours are in
-   the unlayered BACKGROUND section, next to .scene). ── */
-body:has(.explore-hero) .scene::after,
-body:has(.explore-hero) .sky-cloud,
-body:has(.explore-hero) .sky-bit { display: none; }
-body:has(.explore-hero) .sky-spark {
-  background: #ffffff;
-  box-shadow:
-    0 -3px 0 0 #cdd8ff, 0 3px 0 0 #cdd8ff, -3px 0 0 0 #cdd8ff, 3px 0 0 0 #cdd8ff,
-    0 -6px 0 0 rgba(143, 166, 232, 0.5), 0 6px 0 0 rgba(143, 166, 232, 0.5),
-    -6px 0 0 0 rgba(143, 166, 232, 0.5), 6px 0 0 0 rgba(143, 166, 232, 0.5);
-}
+
 
 /* ── The frame: gold edge, a soft gold halo with stepped corners, a dark 3D base ──
    Gold: the classic four shadows (1px-step corner). Halo: four diagonal shadows fill the corner
@@ -6400,6 +6352,12 @@ body:has(.explore-hero) .sky-spark {
   --glyph-shade: var(--g3);
   --glyph-ink: var(--ink);
 }
+/* Each menu icon in its own colour, taken from the home cards' themes (user request 2026-11-10:
+   "colourful icons, without breaking the design language"): Explore in Arc blue (card 002, the
+   pool), My Collection in emerald (card 003), Connect in violet (card 001). Same ink outline. */
+.nav-icon-search { --glyph-face: #6a86d8; --glyph-light: #b9c9f5; --glyph-shade: #3a54a0; }
+.nav-icon-collect { --glyph-face: #2fa478; --glyph-light: #8be8bd; --glyph-shade: #1f7a5a; }
+.nav-icon-plug { --glyph-face: #8b6cd8; --glyph-light: #c9b8f5; --glyph-shade: #5b3f9e; }
 .nav-link:hover {
   color: var(--y2);
   background: rgba(255, 203, 5, 0.08);

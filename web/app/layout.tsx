@@ -56,8 +56,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} ${vt323.variable} ${jersey.variable} ${silkscreen.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        {/* A pixel night sky with clouds (components/PixelSky.tsx). Stays fixed during page
-            transitions (globals.css → view-transition-name: site-bg) */}
+        {/* The starry night sky, the base background of every page (globals.css → .scene,
+            components/PixelSky.tsx). Stays fixed during page transitions (view-transition-name: site-bg) */}
         <PixelSky />
         <WalletProvider>
           <NavScrollTop />
