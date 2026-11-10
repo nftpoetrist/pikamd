@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import Image from "next/image";
-import { Geist, Geist_Mono, Jersey_10, VT323 } from "next/font/google";
+import { Geist, Geist_Mono, Jersey_10, Silkscreen, VT323 } from "next/font/google";
 import Footer from "@/components/Footer";
 import NavScrollTop from "@/components/NavScrollTop";
 import Navbar from "@/components/Navbar";
+import PixelSky from "@/components/PixelSky";
 import WalletProvider from "@/components/wallet/WalletProvider";
-import bgImage from "@/public/bg/pikamd-cards.webp";
 import "./globals.css";
 
 // Pages are prerendered or render in well under a second; a cap for the ones rendered on request
@@ -37,6 +36,14 @@ const jersey = Jersey_10({
   subsets: ["latin", "latin-ext"],
 });
 
+// Silkscreen: the uppercase, letter-spaced labels of the menu, buttons and section titles
+// (the Squeaksy-style skin, DESIGN.md §1.2). Short English labels only, never body text.
+const silkscreen = Silkscreen({
+  variable: "--font-silk",
+  weight: ["400", "700"],
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = {
   title: "PikaMd",
   description: "Share Markdown guidelines for Claude and other AI agents, save them to your collection, and use them over MCP.",
@@ -46,20 +53,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${vt323.variable} ${jersey.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${vt323.variable} ${jersey.variable} ${silkscreen.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        {/* PikaMd's own card pile (design/brand/background.mjs). Stays fixed during page
+        {/* A pixel night sky with clouds (components/PixelSky.tsx). Stays fixed during page
             transitions (globals.css → view-transition-name: site-bg) */}
-        <div className="scene" aria-hidden="true">
-          <div className="bg-strip">
-            {/* placeholder="blur": tiny blurred preview until the image loads — no black flash */}
-            {/* sizes: the pile covers the screen (object-fit: cover), so on a screen narrower than the
-                image's 2880:1416 it's drawn as wide as 2.034 × the height, not 100vw: phones loaded a
-                828px file stretched over ~3,500 device pixels */}
-            <Image src={bgImage} alt="" fill preload sizes="(max-aspect-ratio: 2880/1416) 204vh, 100vw" placeholder="blur" />
-          </div>
-        </div>
+        <PixelSky />
         <WalletProvider>
           <NavScrollTop />
           <Navbar />

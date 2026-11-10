@@ -4,6 +4,7 @@ import { colorPaths } from "@/lib/pixel-path";
 // The PikaMd cat (components/brand/pika-art.ts) as crisp SVG: one path per color (lib/pixel-path.ts),
 // at an integer scale so every pixel stays sharp. `blink`: the eyes close for a
 // moment every few seconds (globals.css → .pika-lids; off with prefers-reduced-motion).
+// `sleep`: the eyes stay closed (the cat napping on the footer line).
 
 const N = PIKA.length;
 
@@ -22,7 +23,7 @@ PIKA.forEach((row, y) => {
 const BODY = colorPaths(RUNS);
 const LIDS = colorPaths(PIKA_LIDS.map(({ x, y, c }) => ({ x, y, fill: PIKA_PALETTE[c] })));
 
-export default function PikaSprite({ scale = 1, blink = false, className }: { scale?: number; blink?: boolean; className?: string }) {
+export default function PikaSprite({ scale = 1, blink = false, sleep = false, className }: { scale?: number; blink?: boolean; sleep?: boolean; className?: string }) {
   return (
     <svg
       className={className}
@@ -35,8 +36,8 @@ export default function PikaSprite({ scale = 1, blink = false, className }: { sc
       {BODY.map(({ fill, d }) => (
         <path key={fill} d={d} fill={fill} />
       ))}
-      {blink && (
-        <g className="pika-lids">
+      {(blink || sleep) && (
+        <g className={sleep ? undefined : "pika-lids"}>
           {LIDS.map(({ fill, d }) => (
             <path key={fill} d={d} fill={fill} />
           ))}

@@ -4,20 +4,24 @@ import PageLink from "@/components/PageLink";
 import { usePathname } from "next/navigation";
 import { Suspense, useLayoutEffect, useRef, useState } from "react";
 import PikaSprite from "@/components/brand/PikaSprite";
+import PixelGlyph, { type GlyphName } from "@/components/PixelGlyph";
 import PikaGoldBox from "@/components/wallet/PikaGoldBox";
 import WalletButton from "@/components/wallet/WalletButton";
 
-const LINKS = [
-  { href: "/explore", label: "Explore" },
-  { href: "/collection", label: "My Collection" },
-  { href: "/connect", label: "Connect your agent" },
+const LINKS: { href: string; label: string; icon: GlyphName }[] = [
+  { href: "/explore", label: "Explore", icon: "search" },
+  { href: "/collection", label: "My Collection", icon: "collect" },
+  { href: "/connect", label: "Connect your agent", icon: "plug" },
 ];
 
 function NavLinks({ pathname, onNavigate }: { pathname: string | null; onNavigate: () => void }) {
   const isActive = (href: string) => pathname !== null && (href === "/" ? pathname === "/" : pathname.startsWith(href));
-  return LINKS.map(({ href, label }) => (
+  return LINKS.map(({ href, label, icon }) => (
     <PageLink key={href} href={href} className="nav-link" aria-current={isActive(href) ? "page" : undefined} onClick={onNavigate}>
       {isActive(href) && <span className="nav-dot" />}
+      <span className="nav-icon">
+        <PixelGlyph name={icon} scale={2} />
+      </span>
       {label}
     </PageLink>
   ));

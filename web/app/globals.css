@@ -24,6 +24,11 @@
   --orange: #FF9F43; /* needs review */
   --green: #7BD88F;  /* done / clean */
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  /* Night sky (components/PixelSky.tsx): warm, PikaMd's ink and amber */
+  --sky-top: #120b02;
+  --sky-mid: #1c1305;
+  --sky-low: #160e03;
+  --sky-bottom: #0b0601;
 }
 
 /* Two-row navbar (640–1119px, see .nav-inner): a 56px menu row, its 3px divider included (measured). Unlayered like the
@@ -67,46 +72,20 @@ body {
 }
 
 /* ══════════════════════════════════════════════
-   BACKGROUND: PikaMd's own pile of collectible cards (public/bg/pikamd-cards.webp, made by
-   design/brand/background.mjs), with PikaStake's blur, scale and dark overlay
+   BACKGROUND: a warm pixel night sky with blocky clouds (components/PixelSky.tsx, the Squeaksy-style
+   skin, 2026-11-10). Until 2026-11-10 PikaMd's card pile (public/bg/pikamd-cards.webp,
+   design/brand/background.mjs) lay here; the file stays in the repo. Unlayered, like the tokens.
 ══════════════════════════════════════════════ */
 .scene {
   position: fixed;
   inset: 0;
   z-index: 0;
-  /* Amber fallback in the image's tone, so it never flashes black before the image loads */
+  overflow: hidden;
   background:
-    radial-gradient(ellipse 90% 60% at 50% 0%, #6B4A00 0%, transparent 70%),
-    linear-gradient(180deg, #4A3200 0%, #2A1A00 100%);
+    radial-gradient(ellipse 75% 55% at 50% 18%, rgba(240, 165, 0, 0.09) 0%, transparent 70%),
+    linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 32%, var(--sky-low) 66%, var(--sky-bottom) 100%);
   pointer-events: none;
   view-transition-name: site-bg;
-}
-
-.bg-strip {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  z-index: 0;
-}
-
-/* Dark overlay for readability */
-.bg-strip::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: rgba(4, 2, 0, 0.35);
-  z-index: 1;
-}
-
-.bg-strip img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  display: block;
-  /* The blur is baked into the image (design/brand/background.mjs, BLUR_SIGMA): a full-screen CSS
-     filter here was recomputed by the GPU while anything on the page moved. Same look (pixel-compared), half the file */
-  transform: scale(1.01);
 }
 
 /* Izgara dokusu */
@@ -6181,6 +6160,324 @@ button.wallet-mod:disabled { cursor: wait; opacity: 0.7; }
   .docs-table td { display: block; padding: 2px 14px; border-top: none; }
   .docs-table td:first-child { color: var(--y2); }
   .docs-table td:empty { display: none; }
+}
+
+
+/* ══════════════════════════════════════════════
+   SQUEAKSY SKIN (2026-11-10, user request: "Squeaksy's design, in PikaMd's pixels and colors,
+   without breaking any of PikaMd's structure or content"). Squeaksy's language: floating framed
+   panels with stepped round corners, a glowing edge and a dark 3D base; an icon menu whose active
+   item is a raised button; uppercase, letter-spaced pixel labels (Silkscreen); a night sky with
+   blocky clouds; a footer panel with a napping character and a strip of grass.
+   Redrawn in PikaMd's palette (gold, amber, ink; Arc blues where Arc is meant) and pixel rules:
+   no border-radius, frames drawn with box-shadows OUTSIDE the box, so no element changes size or
+   place. Everything below only restyles existing classes; the rules above stay the source of the
+   layout. Remove this section and the site looks as it did before (except components/PixelSky,
+   the nav icons and the footer nap, which are new markup).
+══════════════════════════════════════════════ */
+:root {
+  /* Labels: menu, buttons, badges, section titles. Body text stays VT323, display titles Jersey 10 */
+  --font-label: var(--font-silk), var(--font-vt323), ui-monospace, monospace;
+
+  --cloud: #33240a;
+  --cloud-shade: #281b07;
+  --cloud-lit: #4a340f;
+
+  /* The frame every panel shares (see .pixel-panel below) */
+  --fr-edge: var(--g1);
+  --fr-halo: rgba(255, 203, 5, 0.2);
+  --fr-base: #0e0800;
+  --fr-hi: rgba(255, 230, 128, 0.14);
+  --fr-lo: rgba(0, 0, 0, 0.42);
+}
+
+/* ── The sky (components/PixelSky.tsx; the sky itself is .scene, above) ── */
+.sky-cloud { position: absolute; display: block; }
+.sky-cloud-body { fill: var(--cloud); }
+.sky-cloud-shade { fill: var(--cloud-shade); }
+.sky-cloud-lit { fill: var(--cloud-lit); }
+/* Loose gold pixels: a 3px gold frame, dark middle, one lit pixel */
+.sky-bit {
+  position: absolute;
+  background:
+    linear-gradient(#5c3f0c, #5c3f0c) 3px 3px / 3px 3px no-repeat,
+    #1e1404;
+  box-shadow: inset 0 0 0 3px #4a3209;
+  opacity: 0.9;
+}
+/* Four-point sparkles; they blink in steps (opacity only, on the compositor) */
+.sky-spark {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: #FFE680;
+  box-shadow:
+    0 -3px 0 0 var(--g1), 0 3px 0 0 var(--g1), -3px 0 0 0 var(--g1), 3px 0 0 0 var(--g1),
+    0 -6px 0 0 rgba(240, 165, 0, 0.45), 0 6px 0 0 rgba(240, 165, 0, 0.45),
+    -6px 0 0 0 rgba(240, 165, 0, 0.45), 6px 0 0 0 rgba(240, 165, 0, 0.45);
+  animation: sky-twinkle 4.8s steps(1, end) infinite;
+}
+@keyframes sky-twinkle {
+  0%, 100% { opacity: 0.85; }
+  35% { opacity: 0.2; }
+  55% { opacity: 0.55; }
+  80% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sky-spark { animation: none; }
+}
+
+/* ── The frame: gold edge, a soft gold halo with stepped corners, a dark 3D base ──
+   Gold: the classic four shadows (1px-step corner). Halo: four diagonal shadows fill the corner
+   notch, four more draw the outer ring, so the outline steps out like a rounded pixel corner.
+   Base: one row of dark under the halo. All outside the box: sizes and places don't change. */
+.pixel-panel,
+.navbar-bg,
+.footer-bg {
+  box-shadow:
+    0 -3px 0 0 var(--fr-edge), 0 3px 0 0 var(--fr-edge), -3px 0 0 0 var(--fr-edge), 3px 0 0 0 var(--fr-edge),
+    -3px -3px 0 0 var(--fr-halo), 3px -3px 0 0 var(--fr-halo), -3px 3px 0 0 var(--fr-halo), 3px 3px 0 0 var(--fr-halo),
+    0 -6px 0 0 var(--fr-halo), 0 6px 0 0 var(--fr-halo), -6px 0 0 0 var(--fr-halo), 6px 0 0 0 var(--fr-halo),
+    0 9px 0 0 var(--fr-base),
+    inset 0 3px 0 0 var(--fr-hi),
+    inset 0 -4px 0 0 var(--fr-lo),
+    0 18px 34px rgba(0, 0, 0, 0.5);
+}
+
+/* Panels: an opaque warm interior (the sky shows no blur to look through) */
+.pixel-panel {
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 203, 5, 0.022) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, rgba(38, 26, 7, 0.97) 0%, rgba(25, 17, 4, 0.97) 46%, rgba(16, 10, 2, 0.98) 100%);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Rivets in the corners of the page panels (not on scrolling panels or menus: they'd scroll away) */
+.collection-panel::after,
+.connect-panel::after,
+.pub-panel::after,
+.gl-page::after,
+.docs-body::after,
+.mod-panel::after,
+.consent::after,
+.explore-empty::after,
+.vision-panel::after,
+.status-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  --rivet: var(--g2);
+  --rivet-lit: #FFE680;
+  background:
+    linear-gradient(var(--rivet-lit), var(--rivet-lit)) 9px 9px / 3px 3px no-repeat,
+    linear-gradient(var(--rivet-lit), var(--rivet-lit)) right 12px top 9px / 3px 3px no-repeat,
+    linear-gradient(var(--rivet-lit), var(--rivet-lit)) 9px calc(100% - 12px) / 3px 3px no-repeat,
+    linear-gradient(var(--rivet-lit), var(--rivet-lit)) right 12px bottom 12px / 3px 3px no-repeat,
+    linear-gradient(var(--rivet), var(--rivet)) 9px 9px / 6px 6px no-repeat,
+    linear-gradient(var(--rivet), var(--rivet)) right 9px top 9px / 6px 6px no-repeat,
+    linear-gradient(var(--rivet), var(--rivet)) 9px calc(100% - 9px) / 6px 6px no-repeat,
+    linear-gradient(var(--rivet), var(--rivet)) right 9px bottom 9px / 6px 6px no-repeat;
+}
+
+/* ── Navbar: a floating framed bar ── */
+.navbar-bg {
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 203, 5, 0.025) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, #2d1f07 0%, #201605 48%, #170f03 100%);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.navbar-bg::after { display: none; }
+
+/* Menu links: icon + uppercase label (Silkscreen), like Squeaksy's menu */
+/* Silkscreen is drawn on an 8-unit grid: 12px puts each of its pixels on exactly 3 device pixels
+   on a 2× screen (sharp); smaller sizes blur. Regular weight and 0.06em keep the one-row navbar
+   inside its measured budget at 1120px (menu + right group ≤ 840px, see .nav-center) */
+.nav-link {
+  gap: 7px;
+  padding: 0 12px 0 9px;
+  font-family: var(--font-label);
+  font-weight: 400;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--t0);
+}
+.nav-link .nav-dot { display: none; } /* the raised button marks the page now */
+/* Icons in the one-row menu from 1280px (no room at 1120–1279px); always in the two-row menu and the phone menu */
+@media (min-width: 1120px) and (max-width: 1279px) {
+  .nav-center .nav-icon { display: none; }
+}
+.nav-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  --glyph-face: var(--y1);
+  --glyph-light: #FFE680;
+  --glyph-shade: var(--g3);
+  --glyph-ink: var(--ink);
+}
+.nav-link:hover {
+  color: var(--y2);
+  background: rgba(255, 203, 5, 0.08);
+}
+
+/* Active page: a raised gold button. In the phone menu the link draws it itself */
+.nav-link[aria-current="page"] {
+  color: var(--ink);
+  text-shadow: 0 1px 0 rgba(255, 244, 194, 0.55);
+  background: linear-gradient(180deg, #FFE680 0%, var(--y1) 50%, var(--g1) 100%);
+  box-shadow:
+    0 -3px 0 0 var(--g4), 0 3px 0 0 var(--g4), -3px 0 0 0 var(--g4), 3px 0 0 0 var(--g4),
+    inset 0 3px 0 0 #FFF4C2,
+    inset 0 -3px 0 0 var(--g3),
+    0 6px 0 0 #3d2100;
+}
+/* Desktop: the button is .nav-indicator, which slides under the links; the text turns dark at
+   mid-slide, when the button is under it (no color change on hover: it would wait for the delay) */
+.nav-center .nav-link {
+  transition: color 0s linear calc(var(--vt-slide) / 2), background 0.15s steps(2);
+}
+.nav-center .nav-link:hover { color: var(--t0); }
+.nav-center .nav-link[aria-current="page"],
+.nav-center .nav-link[aria-current="page"]:hover {
+  color: var(--ink);
+  background: none;
+  box-shadow: none;
+}
+.nav-indicator {
+  background: linear-gradient(180deg, #FFE680 0%, var(--y1) 50%, var(--g1) 100%);
+  box-shadow:
+    0 -3px 0 0 var(--g4), 0 3px 0 0 var(--g4), -3px 0 0 0 var(--g4), 3px 0 0 0 var(--g4),
+    inset 0 3px 0 0 #FFF4C2,
+    inset 0 -3px 0 0 var(--g3),
+    0 6px 0 0 #3d2100,
+    0 0 18px rgba(255, 203, 5, 0.28);
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-center .nav-link { transition: none; }
+}
+
+/* ── Buttons: same skeleton and sizes, Squeaksy's uppercase labels and a lit gold face ── */
+.btn-gold,
+.btn-ghost {
+  padding: 0 14px;
+  font-family: var(--font-label);
+  font-weight: 400;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.btn-gold {
+  background: linear-gradient(180deg, #FFE680 0%, var(--y1) 52%, var(--g1) 100%);
+  --bevel-top: #FFF4C2;
+  --bevel-bottom: var(--g3);
+}
+.btn-gold:hover {
+  background: linear-gradient(180deg, #FFF0A8 0%, var(--y2) 52%, var(--y1) 100%);
+}
+.btn-ghost {
+  background: linear-gradient(180deg, rgba(255, 203, 5, 0.13) 0%, rgba(255, 203, 5, 0.05) 100%);
+  color: var(--y2);
+  --frame: rgba(240, 165, 0, 0.62);
+  --base: rgba(122, 66, 0, 0.85);
+}
+.btn-ghost:hover {
+  background: linear-gradient(180deg, rgba(255, 203, 5, 0.22) 0%, rgba(255, 203, 5, 0.1) 100%);
+}
+/* A wallet address keeps its letters as they are (checksum case) and the reading font */
+.wallet-chip {
+  font-family: var(--font-vt323);
+  font-weight: 400;
+  font-size: 22px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.tip-send { font-size: 14px; }
+
+/* ── Footer: a floating panel like the navbar, a napping cat, and grass under it ── */
+.site-footer {
+  margin: 34px 20px 0;
+}
+.footer-bg {
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 203, 5, 0.022) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, #2a1d06 0%, #1d1404 50%, #150e03 100%);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.footer-bg::before { display: none; }
+/* The panel ends above the grass strip */
+.footer-bg { bottom: calc(86px + env(safe-area-inset-bottom)); }
+.footer-inner {
+  max-width: 1180px;
+  padding: 16px 22px 0;
+  row-gap: 4px;
+}
+.footer-tag {
+  font-family: var(--font-label);
+  font-size: 8px; /* Silkscreen's own size: one font pixel = one screen pixel */
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.site-footer .btn-ghost {
+  padding: 0 11px;
+}
+/* The cat naps on a dotted gold line across the panel */
+.footer-nap {
+  grid-column: 1 / -1;
+  position: relative;
+  justify-self: stretch;
+  height: 38px;
+  margin-top: 6px;
+  background: repeating-linear-gradient(90deg, rgba(240, 165, 0, 0.45) 0 3px, transparent 3px 9px) left bottom 9px / 100% 3px no-repeat;
+}
+.footer-cat {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  width: 32px;
+  height: 32px;
+  margin-left: -16px;
+}
+/* "z z": two pixel letters drifting up from the cat, in steps */
+.footer-z {
+  position: absolute;
+  left: calc(50% + 18px);
+  bottom: 38px;
+  width: 3px;
+  height: 3px;
+  color: var(--y2);
+  /* a 3×3-pixel "z" (top row, middle, bottom row) drawn with shadows, and a smaller one higher up */
+  box-shadow:
+    0 0 0 0 currentColor, 3px 0 0 0 currentColor, 6px 0 0 0 currentColor,
+    3px 3px 0 0 currentColor,
+    0 6px 0 0 currentColor, 3px 6px 0 0 currentColor, 6px 6px 0 0 currentColor,
+    12px -12px 0 0 rgba(255, 215, 64, 0.6), 15px -12px 0 0 rgba(255, 215, 64, 0.6),
+    12px -9px 0 0 rgba(255, 215, 64, 0.6), 15px -6px 0 0 rgba(255, 215, 64, 0.6),
+    12px -6px 0 0 rgba(255, 215, 64, 0.6);
+  animation: footer-z 3.2s steps(1, end) infinite;
+}
+@keyframes footer-z {
+  0%, 100% { transform: translateY(0); opacity: 0.9; }
+  33% { transform: translateY(-3px); opacity: 0.7; }
+  66% { transform: translateY(-6px); opacity: 0.35; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .footer-z { animation: none; }
+}
+/* Pixel grass in PikaMd's golds, edge to edge under the footer panel (one 48px tile) */
+.footer-ground {
+  height: calc(64px + env(safe-area-inset-bottom));
+  margin: 22px -20px 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'%3E%3Crect x='0' y='6' width='16' height='1' fill='%23c47a00'/%3E%3Crect x='0' y='7' width='16' height='1' fill='%238a5600'/%3E%3Crect x='0' y='8' width='16' height='2' fill='%234a2e00'/%3E%3Crect x='0' y='10' width='16' height='6' fill='%232a1900'/%3E%3Crect x='1' y='4' width='1' height='2' fill='%23ffcb05'/%3E%3Crect x='2' y='5' width='1' height='1' fill='%23f0a500'/%3E%3Crect x='4' y='5' width='1' height='1' fill='%23f0a500'/%3E%3Crect x='5' y='3' width='1' height='3' fill='%23ffcb05'/%3E%3Crect x='6' y='4' width='1' height='2' fill='%23f0a500'/%3E%3Crect x='8' y='5' width='1' height='1' fill='%23f0a500'/%3E%3Crect x='9' y='4' width='1' height='2' fill='%23ffcb05'/%3E%3Crect x='11' y='5' width='1' height='1' fill='%23f0a500'/%3E%3Crect x='12' y='3' width='1' height='3' fill='%23f0a500'/%3E%3Crect x='13' y='4' width='1' height='2' fill='%23ffcb05'/%3E%3Crect x='15' y='5' width='1' height='1' fill='%23f0a500'/%3E%3Crect x='3' y='6' width='1' height='1' fill='%23f0a500'/%3E%3Crect x='7' y='6' width='1' height='1' fill='%23ffcb05'/%3E%3Crect x='10' y='6' width='1' height='1' fill='%23f0a500'/%3E%3Crect x='14' y='6' width='1' height='1' fill='%23ffcb05'/%3E%3Crect x='5' y='12' width='2' height='1' fill='%233a2400'/%3E%3Crect x='11' y='14' width='2' height='1' fill='%233a2400'/%3E%3Crect x='1' y='13' width='1' height='1' fill='%233a2400'/%3E%3C/svg%3E") left top / 64px 64px repeat-x, #2a1900;
+  image-rendering: pixelated;
+}
+@media (max-width: 1023px) {
+  .footer-inner {
+    padding: 14px 16px 0;
+  }
 }
 
 }

@@ -42,6 +42,18 @@ const GLYPHS = {
     "....#....",
     "....#....",
   ],
+  // A magnifier: browse and search the library (the Explore menu link)
+  search: [
+    ".####...",
+    "#....#..",
+    "#....#..",
+    "#....#..",
+    "#....#..",
+    ".####...",
+    "....##..",
+    ".....##.",
+    "......##",
+  ],
   // A shield with a check: your agent stays safe
   shield: [
     "#########",

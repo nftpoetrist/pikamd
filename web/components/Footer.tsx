@@ -1,10 +1,12 @@
 import PageLink from "@/components/PageLink";
+import PikaSprite from "@/components/brand/PikaSprite";
 import { PixelBlock } from "@/components/PixelBlocks";
 import { ARC_TRADEMARK } from "@/components/VisionCards";
 
-// Slim full-width bar flush to the bottom of every page (dashed gold line on the top edge, mirroring the navbar).
+// A floating panel at the bottom of every page, like the navbar (Squeaksy-style skin, DESIGN.md §2).
 // Left: wordmark · center: Built on Arc · right: PikaMd on X, Arc on X, PikaMd docs (/docs; the Arc
-// docs link moved into PikaMd's docs, 2026-10-25) (navbar button skeleton).
+// docs link moved into PikaMd's docs, 2026-10-25) (navbar button skeleton). Under them the PikaMd
+// cat naps on a dotted line, and a strip of pixel grass closes the page (both decoration only).
 // Arc link verified on arc.io (2026-10-10): x.com/arc.
 // PikaMd's X account: @PikaMd0x (2026-11-02).
 // Brand rules (checked 2026-10-15): Arc's logo may only be the official file, unaltered, at least
@@ -56,7 +58,14 @@ export default function Footer() {
             PikaMd docs
           </PageLink>
         </div>
+
+        <div className="footer-nap" aria-hidden="true">
+          <PikaSprite className="footer-cat" sleep />
+          <span className="footer-z" />
+        </div>
       </div>
+
+      <div className="footer-ground" aria-hidden="true" />
     </footer>
   );
 }
