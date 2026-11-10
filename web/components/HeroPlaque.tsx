@@ -58,7 +58,9 @@ const TILES = {
 
 const CLOUD_TILES = {
   "--hp-cloud-top": tile(ISLAND.cloudTopTile),
-  "--hp-cloud-under": tile(ISLAND.cloudUnderTile),
+  "--hp-cloud-bottom": tile(ISLAND.cloudBottomTile),
+  "--hp-cloud-left": tile(ISLAND.cloudLeftTile),
+  "--hp-cloud-right": tile(ISLAND.cloudRightTile),
   "--hp-star": tile(ISLAND.cloudStar),
   "--hp-star-s": tile(ISLAND.cloudStarSmall),
 } as CSSProperties;
@@ -72,26 +74,27 @@ const top = (n: number) => `calc(${a(n)})`;
 const below = (n: number) => `calc(100% + ${a(n)})`; // from the panel's bottom edge
 
 /**
- * Explore's title (user request 2026-11-10: "the same without the cat, thinner, a soft sky white
- * like clouds"): the island's frame, badges and divider in soft white over a night-blue panel
- * (the Arc sea's blues), cloud puffs along the top and a puffy cloud underside. 3px per art pixel.
+ * Explore's title (user requests 2026-11-10: "the same without the cat, thinner, a soft sky white
+ * like clouds", then "the frame is a cloud, not a straight line; a soft white background where the
+ * text reads well"): the whole plaque is one cloud. A soft white body, puffs on every edge and big
+ * puffs on the corners, the island's badges and divider with gold stars. 3px per art pixel.
  */
 function CloudPlaque({ children }: { children: ReactNode }) {
+  const mid = "round(down, 50% - 6.5 * var(--a), 1px)";
   return (
     <div className="hero-plaque is-cloud" style={CLOUD_TILES}>
       <div className="hp-island" aria-hidden="true">
         <span className="hp-panel" />
-        <span className="hp-line hp-line-l" />
-        <span className="hp-line hp-line-r" />
-        <span className="hp-line hp-line-b" />
-        <span className="hp-cloud-under" />
-        <Sprite s={ISLAND.cloudUnderLeft} at={{ x: left(-8), y: below(0) }} />
-        <Sprite s={ISLAND.cloudUnderRight} at={{ x: right(6), y: below(0) }} />
+        <span className="hp-cloud-left" />
+        <span className="hp-cloud-right" />
         <span className="hp-cloud-top" />
-        <Sprite s={ISLAND.cloudTopLeft} at={{ x: left(-8), y: top(-10) }} />
-        <Sprite s={ISLAND.cloudTopRight} at={{ x: right(6), y: top(-10) }} />
-        <Sprite s={ISLAND.cloudGem} className="hp-gem" at={{ x: left(-6), y: "round(down, 50% - 6.5 * var(--a), 1px)" }} />
-        <Sprite s={ISLAND.cloudGem} className="hp-gem" at={{ x: right(7), y: "round(down, 50% - 6.5 * var(--a), 1px)" }} />
+        <span className="hp-cloud-bottom" />
+        <Sprite s={ISLAND.cloudCornerTL} at={{ x: left(-8), y: top(-10) }} />
+        <Sprite s={ISLAND.cloudCornerTR} at={{ x: right(10), y: top(-10) }} />
+        <Sprite s={ISLAND.cloudCornerBL} at={{ x: left(-8), y: below(-7) }} />
+        <Sprite s={ISLAND.cloudCornerBR} at={{ x: right(10), y: below(-7) }} />
+        <Sprite s={ISLAND.cloudGem} className="hp-gem" at={{ x: left(-6), y: mid }} />
+        <Sprite s={ISLAND.cloudGem} className="hp-gem" at={{ x: right(7), y: mid }} />
       </div>
       {children}
     </div>

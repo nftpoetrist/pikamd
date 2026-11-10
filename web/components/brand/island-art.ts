@@ -841,137 +841,255 @@ export const ISLAND = {
   },
   "cloudTopTile": {
     "w": 48,
-    "h": 11,
+    "h": 12,
     "rows": [
-      "................................................",
-      "............................WWWm................",
-      "...........Wm...mm........WWwwwwwm.mm...........",
-      ".........WWwwwmmmmmm.....Wwwwwwwwwmmmmm.........",
-      "......mmWwwwwwwmmmmmm...mWwwwwwwwwmmmmmWWWm.....",
-      "..WWWmmWwwwwwwwwmmmWWWmmWwwwwwwwwwwmmmWwwwwmmmmm",
-      "mWwwwwwwwwwwwwwwmmWwwwwwwwwwwwwwwwwmmWwwwwwwmmmm",
-      "mWwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwmmmm",
-      "Wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwmmm",
-      "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwmm",
-      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmss"
+      "..........ooooo...........ooWWWWWWoo............",
+      "........ooWWWWWoo........oWWwwwwwwWWo...........",
+      ".......oWWwwwwwWWo.......oWwwwwwwwwmo...........",
+      "..oooo.oWwwwwwwwmo......oWwwwwwwwwwwWo.oooooo...",
+      ".oWWWWoWwwwwwwwwwWoooooooWwwwwwwwwwwmooWWWWWWo..",
+      "oWwwwwWwwwwwwwwwwmoWWWWWWwwwwwwwwwwwwWWwwwwwwWo.",
+      "WwwwwwwwwwwwwwwwwwWwwwwwwwwwwwwwwwwwwwwwwwwwwmoo",
+      "WwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwWo",
+      "Wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwmo",
+      "Wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwmo",
+      "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwW",
+      "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww"
     ],
     "palette": {
       "W": "#ffffff",
-      "w": "#f1f5fd",
-      "m": "#dde4f5",
-      "s": "#c3cde8",
-      "d": "#a4b0d6"
+      "w": "#f6f9ff",
+      "m": "#e3e9f7",
+      "s": "#cbd4ee",
+      "o": "#a9b6dc"
     }
   },
-  "cloudTopLeft": {
-    "w": 14,
-    "h": 11,
-    "rows": [
-      "..............",
-      "..............",
-      "..........Wm..",
-      "........WWwwwW",
-      "......mWwwwwww",
-      "...WWWWwwwwwww",
-      "..Wwwwwwwwwwww",
-      "..Wwwwwwwwwwww",
-      ".Wwwwwwwwwwwww",
-      ".Wwwwwwwwwwwww",
-      ".mmmmmmmmmmmmm"
-    ],
-    "palette": {
-      "W": "#ffffff",
-      "w": "#f1f5fd",
-      "m": "#dde4f5",
-      "s": "#c3cde8",
-      "d": "#a4b0d6"
-    }
-  },
-  "cloudTopRight": {
-    "w": 14,
-    "h": 11,
-    "rows": [
-      "..............",
-      "..............",
-      "..Wm..........",
-      "WWwwwm........",
-      "wwwwwwmm......",
-      "wwwwwwwwWWm...",
-      "wwwwwwwwwwwm..",
-      "wwwwwwwwwwwm..",
-      "wwwwwwwwwwwwm.",
-      "wwwwwwwwwwwww.",
-      "mmmmmmmmmmmmm."
-    ],
-    "palette": {
-      "W": "#ffffff",
-      "w": "#f1f5fd",
-      "m": "#dde4f5",
-      "s": "#c3cde8",
-      "d": "#a4b0d6"
-    }
-  },
-  "cloudUnderTile": {
+  "cloudBottomTile": {
     "w": 52,
-    "h": 8,
+    "h": 9,
     "rows": [
-      "mmWWWWWWWWWWmmmmmWWWWWWWWmmWWWWWWWWWWWWmmmWWWWWWWWmm",
-      "sswwwwwwwwwwssssswwwwwwwwsswwwwwwwwwwwwssswwwwwwwwss",
-      "sswwwwwwwwwwssssswwwwwwwwsswwwwwwwwwwwwssswwwwwwwwss",
-      "sdmwwwwwwwwmsssssmwwwwwwmssmwwwwwwwwwwmsssmwwwwwwmss",
-      "s.swwwwwwwwsssssssmwwwwmsssswwwwwwwwwwsssssmwwwwmsss",
-      "d..mwwwwwwmdssssd.smmmmsssssmwwwwwwwwmssssdsmmmmsddd",
-      "...smmmmmms.dddd...ssssdsssssmmmmmmmmsdddd..ssss....",
-      "....ssssss..............dddddssssssss..............."
+      "mwwwwwwwwwwwwmmmwwwwwwwwwmwwwwwwwwwwwwwwmwwwwwwwwwwm",
+      "swwwwwwwwwwwwssswwwwwwwwwswwwwwwwwwwwwwwswwwwwwwwwws",
+      "oWwwwwwwwwwwmoooWwwwwwwwmoWwwwwwwwwwwwwmoWwwwwwwwwmo",
+      "oWwwwwwwwwwwmo.oWmwwwwwmsoWwwwwwwwwwwwwsoWmwwwwwwmso",
+      "oWmwwwwwwwwmso..oWmmmmmso.oWwwwwwwwwwwmo.oWmmmmmmso.",
+      ".oWmmmmmmmmso....oWsssso..oWmmwwwwwwmmso..oWssssso..",
+      "..oWssssssso......ooooo....oWsmmmmmmsso....oooooo...",
+      "...oooooooo.................ooWsssssoo..............",
+      "..............................oooooo................"
     ],
     "palette": {
       "W": "#ffffff",
-      "w": "#f1f5fd",
-      "m": "#dde4f5",
-      "s": "#c3cde8",
-      "d": "#a4b0d6"
+      "w": "#f6f9ff",
+      "m": "#e3e9f7",
+      "s": "#cbd4ee",
+      "o": "#a9b6dc"
     }
   },
-  "cloudUnderLeft": {
-    "w": 14,
-    "h": 8,
+  "cloudLeftTile": {
+    "w": 8,
+    "h": 30,
     "rows": [
-      "mmWWWWWWWWWWWW",
-      "sswwwwwwwwwwww",
-      "..mwwwwwwwwwww",
-      "..swwwwmwwwwww",
-      "...mmmmsmwwwwm",
-      "...ssssssmmmms",
-      "......dddssss.",
-      ".............."
+      "..ooWWww",
+      ".oWWwwww",
+      "oWwwwwww",
+      "Wwwwwwww",
+      "Wwwwwwww",
+      "Wmwwwwww",
+      "oWmmwwww",
+      ".oWsmmww",
+      "..ooWsww",
+      "....ooWw",
+      "....ooWw",
+      "...oWWww",
+      "..oWwwww",
+      ".oWwwwww",
+      ".oWwwwww",
+      ".oWwwwww",
+      ".oWwwwww",
+      ".oWmwwww",
+      "..oWmmww",
+      "...oWsww",
+      "....ooWw",
+      "...oooWw",
+      ".ooWWWww",
+      "oWWwwwww",
+      "oWwwwwww",
+      "oWwwwwww",
+      "oWmwwwww",
+      "oWsmmmww",
+      ".ooWssww",
+      "...oooWw"
     ],
     "palette": {
       "W": "#ffffff",
-      "w": "#f1f5fd",
-      "m": "#dde4f5",
-      "s": "#c3cde8",
-      "d": "#a4b0d6"
+      "w": "#f6f9ff",
+      "m": "#e3e9f7",
+      "s": "#cbd4ee",
+      "o": "#a9b6dc"
     }
   },
-  "cloudUnderRight": {
-    "w": 14,
-    "h": 8,
+  "cloudRightTile": {
+    "w": 8,
+    "h": 30,
     "rows": [
-      "WWWWWWWWWWWWmm",
-      "wwwwwwwwwwwwss",
-      "wwwwwwwwwwwm..",
-      "wwwwwwmwwwws..",
-      "mwwwwmsmmmm...",
-      "smmmmssssss...",
-      ".ssssddd......",
-      ".............."
+      "wwwwwwmo",
+      "wwwwwmmo",
+      "wwmmmsso",
+      "wwsssoo.",
+      "wmooo...",
+      "wwWWoo..",
+      "wwwwWWo.",
+      "wwwwwwWo",
+      "wwwwwwwW",
+      "wwwwwwwm",
+      "wwwwwwms",
+      "wwwwmmso",
+      "wwmmsso.",
+      "wwssoo..",
+      "wmoo....",
+      "wmoo....",
+      "wwWWo...",
+      "wwwwWo..",
+      "wwwwwWo.",
+      "wwwwwmo.",
+      "wwwwwmo.",
+      "wwwwwmo.",
+      "wwwwmso.",
+      "wwmmso..",
+      "wwsso...",
+      "wmoo....",
+      "wmooo...",
+      "wwWWWoo.",
+      "wwwwwWWo",
+      "wwwwwwmo"
     ],
     "palette": {
       "W": "#ffffff",
-      "w": "#f1f5fd",
-      "m": "#dde4f5",
-      "s": "#c3cde8",
-      "d": "#a4b0d6"
+      "w": "#f6f9ff",
+      "m": "#e3e9f7",
+      "s": "#cbd4ee",
+      "o": "#a9b6dc"
+    }
+  },
+  "cloudCornerTL": {
+    "w": 18,
+    "h": 18,
+    "rows": [
+      ".....oooooo.oooo.o",
+      "....oWWWWWWoWWWWoo",
+      "...oWwwwwwwWwwwwWo",
+      "..oWwwwwwwwwwwwwwW",
+      ".oWwwwwwwwwwwwwwww",
+      "oWwwwwwwwwwwwwwwww",
+      "oWwwwwwwwwwwwwwwww",
+      "oWwwwwwwwwwwwwwwwm",
+      "oWwwwwwwwwwwwwwwws",
+      "oWwwwwwwwwwwwwwwmo",
+      "oWwwwwwwwwwwwwwwwW",
+      "Wwwwwwwwwwwwwwwwww",
+      "Wwwwwwwwwwwwwwwwww",
+      "Wwwwwwwwwwwwwwwwww",
+      "Wmwwwwwwwwwwwwwwww",
+      "oWmmmmmmwwwwwwwwww",
+      ".oWssssswwwwwwwwww",
+      "ooooooooWwwwwwwwww"
+    ],
+    "palette": {
+      "W": "#ffffff",
+      "w": "#f6f9ff",
+      "m": "#e3e9f7",
+      "s": "#cbd4ee",
+      "o": "#a9b6dc"
+    }
+  },
+  "cloudCornerTR": {
+    "w": 18,
+    "h": 18,
+    "rows": [
+      "o.oooo.oooooo.....",
+      "ooWWWWoWWWWWWo....",
+      "oWwwwwWwwwwwwWo...",
+      "WwwwwwwwwwwwwwWo..",
+      "wwwwwwwwwwwwwwwWo.",
+      "wwwwwwwwwwwwwwwwWo",
+      "wwwwwwwwwwwwwwwwmo",
+      "mwwwwwwwwwwwwwwwmo",
+      "swwwwwwwwwwwwwwwmo",
+      "oWwwwwwwwwwwwwwwmo",
+      "Wwwwwwwwwwwwwwwwmo",
+      "wwwwwwwwwwwwwwwwwW",
+      "wwwwwwwwwwwwwwwwwm",
+      "wwwwwwwwwwwwwwwwwm",
+      "wwwwwwwwwwwwwwwwms",
+      "wwwwwwwwwwmmmmmmso",
+      "wwwwwwwwwwsssssso.",
+      "wwwwwwwwwmoooooooo"
+    ],
+    "palette": {
+      "W": "#ffffff",
+      "w": "#f6f9ff",
+      "m": "#e3e9f7",
+      "s": "#cbd4ee",
+      "o": "#a9b6dc"
+    }
+  },
+  "cloudCornerBL": {
+    "w": 18,
+    "h": 16,
+    "rows": [
+      "oWwwwwwwwwwwwwwwww",
+      "Wwwwwwwwwwwwwwwwww",
+      "Wwwwwwwwwwwwwwwwww",
+      "Wwwwwwwwwwwwwwwwww",
+      "Wwwwwwwwwwwwwwwwww",
+      "oWwwwwwwwwwwwwwwww",
+      "oWwwwwwwwwwwwwwwww",
+      "oWwwwwwwwwwwwwwwww",
+      "oWwwwwwwwwwwwwwwww",
+      "oWwwwwwwwwwwwwwwww",
+      ".oWwwwwwwwwwwwwwww",
+      ".oWmmwwwwwwwwwwwwm",
+      "..oWsmmmmmmmmmmmms",
+      "...ooWssssssssssso",
+      ".....ooooooooooooo",
+      ".................o"
+    ],
+    "palette": {
+      "W": "#ffffff",
+      "w": "#f6f9ff",
+      "m": "#e3e9f7",
+      "s": "#cbd4ee",
+      "o": "#a9b6dc"
+    }
+  },
+  "cloudCornerBR": {
+    "w": 18,
+    "h": 16,
+    "rows": [
+      "wwwwwwwwwwwwwwwwmo",
+      "wwwwwwwwwwwwwwwwwW",
+      "wwwwwwwwwwwwwwwwwm",
+      "wwwwwwwwwwwwwwwwwm",
+      "wwwwwwwwwwwwwwwwws",
+      "wwwwwwwwwwwwwwwwmo",
+      "wwwwwwwwwwwwwwwwmo",
+      "wwwwwwwwwwwwwwwwmo",
+      "wwwwwwwwwwwwwwwwmo",
+      "wwwwwwwwwwwwwwwwso",
+      "wwwwwwwwwwwwwwwmo.",
+      "mwwwwwwwwwwwwmmso.",
+      "smmmmmmmmmmmmsso..",
+      "oWsssssssssssoo...",
+      "ooooooooooooo.....",
+      "o................."
+    ],
+    "palette": {
+      "W": "#ffffff",
+      "w": "#f6f9ff",
+      "m": "#e3e9f7",
+      "s": "#cbd4ee",
+      "o": "#a9b6dc"
     }
   },
   "cloudGem": {
@@ -993,14 +1111,14 @@ export const ISLAND = {
       "....GGGGG...."
     ],
     "palette": {
-      "G": "#eaf0fc",
-      "B": "#94a2cf",
-      "D": "#112149",
-      "E": "#182b5e",
-      "h": "#ffffff",
-      "Y": "#eaf0fc",
-      "y": "#d5ddf3",
-      "s": "#b7c3e3",
+      "G": "#a9b6dc",
+      "B": "#cbd4ee",
+      "D": "#f6f9ff",
+      "E": "#eef2fb",
+      "h": "#fff3b0",
+      "Y": "#ffcb05",
+      "y": "#f0a500",
+      "s": "#c47a00",
       "W": "#ffffff"
     }
   },
@@ -1017,14 +1135,14 @@ export const ISLAND = {
       "...y..."
     ],
     "palette": {
-      "G": "#eaf0fc",
-      "B": "#94a2cf",
-      "D": "#112149",
-      "E": "#182b5e",
-      "h": "#ffffff",
-      "Y": "#eaf0fc",
-      "y": "#d5ddf3",
-      "s": "#b7c3e3",
+      "G": "#a9b6dc",
+      "B": "#cbd4ee",
+      "D": "#f6f9ff",
+      "E": "#eef2fb",
+      "h": "#fff3b0",
+      "Y": "#ffcb05",
+      "y": "#f0a500",
+      "s": "#c47a00",
       "W": "#ffffff"
     }
   },
@@ -1037,14 +1155,14 @@ export const ISLAND = {
       ".y."
     ],
     "palette": {
-      "G": "#eaf0fc",
-      "B": "#94a2cf",
-      "D": "#112149",
-      "E": "#182b5e",
-      "h": "#ffffff",
-      "Y": "#eaf0fc",
-      "y": "#d5ddf3",
-      "s": "#b7c3e3",
+      "G": "#a9b6dc",
+      "B": "#cbd4ee",
+      "D": "#f6f9ff",
+      "E": "#eef2fb",
+      "h": "#fff3b0",
+      "Y": "#ffcb05",
+      "y": "#f0a500",
+      "s": "#c47a00",
       "W": "#ffffff"
     }
   }

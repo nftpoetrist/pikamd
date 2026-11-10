@@ -469,53 +469,89 @@ const DROP_SMALL = check("drop small", [
 // A small round hole in the underside, near the middle (x centre + 49, y 77)
 const HOLE_MAP = check("hole", [".OO.", "OsLO", "OLLO", ".OO."]);
 
-// ── Explore: the cloud version (user request 2026-11-10: "the same without the cat, thinner,
-// a soft sky white like clouds, fully in the site's style"). The island's frame, badges and
-// divider, recoloured soft white; the grass band becomes a row of cloud puffs, the dirt and
-// stalactites a puffy cloud underside. Drawn at 3px per art pixel (2px on short screens and phones).
-const CLOUD = { W: "#ffffff", w: "#f1f5fd", m: "#dde4f5", s: "#c3cde8", d: "#a4b0d6" };
+// ── Explore: the cloud version (user requests 2026-11-10: "the same without the cat, thinner, a
+// soft sky white like clouds", then "the frame must be a cloud, not a straight line; a pure white
+// background, a soft cloud white where the text reads well"). The whole plaque is one cloud: a
+// white body with puffs on every edge, big puffs on the corners, lit from the top left, a soft
+// periwinkle outline. Built from unions of ellipses (in art pixels) so any width tiles cleanly.
+const CLOUD = {
+  W: "#ffffff", // lit edge
+  w: "#f6f9ff", // body (also the panel inside, globals.css)
+  m: "#e3e9f7", // shade
+  s: "#cbd4ee", // deep shade, the underside
+  o: "#a9b6dc", // outline
+};
 
-/** Top edge row of a row of semicircular puffs (periodic when `period` is set). */
-const puffTops = (width, puffs, base, period = 0, k = 1) =>
-  Array.from({ length: width }, (_, x) => {
-    let top = base + 1;
-    for (const [cx, r] of puffs) for (const shift of period ? [-period, 0, period] : [0]) {
-      const dx = x + 0.5 - (cx + shift);
-      if (Math.abs(dx) < r) top = Math.min(top, base - Math.floor(k * Math.sqrt(r * r - dx * dx)));
+/**
+ * A piece of the cloud: cells inside any ellipse [cx, cy, rx, ry] or body rect [x0, y0, x1, y1]
+ * (end-exclusive). `period` wraps the ellipses (repeating tiles); `inner` lists the sides where the
+ * piece continues into the cloud (no outline or lit edge there).
+ */
+function cloudPiece(w, h, { ellipses = [], rects = [], periodX = 0, periodY = 0, inner = [] }) {
+  const inside = (x, y) => {
+    const px = x + 0.5, py = y + 0.5;
+    if (rects.some(([x0, y0, x1, y1]) => px >= x0 && px < x1 && py >= y0 && py < y1)) return true;
+    for (const [cx, cy, rx, ry] of ellipses)
+      for (const sx of periodX ? [-periodX, 0, periodX] : [0])
+        for (const sy of periodY ? [-periodY, 0, periodY] : [0])
+          if (((px - cx - sx) / rx) ** 2 + ((py - cy - sy) / ry) ** 2 < 1) return true;
+    return false;
+  };
+  const filled = (x, y) => {
+    if (x < 0 || x >= w) { if (periodX) x = (x + w) % w; else return inner.includes(x < 0 ? "left" : "right"); }
+    if (y < 0 || y >= h) { if (periodY) y = (y + h) % h; else return inner.includes(y < 0 ? "top" : "bottom"); }
+    return inside(x, y);
+  };
+  const g = grid(w, h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    if (inside(x, y)) {
+      const up = filled(x, y - 1), left = filled(x - 1, y), down = filled(x, y + 1), right = filled(x + 1, y);
+      g[y][x] = !up || !left ? "W" : !down ? "s" : !filled(x, y + 2) || !right ? "m" : "w";
+    } else if (filled(x, y - 1) || filled(x - 1, y) || filled(x, y + 1) || filled(x + 1, y)) {
+      g[y][x] = "o";
     }
-    return Math.max(0, top);
-  });
-
-/** Cloud tops, two layers: shaded puffs behind, white puffs in front (lit from the top left, the
- * right-hand slopes in shade), all resting on a body whose bottom row is `base`. */
-function cloudTop(width, front, back, period = 0, base = 10) {
-  const g = grid(width, base + 1);
-  const bt = puffTops(width, back, base, period, 1.35), ft = puffTops(width, front, base, period, 1.35);
-  for (let x = 0; x < width; x++) for (let y = bt[x]; y <= base; y++) g[y][x] = y === base ? "s" : "m";
-  for (let x = 0; x < width; x++) for (let y = ft[x]; y <= base; y++) {
-    const lit = (y === ft[x] && (x === 0 || ft[x - 1] >= ft[x])) || (y === ft[x] + 1 && x > 0 && ft[x - 1] > y);
-    g[y][x] = y === base ? "m" : lit ? "W" : "w";
   }
-  for (let x = 0; x < width - 1; x++) if (ft[x + 1] > ft[x]) for (let y = ft[x]; y < Math.min(ft[x + 1], base - 1); y++) g[y][x] = "m";
-  return toRows(g);
-}
-/** Cloud underside, two layers: puffs hang from a `body` rows deep band; the back ones darker. */
-function cloudUnder(width, front, back, period = 0, body = 2, depth = 8) {
-  const g = grid(width, depth);
-  const hang = (puffs) => puffTops(width, puffs, depth - 1 - body, period, 1.2).map((t) => depth - 1 - t);
-  const bb = hang(back), fb = hang(front);
-  for (let x = 0; x < width; x++) for (let y = 0; y <= Math.min(bb[x], depth - 1); y++) g[y][x] = y === bb[x] ? "d" : "s";
-  for (let x = 0; x < width; x++) for (let y = 0; y <= Math.min(fb[x], depth - 1); y++) g[y][x] = y === fb[x] ? "s" : y === fb[x] - 1 ? "m" : y === 0 ? "W" : "w";
   return toRows(g);
 }
 
-const CLOUD_TOP_TILE = check("cloud top tile", cloudTop(48, [[4, 4], [12, 6], [21, 4], [30, 7], [41, 5]], [[8, 5], [17, 6], [26, 5], [36, 6], [46, 4]], 48));
-const CLOUD_TOP_LEFT = check("cloud top left", cloudTop(14, [[5, 4], [11, 6]], [[8, 5], [14, 5]]));
-const CLOUD_TOP_RIGHT = check("cloud top right", cloudTop(14, [[3, 6], [9, 4]], [[0, 5], [6, 5]]));
-const CLOUD_UNDER_TILE = check("cloud under tile", cloudUnder(52, [[7, 5], [21, 4], [33, 6], [46, 4]], [[14, 4], [27, 5], [40, 4], [51, 3]], 52, 2));
-const CLOUD_UNDER_LEFT = check("cloud under left", cloudUnder(14, [[5, 3], [11, 4]], [[8, 4], [14, 3]], 0, 2));
-const CLOUD_UNDER_RIGHT = check("cloud under right", cloudUnder(14, [[3, 4], [9, 3]], [[0, 3], [6, 4]], 0, 2));
-const CLOUD_GEM = { G: "#eaf0fc", B: "#94a2cf", D: "#112149", E: "#182b5e", h: "#ffffff", Y: "#eaf0fc", y: "#d5ddf3", s: "#b7c3e3", W: "#ffffff" };
+// Top edge: puffs rising 10 art pixels over the panel (rows y −11…0); the bottom row is body
+const CLOUD_TOP_TILE = check("cloud top", cloudPiece(48, 12, {
+  ellipses: [[4, 9, 4.5, 5], [12.5, 8, 6, 7.5], [21.5, 9.5, 4.5, 5], [31, 7.5, 7, 8], [42, 9, 5, 5.5]],
+  rects: [[0, 10, 48, 12]], periodX: 48, inner: ["bottom"],
+}));
+// Bottom edge: puffs hanging 8 art pixels under the panel (rows y H−1…H+7)
+const CLOUD_BOTTOM_TILE = check("cloud bottom", cloudPiece(52, 9, {
+  ellipses: [[7, 2, 6.5, 5.5], [20.5, 2, 4.5, 4], [33, 2, 7, 6], [46, 2, 5, 4.5]],
+  rects: [[0, 0, 52, 2]], periodX: 52, inner: ["top"],
+}));
+// Sides: puffs bulging 6 art pixels out of the panel, repeating every 30 rows
+const CLOUD_LEFT_TILE = check("cloud left", cloudPiece(8, 30, {
+  ellipses: [[6.5, 4.5, 6.5, 4.5], [7, 15.5, 5.5, 5], [6.5, 25.5, 6, 4]],
+  rects: [[6, 0, 8, 30]], periodY: 30, inner: ["right"],
+}));
+const CLOUD_RIGHT_TILE = check("cloud right", cloudPiece(8, 30, {
+  ellipses: [[1.5, 9.5, 6.5, 4.5], [1, 20.5, 5.5, 5], [1.5, 0.5, 6, 4]],
+  rects: [[0, 0, 2, 30]], periodY: 30, inner: ["left"],
+}));
+// Corners: one big puff each, over where the edges meet (18×18, the panel's corner at cell 8,10)
+const CLOUD_CORNER_TL = check("cloud corner tl", cloudPiece(18, 18, {
+  ellipses: [[8, 9, 7.5, 8], [3.5, 13, 3.5, 4], [14, 6, 4.5, 5]],
+  rects: [[8, 10, 18, 18]], inner: ["right", "bottom"],
+}));
+const CLOUD_CORNER_TR = check("cloud corner tr", cloudPiece(18, 18, {
+  ellipses: [[10, 9, 7.5, 8], [14.5, 13, 3.5, 4], [4, 6, 4.5, 5]],
+  rects: [[0, 10, 10, 18]], inner: ["left", "bottom"],
+}));
+const CLOUD_CORNER_BL = check("cloud corner bl", cloudPiece(18, 16, {
+  ellipses: [[8, 7, 7.5, 7], [3.5, 3, 3.5, 4], [14, 10, 4.5, 4.5]],
+  rects: [[8, 0, 18, 7]], inner: ["right", "top"],
+}));
+const CLOUD_CORNER_BR = check("cloud corner br", cloudPiece(18, 16, {
+  ellipses: [[10, 7, 7.5, 7], [14.5, 3, 3.5, 4], [4, 10, 4.5, 4.5]],
+  rects: [[0, 0, 10, 7]], inner: ["left", "top"],
+}));
+// Badges and divider stars on the cloud: periwinkle rings, gold stars (the site's gold)
+const CLOUD_GEM = { G: "#a9b6dc", B: "#cbd4ee", D: "#f6f9ff", E: "#eef2fb", h: "#fff3b0", Y: "#ffcb05", y: "#f0a500", s: "#c47a00", W: "#ffffff" };
 
 // ── Output ────────────────────────────────────────────────────────────────────────────────
 const sprite = (rows, palette) => ({ w: rows[0].length, h: rows.length, rows, palette });
@@ -545,11 +581,13 @@ const SPRITES = {
   frameTL: sprite(FRAME_TL, FRAME),
   frameTR: sprite(FRAME_TR, FRAME),
   cloudTopTile: sprite(CLOUD_TOP_TILE, CLOUD),
-  cloudTopLeft: sprite(CLOUD_TOP_LEFT, CLOUD),
-  cloudTopRight: sprite(CLOUD_TOP_RIGHT, CLOUD),
-  cloudUnderTile: sprite(CLOUD_UNDER_TILE, CLOUD),
-  cloudUnderLeft: sprite(CLOUD_UNDER_LEFT, CLOUD),
-  cloudUnderRight: sprite(CLOUD_UNDER_RIGHT, CLOUD),
+  cloudBottomTile: sprite(CLOUD_BOTTOM_TILE, CLOUD),
+  cloudLeftTile: sprite(CLOUD_LEFT_TILE, CLOUD),
+  cloudRightTile: sprite(CLOUD_RIGHT_TILE, CLOUD),
+  cloudCornerTL: sprite(CLOUD_CORNER_TL, CLOUD),
+  cloudCornerTR: sprite(CLOUD_CORNER_TR, CLOUD),
+  cloudCornerBL: sprite(CLOUD_CORNER_BL, CLOUD),
+  cloudCornerBR: sprite(CLOUD_CORNER_BR, CLOUD),
   cloudGem: sprite(GEM_MAP, CLOUD_GEM),
   cloudStar: sprite(STAR_MAP, CLOUD_GEM),
   cloudStarSmall: sprite(STAR_SMALL_MAP, CLOUD_GEM),
