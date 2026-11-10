@@ -14,7 +14,6 @@ import { useSessionWallet, useSignIn } from "@/lib/wallet/session";
 import { formatUsdc } from "@/lib/tips/amount";
 import { useKnownWallet } from "@/lib/wallet/known";
 import { openWalletModal } from "@/lib/wallet/modal";
-import NavIcon from "@/components/NavIcon";
 
 const shortAddress = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 const noop = () => () => {};
@@ -30,9 +29,6 @@ export default function WalletButton({ className = "" }: { className?: string })
     return (
       <button type="button" className={`btn-ghost ${className}`} onClick={openWalletModal}>
         <span className="nav-dot" />
-        <span className="nav-btn-icon">
-          <NavIcon name="wallet" />
-        </span>
         Connect Wallet
       </button>
     );

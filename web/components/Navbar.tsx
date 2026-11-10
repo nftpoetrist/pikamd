@@ -4,14 +4,14 @@ import PageLink from "@/components/PageLink";
 import { usePathname } from "next/navigation";
 import { Suspense, useLayoutEffect, useRef, useState } from "react";
 import PikaSprite from "@/components/brand/PikaSprite";
-import NavIcon, { type NavIconName } from "@/components/NavIcon";
+import PixelGlyph, { type GlyphName } from "@/components/PixelGlyph";
 import PikaGoldBox from "@/components/wallet/PikaGoldBox";
 import WalletButton from "@/components/wallet/WalletButton";
 
-const LINKS: { href: string; label: string; icon: NavIconName }[] = [
-  { href: "/explore", label: "Explore", icon: "explore" },
-  { href: "/collection", label: "My Collection", icon: "collection" },
-  { href: "/connect", label: "Connect your agent", icon: "agent" },
+const LINKS: { href: string; label: string; icon: GlyphName }[] = [
+  { href: "/explore", label: "Explore", icon: "search" },
+  { href: "/collection", label: "My Collection", icon: "collect" },
+  { href: "/connect", label: "Connect your agent", icon: "plug" },
 ];
 
 function NavLinks({ pathname, onNavigate }: { pathname: string | null; onNavigate: () => void }) {
@@ -20,7 +20,7 @@ function NavLinks({ pathname, onNavigate }: { pathname: string | null; onNavigat
     <PageLink key={href} href={href} className="nav-link" aria-current={isActive(href) ? "page" : undefined} onClick={onNavigate}>
       {isActive(href) && <span className="nav-dot" />}
       <span className="nav-icon">
-        <NavIcon name={icon} />
+        <PixelGlyph name={icon} scale={2} />
       </span>
       {label}
     </PageLink>
@@ -120,10 +120,7 @@ export default function Navbar() {
 
         <div className="nav-right">
           <PageLink href="/new" className="btn-gold hidden sm:inline-flex">
-            <span className="nav-btn-icon">
-              <NavIcon name="publish" />
-            </span>
-            <span className="nav-btn-plus" aria-hidden="true">+</span> Publish
+            <span aria-hidden="true">+</span> Publish
           </PageLink>
           <WalletButton className="hidden sm:inline-flex" />
           <PikaGoldBox />
@@ -149,10 +146,7 @@ export default function Navbar() {
         <div className="nav-mobile">
           {links}
           <PageLink href="/new" className="btn-gold mt-2 justify-center sm:hidden" onClick={() => setOpen(false)}>
-            <span className="nav-btn-icon">
-              <NavIcon name="publish" />
-            </span>
-            <span className="nav-btn-plus" aria-hidden="true">+</span> Publish
+            <span aria-hidden="true">+</span> Publish
           </PageLink>
           <WalletButton className="justify-center sm:hidden" />
         </div>
