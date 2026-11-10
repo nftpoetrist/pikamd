@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import ExploreLibrary from "@/components/ExploreLibrary";
+import HeroPlaque from "@/components/HeroPlaque";
 import PageTransition from "@/components/PageTransition";
 import { listGuidelineCards } from "@/lib/data/guidelines";
 
@@ -17,15 +18,17 @@ export default async function ExplorePage() {
     <PageTransition>
       <main className="flex flex-1 flex-col">
         <div className="page-center page-center-high hero-compact explore-hero">
-          <h1 className="hero-title">
-            Give your agent
-            <br />
-            <span>a creative edge</span>
-          </h1>
-          <p className="hero-sub">
-            <span>Browse guidelines shared by the community</span>{" "}
-            <span>Add the ones you like to your collection and your agent can use them over MCP</span>
-          </p>
+          <HeroPlaque variant="cloud">
+            <h1 className="hero-title">
+              Give your agent
+              <br />
+              <span>a creative edge</span>
+            </h1>
+            <p className="hero-sub">
+              <span>Browse guidelines shared by the community</span>{" "}
+              <span>Add the ones you like to your collection and your agent can use them over MCP</span>
+            </p>
+          </HeroPlaque>
           <ExploreLibrary initial={guidelines} />
         </div>
       </main>

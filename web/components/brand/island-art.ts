@@ -838,5 +838,214 @@ export const ISLAND = {
       "G": "#f1b34e",
       "g": "#d8962f"
     }
+  },
+  "cloudTopTile": {
+    "w": 48,
+    "h": 11,
+    "rows": [
+      "................................................",
+      "............................WWWm................",
+      "...........Wm...mm........WWwwwwwm.mm...........",
+      ".........WWwwwmmmmmm.....Wwwwwwwwwmmmmm.........",
+      "......mmWwwwwwwmmmmmm...mWwwwwwwwwmmmmmWWWm.....",
+      "..WWWmmWwwwwwwwwmmmWWWmmWwwwwwwwwwwmmmWwwwwmmmmm",
+      "mWwwwwwwwwwwwwwwmmWwwwwwwwwwwwwwwwwmmWwwwwwwmmmm",
+      "mWwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwmmmm",
+      "Wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwmmm",
+      "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwmm",
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmss"
+    ],
+    "palette": {
+      "W": "#ffffff",
+      "w": "#f1f5fd",
+      "m": "#dde4f5",
+      "s": "#c3cde8",
+      "d": "#a4b0d6"
+    }
+  },
+  "cloudTopLeft": {
+    "w": 14,
+    "h": 11,
+    "rows": [
+      "..............",
+      "..............",
+      "..........Wm..",
+      "........WWwwwW",
+      "......mWwwwwww",
+      "...WWWWwwwwwww",
+      "..Wwwwwwwwwwww",
+      "..Wwwwwwwwwwww",
+      ".Wwwwwwwwwwwww",
+      ".Wwwwwwwwwwwww",
+      ".mmmmmmmmmmmmm"
+    ],
+    "palette": {
+      "W": "#ffffff",
+      "w": "#f1f5fd",
+      "m": "#dde4f5",
+      "s": "#c3cde8",
+      "d": "#a4b0d6"
+    }
+  },
+  "cloudTopRight": {
+    "w": 14,
+    "h": 11,
+    "rows": [
+      "..............",
+      "..............",
+      "..Wm..........",
+      "WWwwwm........",
+      "wwwwwwmm......",
+      "wwwwwwwwWWm...",
+      "wwwwwwwwwwwm..",
+      "wwwwwwwwwwwm..",
+      "wwwwwwwwwwwwm.",
+      "wwwwwwwwwwwww.",
+      "mmmmmmmmmmmmm."
+    ],
+    "palette": {
+      "W": "#ffffff",
+      "w": "#f1f5fd",
+      "m": "#dde4f5",
+      "s": "#c3cde8",
+      "d": "#a4b0d6"
+    }
+  },
+  "cloudUnderTile": {
+    "w": 52,
+    "h": 8,
+    "rows": [
+      "mmWWWWWWWWWWmmmmmWWWWWWWWmmWWWWWWWWWWWWmmmWWWWWWWWmm",
+      "sswwwwwwwwwwssssswwwwwwwwsswwwwwwwwwwwwssswwwwwwwwss",
+      "sswwwwwwwwwwssssswwwwwwwwsswwwwwwwwwwwwssswwwwwwwwss",
+      "sdmwwwwwwwwmsssssmwwwwwwmssmwwwwwwwwwwmsssmwwwwwwmss",
+      "s.swwwwwwwwsssssssmwwwwmsssswwwwwwwwwwsssssmwwwwmsss",
+      "d..mwwwwwwmdssssd.smmmmsssssmwwwwwwwwmssssdsmmmmsddd",
+      "...smmmmmms.dddd...ssssdsssssmmmmmmmmsdddd..ssss....",
+      "....ssssss..............dddddssssssss..............."
+    ],
+    "palette": {
+      "W": "#ffffff",
+      "w": "#f1f5fd",
+      "m": "#dde4f5",
+      "s": "#c3cde8",
+      "d": "#a4b0d6"
+    }
+  },
+  "cloudUnderLeft": {
+    "w": 14,
+    "h": 8,
+    "rows": [
+      "mmWWWWWWWWWWWW",
+      "sswwwwwwwwwwww",
+      "..mwwwwwwwwwww",
+      "..swwwwmwwwwww",
+      "...mmmmsmwwwwm",
+      "...ssssssmmmms",
+      "......dddssss.",
+      ".............."
+    ],
+    "palette": {
+      "W": "#ffffff",
+      "w": "#f1f5fd",
+      "m": "#dde4f5",
+      "s": "#c3cde8",
+      "d": "#a4b0d6"
+    }
+  },
+  "cloudUnderRight": {
+    "w": 14,
+    "h": 8,
+    "rows": [
+      "WWWWWWWWWWWWmm",
+      "wwwwwwwwwwwwss",
+      "wwwwwwwwwwwm..",
+      "wwwwwwmwwwws..",
+      "mwwwwmsmmmm...",
+      "smmmmssssss...",
+      ".ssssddd......",
+      ".............."
+    ],
+    "palette": {
+      "W": "#ffffff",
+      "w": "#f1f5fd",
+      "m": "#dde4f5",
+      "s": "#c3cde8",
+      "d": "#a4b0d6"
+    }
+  },
+  "cloudGem": {
+    "w": 13,
+    "h": 13,
+    "rows": [
+      "....GGGGG....",
+      "..GGBBBBBGG..",
+      ".GBBDDhDDBBG.",
+      ".GBDDDhDDDBG.",
+      "GBDDDhhYDDDBG",
+      "GBDDhhhYYDDBG",
+      "GBhhhhWYYYyBG",
+      "GBDDYYYyyDDBG",
+      "GBDDDYyyDDDBG",
+      ".GBDDDyDDDBG.",
+      ".GBBDDsDDBBG.",
+      "..GGBBBBBGG..",
+      "....GGGGG...."
+    ],
+    "palette": {
+      "G": "#eaf0fc",
+      "B": "#94a2cf",
+      "D": "#112149",
+      "E": "#182b5e",
+      "h": "#ffffff",
+      "Y": "#eaf0fc",
+      "y": "#d5ddf3",
+      "s": "#b7c3e3",
+      "W": "#ffffff"
+    }
+  },
+  "cloudStar": {
+    "w": 7,
+    "h": 7,
+    "rows": [
+      "...h...",
+      "...h...",
+      "..hhY..",
+      "hhhWYYy",
+      "..YYy..",
+      "...y...",
+      "...y..."
+    ],
+    "palette": {
+      "G": "#eaf0fc",
+      "B": "#94a2cf",
+      "D": "#112149",
+      "E": "#182b5e",
+      "h": "#ffffff",
+      "Y": "#eaf0fc",
+      "y": "#d5ddf3",
+      "s": "#b7c3e3",
+      "W": "#ffffff"
+    }
+  },
+  "cloudStarSmall": {
+    "w": 3,
+    "h": 3,
+    "rows": [
+      ".Y.",
+      "YhY",
+      ".y."
+    ],
+    "palette": {
+      "G": "#eaf0fc",
+      "B": "#94a2cf",
+      "D": "#112149",
+      "E": "#182b5e",
+      "h": "#ffffff",
+      "Y": "#eaf0fc",
+      "y": "#d5ddf3",
+      "s": "#b7c3e3",
+      "W": "#ffffff"
+    }
   }
 } as const satisfies Record<string, IslandSprite>;

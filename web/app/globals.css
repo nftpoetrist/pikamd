@@ -1188,6 +1188,79 @@ body {
   .hp-flower-l { translate: calc(-16 * var(--a)) 0; }
 }
 
+/* ── Explore: the cloud version of the island (HeroPlaque variant="cloud", user request 2026-11-10:
+   "without the cat, thinner, a soft sky white like clouds, fully in the site's style") ──
+   The island's frame, badges and divider in soft white over a night-blue panel (the Arc sea's
+   blues, design/brand/hero-island.mjs → CLOUD), cloud puffs along the top and a puffy cloud
+   underside. 3px per art pixel, 2px on short screens and phones. Lifted 32px like every hero. */
+.page-center-high:has(> .hero-plaque.is-cloud),
+.hero-plaque.is-cloud {
+  --a: 3px;
+  --hp-side: calc(12 * var(--a));
+  --hp-top: 12px;
+  --hp-bottom: 12px;
+  --hp-star-px: 2px;
+}
+/* The column keeps its usual top padding (the home island's extra room is for the cat) */
+.page-center-high:has(> .hero-plaque.is-cloud) { padding-top: clamp(16px, 5vh, 56px); }
+.hero-plaque.is-cloud {
+  top: -32px;
+  /* above: the cloud tops (10 art pixels) clear of the navbar; below: the cloud underside (8) */
+  margin: 24px auto calc(var(--hp-bottom) + 8 * var(--a) + 8px);
+  max-width: calc(100% - 2 * (var(--hp-side) + 8 * var(--a) + 8px));
+}
+.hero-plaque.is-cloud .hero-title { margin-bottom: 28px; }
+.hero-plaque.is-cloud .hero-sub::before {
+  top: -20px;
+  background:
+    var(--hp-star) center / calc(7 * var(--hp-star-px)) calc(7 * var(--hp-star-px)) no-repeat,
+    var(--hp-star-s) calc(50% - 20px) center / calc(3 * var(--hp-star-px)) calc(3 * var(--hp-star-px)) no-repeat,
+    var(--hp-star-s) calc(50% + 20px) center / calc(3 * var(--hp-star-px)) calc(3 * var(--hp-star-px)) no-repeat,
+    linear-gradient(#d5ddf3 0 2px, #94a2cf 2px 3px) left center / calc(50% - 28px) 3px no-repeat,
+    linear-gradient(#d5ddf3 0 2px, #94a2cf 2px 3px) right center / calc(50% - 28px) 3px no-repeat;
+  filter: drop-shadow(0 0 6px rgba(234, 240, 252, 0.35));
+}
+.is-cloud .hp-panel {
+  inset: 0;
+  background: linear-gradient(180deg, #182b5e 0%, #112149 55%, #0a1634 100%);
+  clip-path: polygon(var(--a) 0, calc(100% - var(--a)) 0, 100% var(--a), 100% calc(100% - var(--a)),
+    calc(100% - var(--a)) 100%, var(--a) 100%, 0 calc(100% - var(--a)), 0 var(--a));
+}
+.is-cloud .hp-line { background: #eaf0fc; box-shadow: 0 0 8px rgba(234, 240, 252, 0.3); }
+.is-cloud .hp-line-l,
+.is-cloud .hp-line-r { top: var(--a); bottom: var(--a); }
+.is-cloud .hp-line-b { left: var(--a); right: var(--a); background: #b7c3e3; }
+.is-cloud .hp-gem { filter: drop-shadow(0 0 8px rgba(234, 240, 252, 0.35)); }
+.hp-cloud-top {
+  left: calc(6 * var(--a));
+  right: calc(6 * var(--a));
+  top: calc(-10 * var(--a));
+  height: calc(11 * var(--a));
+  background: var(--hp-cloud-top) left top / calc(48 * var(--a)) calc(11 * var(--a)) repeat-x;
+}
+.hp-cloud-under {
+  left: calc(6 * var(--a));
+  right: calc(6 * var(--a));
+  top: 100%;
+  height: calc(8 * var(--a));
+  background: var(--hp-cloud-under) left top / calc(52 * var(--a)) calc(8 * var(--a)) repeat-x;
+}
+/* Short screens and phones: thinner still, so the lanes stay as close to the first screen as can be */
+@media (max-height: 820px), (max-width: 639px) {
+  .page-center-high:has(> .hero-plaque.is-cloud),
+  .hero-plaque.is-cloud {
+    --a: 2px;
+    --hp-top: 8px;
+    --hp-bottom: 8px;
+  }
+  .hero-plaque.is-cloud { margin-top: 18px; }
+  .hero-plaque.is-cloud .hero-title { margin-bottom: 22px; }
+  .hero-plaque.is-cloud .hero-sub::before { top: -17px; }
+}
+@media (max-width: 639px) {
+  .hero-plaque.is-cloud { --hp-side: 14px; }
+}
+
 /* ── Explore: two endless lanes of MD cards ─────────────────── */
 .md-lanes {
   --card-w: 304px; /* room for open · star · tip · add in one row */
