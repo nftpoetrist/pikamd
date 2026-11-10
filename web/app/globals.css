@@ -6490,11 +6490,32 @@ button.wallet-mod:disabled { cursor: wait; opacity: 0.7; }
 @media (min-width: 1120px) and (max-width: 1279px) {
   .nav-center .nav-icon { display: none; }
 }
-/* The menu icons: components/NavIcon.tsx, Squeaksy's icon language in PikaMd's colours (2026-11-10) */
+/* The navbar icons (components/NavIcon.tsx, 2026-11-11): Squeaksy's shapes in the site's own
+   embossed gold (PixelGlyph's language), so they sit in the gold navbar; on gold buttons (the
+   active page, Publish) a darker emboss, so gold never sits on gold */
+.navbar {
+  --ni-face: var(--g1);
+  --ni-light: #FFE680;
+  --ni-shade: var(--g3);
+  --ni-ink: var(--ink);
+  --ni-glint: var(--t0);
+}
+.nav-link[aria-current="page"],
+.navbar .btn-gold {
+  --ni-face: #8a4b00;
+  --ni-light: var(--g3);
+  --ni-shade: #5a3000;
+  --ni-glint: #FFF4C2;
+}
 .nav-icon {
   display: inline-flex;
   flex-shrink: 0;
   line-height: 0;
+}
+/* Desktop: the icon changes with the link's text, at mid-slide (.nav-center .nav-link) */
+.nav-center .nav-icon path { transition: fill 0s linear calc(var(--vt-slide) / 2); }
+@media (prefers-reduced-motion: reduce) {
+  .nav-center .nav-icon path { transition: none; }
 }
 /* Publish and Connect Wallet carry icons too (components/NavIcon.tsx, Squeaksy's icon language,
    2026-11-10). From 1280px, like the menu icons (the one-row navbar's measured budget at 1120px

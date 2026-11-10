@@ -1,125 +1,117 @@
 import { colorPaths } from "@/lib/pixel-path";
 
-// The navbar's icons (user request 2026-11-10: "like the buttons in Squeaksy's navbar, each icon
-// fitting its button"). Squeaksy's language (the user's own game, src/page/pixelIcons.ts): small
-// maps at 2×, one dark outline, flat fills with a white glint and a gold accent, objects you read at
-// a glance. Redrawn in PikaMd's colours: ink outline, Arc blue, emerald, violet, gold.
-// k ink outline · b blue · l light blue · w white · g gold · G light gold · o gold shade
-// e emerald · E light emerald · p violet · P light violet · s silver · S light silver
-const PAL: Record<string, string> = {
-  k: "#1a0800",
-  b: "#4a74d8",
-  l: "#a9c4ff",
-  w: "#ffffff",
-  g: "#ffcb05",
-  G: "#fff1a8",
-  o: "#c47a00",
-  e: "#2fa478",
-  E: "#8be8bd",
-  p: "#7a5cc4",
-  P: "#b9a5f0",
-  s: "#a9b6cc",
-  S: "#eef3fb",
-};
-
+// The navbar's icons. Shapes after Squeaksy's menu icons (the user's own game: small objects read at
+// a glance, one outline, a glint), drawn in PikaMd's own icon language so they sit in the gold navbar
+// (user requests 2026-11-10/11: "like Squeaksy's navbar icons", then "in tune with the navbar and the
+// site, premium, not garish"): the embossed gold of components/PixelGlyph.tsx, lit top left, shaded
+// bottom right, an ink outline, ink details and one cream glint.
+// "#" = gold face (lit or shaded at its edges), "-" = ink detail inside the shape, "w" = glint.
+// Colours come from CSS (globals.css → .nav-icon): --ni-face, --ni-light, --ni-shade, --ni-ink,
+// --ni-glint; on gold buttons they turn a darker emboss.
 const ICONS = {
-  // Explore: a magnifier, blue glass with a glint, gold handle
+  // Explore: a magnifier, dark glass with a glint in a gold ring, a gold handle
   explore: [
-    "..kkkkk......",
-    ".kwwllbk.....",
-    "kwllllbbk....",
-    "kwllllbbk....",
-    "kllllbbbk....",
-    "klllbbbbk....",
-    ".kbbbbbk.....",
-    "..kkkkkgk....",
-    "......kGgk...",
-    ".......kGgk..",
-    "........kGgk.",
-    ".........kok.",
-    "..........k..",
+    "..#####....",
+    ".#-----#...",
+    "#--w----#..",
+    "#-w-----#..",
+    "#-------#..",
+    "#-------#..",
+    "#-------#..",
+    ".#-----##..",
+    "..#####.##.",
+    "........###",
+    ".........##",
   ],
-  // My Collection: a stack of guideline cards, the front one white with a gold diamond
+  // My Collection: two guideline cards, the front one with a diamond
   collection: [
-    ".kkkkkkkk...",
-    "kbbbbbbbbk..",
-    "kbwwwwwwbkk.",
-    "kbwwwgwwbkEk",
-    "kbwwgGgwbkek",
-    "kbwgGggobkek",
-    "kbwwgggwbkek",
-    "kbwwwowwbkek",
-    "kbllllllbkek",
-    "kbbbbbbbbkek",
-    ".kkkkkkkkkek",
-    "..keeeeeeeek",
-    "...kkkkkkkk.",
+    "...#######.",
+    "...#-----#.",
+    "#######--#.",
+    "#-----#--#.",
+    "#--#--#--#.",
+    "#-###-#--#.",
+    "#--#--#--#.",
+    "#-----#--#.",
+    "#-----####.",
+    "#-----#....",
+    "#######....",
   ],
-  // Connect your agent: the agent, a robot head with a gold antenna and violet ears
+  // Connect your agent: the agent, a robot head with an antenna, two eyes and a mouth
   agent: [
-    "......k......",
-    ".....kGk.....",
-    "......g......",
-    "......k......",
-    "..kkkkkkkkk..",
-    ".kSSSSSSSSsk.",
-    "kkSwbSSSwbskk",
-    "kpSbbSSSbbskP",
-    "kkSSSSSSSSskk",
-    ".kSSkgggkSsk.",
-    ".kssssssssskk",
-    "..kkkkkkkkk..",
+    ".....w.....",
+    ".....#.....",
+    "..#######..",
+    ".#-------#.",
+    "##-#---#-##",
+    "##-#---#-##",
+    ".#-------#.",
+    ".#--###--#.",
+    ".#-------#.",
+    "..#######..",
   ],
-  // Publish: a page with a folded corner and a blue plus
+  // Publish: a page with a folded corner and a plus
   publish: [
-    "kkkkkkk...",
-    "kwwwwwkk..",
-    "kwwwwwkGk.",
-    "kwwwwwkkkk",
-    "kwwwbwwwwk",
-    "kwwbbbwwwk",
-    "kwwwbwwwwk",
-    "kwwwwwwwwk",
-    "kwlllllwwk",
-    "kkkkkkkkkk",
+    "######...",
+    "#----##..",
+    "#----#-#.",
+    "#----####",
+    "#---#---#",
+    "#--###--#",
+    "#---#---#",
+    "#-------#",
+    "#########",
   ],
-  // Connect Wallet: a blue wallet with a card peeking out and a gold clasp
+  // Connect Wallet: a wallet with a card peeking out and a clasp
   wallet: [
-    "...kkkkkkk...",
-    "..kwwwwwwwk..",
-    "kkkkkkkkkkkkk",
-    "kbbbbbbbbbbbk",
-    "kbllllllllkkk",
-    "kbbbbbbbbkGgk",
-    "kbbbbbbbbkgok",
-    "kbbbbbbbbbkkk",
-    "kbbbbbbbbbbbk",
-    ".kkkkkkkkkkk.",
+    "..########..",
+    ".#--------#.",
+    "############",
+    "#----------#",
+    "#-------####",
+    "#-------#w##",
+    "#-------####",
+    "#----------#",
+    "############",
   ],
 } as const;
 
 export type NavIconName = keyof typeof ICONS;
 
-/** One navbar icon at 2× (crisp: one path per colour on whole pixels). */
+const FACE = "var(--ni-face)";
+const LIGHT = "var(--ni-light)";
+const SHADE = "var(--ni-shade)";
+const INK = "var(--ni-ink)";
+const GLINT = "var(--ni-glint)";
+
+/** One navbar icon at 2× (one path per colour, whole pixels only), outlined in ink. */
 export default function NavIcon({ name, scale = 2 }: { name: NavIconName; scale?: number }) {
   const map = ICONS[name];
-  const runs: { x: number; y: number; w: number; fill: string }[] = [];
-  map.forEach((row, y) => {
-    let x = 0;
-    while (x < row.length) {
-      const ch = row[x];
-      let end = x + 1;
-      while (end < row.length && row[end] === ch) end++;
-      if (ch !== ".") runs.push({ x, y, w: end - x, fill: PAL[ch] });
-      x = end;
+  const H = map.length;
+  const W = map[0].length;
+  const cell = (x: number, y: number) => map[y]?.[x] ?? ".";
+  const on = (x: number, y: number) => cell(x, y) !== ".";
+  const solid = (x: number, y: number) => cell(x, y) === "#" || cell(x, y) === "w";
+  const rects: { x: number; y: number; fill: string }[] = [];
+  for (let y = -1; y <= H; y++) {
+    for (let x = -1; x <= W; x++) {
+      const c = cell(x, y);
+      if (c === "-") rects.push({ x, y, fill: INK });
+      else if (c === "w") rects.push({ x, y, fill: GLINT });
+      else if (c === "#") {
+        let fill = FACE;
+        if (!solid(x - 1, y) || !solid(x, y - 1)) fill = LIGHT;
+        else if (!solid(x + 1, y) || !solid(x, y + 1)) fill = SHADE;
+        rects.push({ x, y, fill });
+      } else if (on(x + 1, y) || on(x - 1, y) || on(x, y + 1) || on(x, y - 1)) {
+        rects.push({ x, y, fill: INK });
+      }
     }
-  });
-  const w = map[0].length;
-  const h = map.length;
+  }
   return (
-    <svg width={w * scale} height={h * scale} viewBox={`0 0 ${w} ${h}`} shapeRendering="crispEdges" aria-hidden="true">
-      {colorPaths(runs).map(({ fill, d }) => (
-        <path key={fill} d={d} fill={fill} />
+    <svg width={(W + 2) * scale} height={(H + 2) * scale} viewBox={`-1 -1 ${W + 2} ${H + 2}`} shapeRendering="crispEdges" aria-hidden="true">
+      {colorPaths(rects).map(({ fill, d }) => (
+        <path key={fill} d={d} style={{ fill }} />
       ))}
     </svg>
   );
