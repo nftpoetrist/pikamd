@@ -6490,20 +6490,24 @@ button.wallet-mod:disabled { cursor: wait; opacity: 0.7; }
 @media (min-width: 1120px) and (max-width: 1279px) {
   .nav-center .nav-icon { display: none; }
 }
+/* The menu icons: components/NavIcon.tsx, Squeaksy's icon language in PikaMd's colours (2026-11-10) */
 .nav-icon {
   display: inline-flex;
   flex-shrink: 0;
-  --glyph-face: var(--y1);
-  --glyph-light: #FFE680;
-  --glyph-shade: var(--g3);
-  --glyph-ink: var(--ink);
+  line-height: 0;
 }
-/* Each menu icon in its own colour, taken from the home cards' themes (user request 2026-11-10:
-   "colourful icons, without breaking the design language"): Explore in Arc blue (card 002, the
-   pool), My Collection in emerald (card 003), Connect in violet (card 001). Same ink outline. */
-.nav-icon-search { --glyph-face: #6a86d8; --glyph-light: #b9c9f5; --glyph-shade: #3a54a0; }
-.nav-icon-collect { --glyph-face: #2fa478; --glyph-light: #8be8bd; --glyph-shade: #1f7a5a; }
-.nav-icon-plug { --glyph-face: #8b6cd8; --glyph-light: #c9b8f5; --glyph-shade: #5b3f9e; }
+/* Publish and Connect Wallet carry icons too (components/NavIcon.tsx, Squeaksy's icon language,
+   2026-11-10). From 1280px, like the menu icons (the one-row navbar's measured budget at 1120px
+   has no room for them); always in the phone menu. Below that the old "+" and cursor dot stay. */
+.nav-btn-icon { display: none; flex-shrink: 0; line-height: 0; }
+@media (min-width: 1280px) {
+  .nav-right .nav-btn-icon { display: inline-flex; }
+  .nav-right .nav-btn-plus,
+  .nav-right .btn-ghost > .nav-dot { display: none; }
+}
+.nav-mobile .nav-btn-icon { display: inline-flex; }
+.nav-mobile .nav-btn-plus,
+.nav-mobile .btn-ghost > .nav-dot { display: none; }
 .nav-link:hover {
   color: var(--y2);
   background: rgba(255, 203, 5, 0.08);
