@@ -12,9 +12,13 @@ export const LIVE_SUPABASE_REF = process.env.PIKAMD_LIVE_SUPABASE_REF ?? "sdjsve
 
 export async function readEnvLocal() {
   const text = await readFile(new URL("../.env.local", import.meta.url), "utf8").catch(() => "");
-  return Object.fromEntries(
+  const env = Object.fromEntries(
     text.split(/\r?\n/).filter((l) => /^[A-Z_][A-Z0-9_]*=/.test(l)).map((l) => [l.slice(0, l.indexOf("=")), l.slice(l.indexOf("=") + 1).trim()]),
   );
+  // Next gives the process environment precedence over .env.local, so a dev server started with
+  // `SUPABASE_URL= npm run dev` uses the local store: the tests must see the same values.
+  for (const key of ["SUPABASE_URL", "SUPABASE_SECRET_KEY"]) if (key in process.env) env[key] = process.env[key];
+  return env;
 }
 
 /** The development database the dev server uses, or null for the local dev store. Exits for the live one. */
@@ -30,7 +34,14 @@ export async function devDatabase(name) {
     process.exit(2);
   }
   const db = { url: env.SUPABASE_URL, key: env.SUPABASE_SECRET_KEY, ref };
-  const res = await rest(db, "GET", "/rest/v1/listed_guidelines?select=id&limit=1");
+  const res = await rest(db, "GET", "/rest/v1/listed_guidelines?select=id&limit=1").catch((error) => {
+    console.error(
+      `${name}: can't reach the development database ${ref} (${error?.cause?.code ?? error?.message ?? "network error"}).\n` +
+        `A paused Supabase project disappears from DNS: restore it in the dashboard, or run the dev server and\n` +
+        `this test with SUPABASE_URL= SUPABASE_SECRET_KEY= to use the local dev store.`,
+    );
+    process.exit(2);
+  });
   const rows = await res.json().catch(() => null);
   if (!res.ok || !Array.isArray(rows)) {
     console.error(`${name}: can't read the development database ${ref} (HTTP ${res.status}).`);
