@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import HeroPlaque from "@/components/HeroPlaque";
 import PageTransition from "@/components/PageTransition";
 import ConnectPanel from "@/components/connect/ConnectPanel";
 
@@ -13,15 +14,17 @@ export default function ConnectPage() {
     <PageTransition>
       <main className="flex flex-1 flex-col">
         <div className="page-center page-center-high hero-compact">
-          <h1 className="hero-title">
-            Connect your agent
-            <br />
-            <span>to your library</span>
-          </h1>
-          <p className="hero-sub">
-            <span>Paste one prompt into Claude Code, Cursor, VS Code or Codex</span>{" "}
-            <span>Your agent reads your collection over MCP, no downloads</span>
-          </p>
+          <HeroPlaque variant="ai">
+            <h1 className="hero-title">
+              Connect your agent
+              <br />
+              <span>to your library</span>
+            </h1>
+            <p className="hero-sub">
+              <span>Paste one prompt into Claude Code, Cursor, VS Code or Codex</span>{" "}
+              <span>Your agent reads your collection over MCP, no downloads</span>
+            </p>
+          </HeroPlaque>
           <ConnectPanel />
         </div>
       </main>

@@ -1285,6 +1285,152 @@ body {
   .hero-plaque.is-cloud { --hp-side: 14px; }
 }
 
+/* ── My Collection and Connect: the library and the AI chip (HeroPlaque variant="library" / "ai",
+   user request 2026-11-10: "a library… aesthetic, premium" and "an AI-like background, premium,
+   minimalist"). Same frame of mind as the island and the cloud: drawn around the text's box,
+   3px per art pixel (2px on short screens and phones), lifted 32px like every hero. ── */
+.page-center-high:has(> .hero-plaque.is-library),
+.hero-plaque.is-library,
+.page-center-high:has(> .hero-plaque.is-ai),
+.hero-plaque.is-ai {
+  --a: 3px;
+  --hp-top: 14px;
+  --hp-bottom: 14px;
+  --hp-star-px: 3px;
+}
+.page-center-high:has(> .hero-plaque.is-library),
+.page-center-high:has(> .hero-plaque.is-ai) { padding-top: clamp(16px, 5vh, 56px); }
+.hero-plaque.is-library,
+.hero-plaque.is-ai { top: -32px; }
+.hero-plaque.is-library .hero-title,
+.hero-plaque.is-ai .hero-title { margin-bottom: 30px; }
+.hero-plaque.is-library .hero-sub::before,
+.hero-plaque.is-ai .hero-sub::before {
+  top: -21px;
+  height: 15px;
+  filter: none;
+}
+.hp-flip-x { transform: scaleX(-1); }
+.hp-flip-y { transform: scaleY(-1); }
+.hp-flip-xy { transform: scale(-1); }
+
+/* Library: books stand 15 art pixels over the shelf; the plank and brackets hang 9 under */
+.page-center-high:has(> .hero-plaque.is-library),
+.hero-plaque.is-library { --hp-side: calc(12 * var(--a)); }
+.hero-plaque.is-library {
+  margin: 50px auto calc(var(--hp-bottom) + 9 * var(--a) + 14px);
+  max-width: calc(100% - 2 * (var(--hp-side) + 4 * var(--a) + 8px));
+}
+.is-library .hp-panel {
+  inset: 0;
+  clip-path: none;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 230, 180, 0.022) 0 2px, transparent 2px 11px),
+    radial-gradient(ellipse 70% 60% at 50% 30%, rgba(255, 203, 5, 0.07) 0%, transparent 70%),
+    linear-gradient(180deg, #2c1b0d 0%, #22150a 55%, #170d05 100%);
+  /* the wooden frame: a lit ring, a dark rim */
+  box-shadow:
+    0 0 0 var(--a) #6b4423,
+    0 0 0 calc(2 * var(--a)) #2a170a,
+    0 14px 30px rgba(0, 0, 0, 0.5);
+}
+.hp-inlay { inset: calc(2 * var(--a)); border: 1px solid rgba(255, 203, 5, 0.45); }
+.hp-shelf-top {
+  left: calc(-2 * var(--a));
+  right: calc(-2 * var(--a));
+  top: calc(-3 * var(--a));
+  height: calc(2 * var(--a));
+  background: linear-gradient(180deg, #b07a40 0 var(--a), #7a4e27 var(--a) 100%);
+  box-shadow: 0 var(--a) 0 #3d2412;
+}
+.hp-shelf {
+  left: calc(-4 * var(--a));
+  right: calc(-4 * var(--a));
+  top: calc(100% + var(--a));
+  height: calc(3 * var(--a));
+  background: linear-gradient(180deg, #b07a40 0 var(--a), #7a4e27 var(--a) calc(2 * var(--a)), #4a2c14 calc(2 * var(--a)) 100%);
+  clip-path: polygon(var(--a) 0, calc(100% - var(--a)) 0, 100% var(--a), 100% 100%, 0 100%, 0 var(--a));
+}
+.hp-bracket { filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.35)); }
+.is-library .hero-sub::before {
+  background:
+    var(--hp-star) center / calc(7 * var(--hp-star-px)) calc(5 * var(--hp-star-px)) no-repeat,
+    linear-gradient(#c4934e 0 2px, #6b4423 2px 3px) left center / calc(50% - 24px) 3px no-repeat,
+    linear-gradient(#c4934e 0 2px, #6b4423 2px 3px) right center / calc(50% - 24px) 3px no-repeat;
+}
+
+/* AI chip: pins 3 art pixels and HUD marks 7 over and under the chip; traces 18 to each side */
+.page-center-high:has(> .hero-plaque.is-ai),
+.hero-plaque.is-ai { --hp-side: calc(13 * var(--a)); }
+.hero-plaque.is-ai {
+  margin: 20px auto calc(var(--hp-bottom) + 7 * var(--a) + 12px);
+  max-width: calc(100% - 2 * (var(--hp-side) + 18 * var(--a) + 8px));
+}
+.is-ai .hp-panel {
+  inset: 0;
+  background:
+    radial-gradient(ellipse 55% 70% at 50% 45%, rgba(106, 134, 216, 0.16) 0%, transparent 70%),
+    radial-gradient(circle, rgba(255, 203, 5, 0.12) 0 1px, transparent 1.5px) 0 0 / 12px 12px,
+    linear-gradient(180deg, #1b1407 0%, #120c04 60%, #0b0702 100%);
+  clip-path: polygon(calc(2 * var(--a)) 0, calc(100% - 2 * var(--a)) 0, 100% calc(2 * var(--a)), 100% calc(100% - 2 * var(--a)),
+    calc(100% - 2 * var(--a)) 100%, calc(2 * var(--a)) 100%, 0 calc(100% - 2 * var(--a)), 0 calc(2 * var(--a)));
+}
+/* the chip's outline: a gold layer one art pixel larger, cut the same way */
+.hp-chip-edge {
+  inset: calc(-1 * var(--a));
+  background: linear-gradient(180deg, #ffe680 0%, #f0a500 50%, #c47a00 100%);
+  clip-path: polygon(calc(3 * var(--a)) 0, calc(100% - 3 * var(--a)) 0, 100% calc(3 * var(--a)), 100% calc(100% - 3 * var(--a)),
+    calc(100% - 3 * var(--a)) 100%, calc(3 * var(--a)) 100%, 0 calc(100% - 3 * var(--a)), 0 calc(3 * var(--a)));
+  filter: drop-shadow(0 0 10px rgba(255, 203, 5, 0.25));
+}
+.hp-chip-inner { inset: calc(3 * var(--a)); border: 1px solid rgba(255, 203, 5, 0.28); }
+.hp-pin1 {
+  left: calc(5 * var(--a));
+  top: calc(5 * var(--a));
+  width: var(--a);
+  height: var(--a);
+  background: #ffcb05;
+  box-shadow: 0 0 6px rgba(255, 203, 5, 0.6);
+}
+.hp-pins {
+  left: 18%;
+  right: 18%;
+  height: calc(2 * var(--a));
+  background: repeating-linear-gradient(90deg, #f0a500 0 var(--a), transparent var(--a) calc(5 * var(--a)));
+}
+.hp-pins-top { top: calc(-3 * var(--a)); }
+.hp-pins-bottom { top: calc(100% + var(--a)); }
+.hp-traces { filter: drop-shadow(0 0 4px rgba(255, 203, 5, 0.35)); }
+.is-ai .hero-sub::before {
+  background:
+    var(--hp-star) center / calc(5 * var(--hp-star-px)) calc(5 * var(--hp-star-px)) no-repeat,
+    linear-gradient(#c47a00 0 2px, #6b4300 2px 3px) left center / calc(50% - 20px) 3px no-repeat,
+    linear-gradient(#c47a00 0 2px, #6b4300 2px 3px) right center / calc(50% - 20px) 3px no-repeat;
+}
+
+/* Short screens and phones: 2px per art pixel */
+@media (max-height: 820px), (max-width: 639px) {
+  .page-center-high:has(> .hero-plaque.is-library),
+  .hero-plaque.is-library,
+  .page-center-high:has(> .hero-plaque.is-ai),
+  .hero-plaque.is-ai {
+    --a: 2px;
+    --hp-top: 10px;
+    --hp-bottom: 10px;
+    --hp-star-px: 2px;
+  }
+  .hero-plaque.is-library { margin-top: 36px; }
+  .hero-plaque.is-ai { margin-top: 16px; }
+  .hero-plaque.is-library .hero-title,
+  .hero-plaque.is-ai .hero-title { margin-bottom: 22px; }
+  .hero-plaque.is-library .hero-sub::before,
+  .hero-plaque.is-ai .hero-sub::before { top: -16px; height: 10px; }
+}
+@media (max-width: 639px) {
+  .hero-plaque.is-library,
+  .hero-plaque.is-ai { --hp-side: 14px; }
+}
+
 /* ── Explore: two endless lanes of MD cards ─────────────────── */
 .md-lanes {
   --card-w: 304px; /* room for open · star · tip · add in one row */

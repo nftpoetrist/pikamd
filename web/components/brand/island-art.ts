@@ -1122,6 +1122,249 @@ export const ISLAND = {
       "W": "#ffffff"
     }
   },
+  "booksLeft": {
+    "w": 34,
+    "h": 15,
+    "rows": [
+      "..................................",
+      ".....OOOO.........................",
+      "....OdeefO....OOO.................",
+      ".OOOOdeefO...OklmO........OOOO....",
+      "OabcOggggOOOOOklmO.......OrsssO...",
+      "OabcOdeefOhijOgggOOOOO...OrsssO...",
+      "OgggOdeefOhijOklmOnppqO.OggggO....",
+      "OabcOdLLfOgggOklmOnppqO.OrsssO....",
+      "OabcOdLLfOhijOklmOggggO.OrsssO....",
+      "OabcOdeefOhijOklmOnppqO.OrsssO....",
+      "OabcOdeefOhijOklmOnppqOOrsssO.....",
+      "OabcOdeefOhijOklmOnppqOOrsssO.....",
+      "OgggOggggOgggOgggOggggOOrsssO.....",
+      "OabcOdeefOhijOklmOnppqOrsssO......",
+      "OabcOdeefOhijOklmOnppqOrsssO......"
+    ],
+    "palette": {
+      "O": "#120a04",
+      "g": "#ffcb05",
+      "L": "#fff3d6",
+      "a": "#a48be6",
+      "b": "#7a5cc4",
+      "c": "#4f3790",
+      "d": "#6f8fdc",
+      "e": "#3a5aa8",
+      "f": "#22386f",
+      "h": "#6fd6a8",
+      "i": "#2fa478",
+      "j": "#1c6b4d",
+      "k": "#e3707f",
+      "l": "#c44458",
+      "m": "#84243a",
+      "n": "#ffe680",
+      "p": "#f0a500",
+      "q": "#a86400",
+      "r": "#fff3d6",
+      "s": "#e9d9b4",
+      "t": "#b9a57c"
+    }
+  },
+  "booksRight": {
+    "w": 42,
+    "h": 15,
+    "rows": [
+      "..........................................",
+      "...................OOO....................",
+      "..........OOO.....OklmO...................",
+      ".OOOO....OdefO....OklmOOOO................",
+      "OabbbO...OdefOOOOOOgggOnpqO...............",
+      "OabbbO...OgggOhiijOklmOnpqO...............",
+      ".OggggO..OdefOhiijOklmOgggO...............",
+      ".OabbbO..OdefOggggOklmOnpqO...............",
+      ".OabbbO..OdefOhiijOklmOnpqO...............",
+      "..OabbbO.OdefOhiijOklmOnpqO...............",
+      "..OabbbO.OdefOhLLjOklmOnpqO.OOOOOOOOOOO...",
+      "..OabbbO.OdefOhiijOklmOnpqOOrrrrrrrrrrrO..",
+      "..OabbbO.OgggOggggOgggOgggOOtttttttttttO..",
+      "...OabbbOOdefOhiijOklmOnpqOrrrrrrrrrrrO...",
+      "...OabbbOOdefOhiijOklmOnpqOtttttttttttO..."
+    ],
+    "palette": {
+      "O": "#120a04",
+      "g": "#ffcb05",
+      "L": "#fff3d6",
+      "a": "#6f8fdc",
+      "b": "#3a5aa8",
+      "c": "#22386f",
+      "d": "#6fd6a8",
+      "e": "#2fa478",
+      "f": "#1c6b4d",
+      "h": "#e3707f",
+      "i": "#c44458",
+      "j": "#84243a",
+      "k": "#a48be6",
+      "l": "#7a5cc4",
+      "m": "#4f3790",
+      "n": "#ffe680",
+      "p": "#f0a500",
+      "q": "#a86400",
+      "r": "#fff3d6",
+      "s": "#e9d9b4",
+      "t": "#b9a57c"
+    }
+  },
+  "bracket": {
+    "w": 6,
+    "h": 5,
+    "rows": [
+      "hGGGGs",
+      ".GGGs.",
+      "..GGs.",
+      "...Gs.",
+      "....s."
+    ],
+    "palette": {
+      "G": "#f0a500",
+      "h": "#ffe680",
+      "s": "#a86400"
+    }
+  },
+  "cornerCap": {
+    "w": 4,
+    "h": 4,
+    "rows": [
+      "hGGs",
+      "G...",
+      "G...",
+      "s..."
+    ],
+    "palette": {
+      "G": "#f0a500",
+      "h": "#ffe680",
+      "s": "#a86400"
+    }
+  },
+  "bookGlyph": {
+    "w": 7,
+    "h": 5,
+    "rows": [
+      "hh...hh",
+      "hGGhGGs",
+      "GGGhGGs",
+      "GGGhGGs",
+      ".ssGss."
+    ],
+    "palette": {
+      "G": "#f0a500",
+      "h": "#ffe680",
+      "s": "#a86400"
+    }
+  },
+  "tracesLeft": {
+    "w": 18,
+    "h": 25,
+    "rows": [
+      "..................",
+      "...hPP............",
+      "...PcPTT..........",
+      "...PPP..T.........",
+      ".........T........",
+      "..........TTTTTTTT",
+      "..................",
+      "..................",
+      "..................",
+      "..................",
+      "..................",
+      ".hPP..............",
+      ".PcPTTTTTTTTTTTTTT",
+      ".PPP..............",
+      "..................",
+      "..................",
+      "..................",
+      "..................",
+      "..................",
+      "............TTTTTT",
+      "...........T......",
+      ".....hPP..T.......",
+      ".....PcPTT........",
+      ".....PPP..........",
+      ".................."
+    ],
+    "palette": {
+      "T": "#b27718",
+      "P": "#f0a500",
+      "h": "#ffe680",
+      "c": "#2a1c05",
+      "b": "#6a86d8"
+    }
+  },
+  "tracesRight": {
+    "w": 18,
+    "h": 25,
+    "rows": [
+      "..................",
+      "............PPh...",
+      "..........TTPcP...",
+      ".........T..PPP...",
+      "........T.........",
+      "TTTTTTTT..........",
+      "..................",
+      "..................",
+      "..................",
+      "..................",
+      "..................",
+      "..............PPh.",
+      "TTTTTTTTTTTTTTPcP.",
+      "..............PPP.",
+      "..................",
+      "..................",
+      "..................",
+      "..................",
+      "..................",
+      "TTTTTT............",
+      "......T...........",
+      ".......T..PPh.....",
+      "........TTPcP.....",
+      "..........PPP.....",
+      ".................."
+    ],
+    "palette": {
+      "T": "#b27718",
+      "P": "#f0a500",
+      "h": "#ffe680",
+      "c": "#2a1c05",
+      "b": "#6a86d8"
+    }
+  },
+  "hudMark": {
+    "w": 4,
+    "h": 4,
+    "rows": [
+      "hGGG",
+      "G...",
+      "G...",
+      "G..."
+    ],
+    "palette": {
+      "G": "#f0a500",
+      "h": "#ffe680"
+    }
+  },
+  "nodeGlyph": {
+    "w": 5,
+    "h": 5,
+    "rows": [
+      "..h..",
+      ".hPP.",
+      "hPbPP",
+      ".PPP.",
+      "..P.."
+    ],
+    "palette": {
+      "T": "#b27718",
+      "P": "#f0a500",
+      "h": "#ffe680",
+      "c": "#2a1c05",
+      "b": "#6a86d8"
+    }
+  },
   "cloudStar": {
     "w": 7,
     "h": 7,

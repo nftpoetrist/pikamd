@@ -101,8 +101,70 @@ function CloudPlaque({ children }: { children: ReactNode }) {
   );
 }
 
-export default function HeroPlaque({ children, variant = "island" }: { children: ReactNode; variant?: "island" | "cloud" }) {
+const LIBRARY_TILES = { "--hp-star": tile(ISLAND.bookGlyph) } as CSSProperties;
+const AI_TILES = { "--hp-star": tile(ISLAND.nodeGlyph) } as CSSProperties;
+
+/**
+ * My Collection's title (user request 2026-11-10: "a library, in tune with the site, not crude:
+ * aesthetic, beautiful, premium"): a walnut panel in a thin wooden frame with a gold inlay, two
+ * small clusters of books on the shelf (the home cards' colours), a shelf plank on gold brackets,
+ * gold corner caps and an open-book glyph on the divider. 3px per art pixel.
+ */
+function LibraryPlaque({ children }: { children: ReactNode }) {
+  return (
+    <div className="hero-plaque is-library" style={LIBRARY_TILES}>
+      <div className="hp-island" aria-hidden="true">
+        <span className="hp-shelf-top" />
+        <span className="hp-panel" />
+        <span className="hp-inlay" />
+        <span className="hp-shelf" />
+        <Sprite s={ISLAND.booksLeft} at={{ x: left(4), y: top(-17) }} />
+        <Sprite s={ISLAND.booksRight} at={{ x: right(4 + ISLAND.booksRight.w), y: top(-17) }} />
+        <Sprite s={ISLAND.bracket} className="hp-bracket" at={{ x: "round(down, 16%, 1px)", y: below(4) }} />
+        <Sprite s={ISLAND.bracket} className="hp-bracket hp-flip-x" at={{ x: "round(down, 84% - 6 * var(--a), 1px)", y: below(4) }} />
+        <Sprite s={ISLAND.cornerCap} at={{ x: left(1), y: top(1) }} />
+        <Sprite s={ISLAND.cornerCap} className="hp-flip-x" at={{ x: right(5), y: top(1) }} />
+        <Sprite s={ISLAND.cornerCap} className="hp-flip-y" at={{ x: left(1), y: below(-5) }} />
+        <Sprite s={ISLAND.cornerCap} className="hp-flip-xy" at={{ x: right(5), y: below(-5) }} />
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Connect's title (user request 2026-11-10: "an AI-like background, premium, minimalist"): a
+ * microchip. A dark board with a faint dot grid and a soft blue glow, a thin gold chip outline
+ * with cut corners and an inner hairline, the pin-1 dot, gold pins along the top and bottom,
+ * circuit traces to solder pads on both sides, HUD corner marks, a node on the divider.
+ */
+function AiPlaque({ children }: { children: ReactNode }) {
+  const mid = "round(down, 50% - 12.5 * var(--a), 1px)";
+  return (
+    <div className="hero-plaque is-ai" style={AI_TILES}>
+      <div className="hp-island" aria-hidden="true">
+        <span className="hp-pins hp-pins-top" />
+        <span className="hp-pins hp-pins-bottom" />
+        <span className="hp-chip-edge" />
+        <span className="hp-panel" />
+        <span className="hp-chip-inner" />
+        <span className="hp-pin1" />
+        <Sprite s={ISLAND.tracesLeft} className="hp-traces" at={{ x: left(-18), y: mid }} />
+        <Sprite s={ISLAND.tracesRight} className="hp-traces" at={{ x: right(0), y: mid }} />
+        <Sprite s={ISLAND.hudMark} at={{ x: left(-7), y: top(-7) }} />
+        <Sprite s={ISLAND.hudMark} className="hp-flip-x" at={{ x: right(-3), y: top(-7) }} />
+        <Sprite s={ISLAND.hudMark} className="hp-flip-y" at={{ x: left(-7), y: below(3) }} />
+        <Sprite s={ISLAND.hudMark} className="hp-flip-xy" at={{ x: right(-3), y: below(3) }} />
+      </div>
+      {children}
+    </div>
+  );
+}
+
+export default function HeroPlaque({ children, variant = "island" }: { children: ReactNode; variant?: "island" | "cloud" | "library" | "ai" }) {
   if (variant === "cloud") return <CloudPlaque>{children}</CloudPlaque>;
+  if (variant === "library") return <LibraryPlaque>{children}</LibraryPlaque>;
+  if (variant === "ai") return <AiPlaque>{children}</AiPlaque>;
   return (
     <div className="hero-plaque" style={TILES}>
       <div className="hp-island" aria-hidden="true">

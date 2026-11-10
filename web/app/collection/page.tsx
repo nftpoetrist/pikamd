@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import CollectionPanel from "@/components/CollectionPanel";
+import HeroPlaque from "@/components/HeroPlaque";
 import PageTransition from "@/components/PageTransition";
 import { listGuidelineCards } from "@/lib/data/guidelines";
 
@@ -17,15 +18,17 @@ export default async function CollectionPage() {
     <PageTransition>
       <main className="flex flex-1 flex-col">
         <div className="page-center page-center-high hero-compact">
-          <h1 className="hero-title">
-            Your agent&apos;s
-            <br />
-            <span>personal library</span>
-          </h1>
-          <p className="hero-sub">
-            <span>Every guideline you&apos;ve collected, in one place</span>{" "}
-            <span>Connect your agent once and it can read them all over MCP</span>
-          </p>
+          <HeroPlaque variant="library">
+            <h1 className="hero-title">
+              Your agent&apos;s
+              <br />
+              <span>personal library</span>
+            </h1>
+            <p className="hero-sub">
+              <span>Every guideline you&apos;ve collected, in one place</span>{" "}
+              <span>Connect your agent once and it can read them all over MCP</span>
+            </p>
+          </HeroPlaque>
           <CollectionPanel guidelines={guidelines} />
         </div>
       </main>

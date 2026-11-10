@@ -553,6 +553,120 @@ const CLOUD_CORNER_BR = check("cloud corner br", cloudPiece(18, 16, {
 // Badges and divider stars on the cloud: periwinkle rings, gold stars (the site's gold)
 const CLOUD_GEM = { G: "#a9b6dc", B: "#cbd4ee", D: "#f6f9ff", E: "#eef2fb", h: "#fff3b0", Y: "#ffcb05", y: "#f0a500", s: "#c47a00", W: "#ffffff" };
 
+// ── My Collection: a library shelf (user request 2026-11-10: "a library, in tune with the site,
+// not crude: aesthetic, beautiful, premium"). Books stand on the shelf in two small clusters at
+// the ends, their spines in the home cards' theme colours with gold bands; gold brackets under
+// the shelf plank, gold corner caps, an open-book glyph on the divider. ─────────────────────
+const SPINES = {
+  violet: ["#a48be6", "#7a5cc4", "#4f3790"],
+  navy: ["#6f8fdc", "#3a5aa8", "#22386f"],
+  emerald: ["#6fd6a8", "#2fa478", "#1c6b4d"],
+  ruby: ["#e3707f", "#c44458", "#84243a"],
+  gold: ["#ffe680", "#f0a500", "#a86400"],
+  cream: ["#fff3d6", "#e9d9b4", "#b9a57c"],
+};
+const BOOK_INK = "#120a04";
+/** A cluster of books standing on the bottom row. Each book: [width, height, colour, label?];
+ * "lean" books tilt (right or left) against their neighbour; "flat" lie in a stack. */
+function shelfBooks(spec) {
+  const H = Math.max(...spec.map((b) => (b.flat ? b.h * b.n : b.h))) + 2;
+  const W = spec.reduce((sum, b) => sum + (b.flat ? b.w : b.lean ? b.h * 0.28 + b.w : b.w) + 1, 1);
+  const w = Math.ceil(W) + 2;
+  const g = grid(w, H);
+  const palette = { O: BOOK_INK, g: "#ffcb05", L: "#fff3d6" };
+  let key = 0;
+  const colour = (name) => {
+    const [l, b, d] = SPINES[name];
+    const keys = ["abc", "def", "hij", "klm", "npq", "rst", "uvx", "yzA", "BCD", "EFH", "IJK"][key++];
+    palette[keys[0]] = l; palette[keys[1]] = b; palette[keys[2]] = d;
+    return keys;
+  };
+  let x = 1;
+  for (const b of spec) {
+    const [lit, base, dark] = colour(b.colour);
+    if (b.flat) {
+      // a stack of b.n books lying down, each b.h rows thick
+      for (let i = 0; i < b.n; i++) {
+        const y1 = H - 1 - i * b.h, y0 = y1 - b.h + 1, inset = i % 2;
+        for (let y = y0; y <= y1; y++) for (let c = x + inset; c < x + b.w - (1 - inset); c++) g[y][c] = y === y0 ? lit : y === y1 ? dark : c === x + inset + 2 ? "g" : base;
+      }
+      x += b.w + 1;
+      continue;
+    }
+    if (b.lean) {
+      // a book leaning at ~25°: a parallelogram from its foot to its top
+      const lean = b.lean === "right" ? 1 : -1, top = H - b.h, dx = b.h * 0.28;
+      const x0 = lean > 0 ? x : x + dx;
+      const pts = lean > 0
+        ? [[x0, H], [x0 + b.w, H], [x0 + b.w + dx, top], [x0 + dx, top]]
+        : [[x0, H], [x0 + b.w, H], [x0 + b.w - dx, top], [x0 - dx, top]];
+      fillPoly(g, pts, base);
+      for (let y = 0; y < H; y++) for (let c = 0; c < w; c++) if (g[y][c] === base && (g[y][c - 1] === "." || g[y][c - 1] === undefined)) g[y][c] = lit;
+      const band = top + 2;
+      for (let c = 0; c < w; c++) if ([base, lit].includes(g[band]?.[c])) g[band][c] = "g";
+      x += Math.ceil(b.w + dx) + 1;
+      continue;
+    }
+    const top = H - b.h;
+    for (let y = top; y < H; y++) for (let c = x; c < x + b.w; c++) {
+      const band = y === top + 2 || y === H - 3;
+      g[y][c] = band ? "g" : c === x ? lit : c === x + b.w - 1 ? dark : base;
+    }
+    if (b.label) for (let y = top + 5; y < top + 7 && y < H - 4; y++) for (let c = x + 1; c < x + b.w - 1; c++) g[y][c] = "L";
+    x += b.w + 1;
+  }
+  outline(g, Object.keys(palette).filter((k) => k !== "O"), "O");
+  return { rows: toRows(g), palette };
+}
+const BOOKS_LEFT = shelfBooks([
+  { w: 3, h: 11, colour: "violet" },
+  { w: 4, h: 13, colour: "navy", label: true },
+  { w: 3, h: 10, colour: "emerald" },
+  { w: 3, h: 12, colour: "ruby" },
+  { w: 4, h: 9, colour: "gold", label: true },
+  { w: 4, h: 11, colour: "cream", lean: "right" },
+]);
+const BOOKS_RIGHT = shelfBooks([
+  { w: 4, h: 11, colour: "navy", lean: "left" },
+  { w: 3, h: 12, colour: "emerald" },
+  { w: 4, h: 10, colour: "ruby", label: true },
+  { w: 3, h: 13, colour: "violet" },
+  { w: 3, h: 11, colour: "gold" },
+  { w: 12, h: 2, n: 2, colour: "cream", flat: true },
+]);
+const WOOD = { G: "#f0a500", h: "#ffe680", s: "#a86400" };
+const BRACKET = check("bracket", ["hGGGGs", ".GGGs.", "..GGs.", "...Gs.", "....s."]);
+const CORNER_CAP = check("corner cap", ["hGGs", "G...", "G...", "s..."]);
+const BOOK_GLYPH = check("book glyph", ["hh...hh", "hGGhGGs", "GGGhGGs", "GGGhGGs", ".ssGss."]);
+
+// ── Connect: an AI chip (user request 2026-11-10: "an AI-like background for this title,
+// premium, minimalist"). Circuit traces leave the chip's sides and end in solder pads; HUD
+// corner marks; a node glyph on the divider. The chip's frame, pins and board are CSS. ───────
+const CHIP = { T: "#b27718", P: "#f0a500", h: "#ffe680", c: "#2a1c05", b: "#6a86d8" };
+function traces(paths, w, h) {
+  const g = grid(w, h);
+  const line = (x0, y0, x1, y1) => {
+    const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+    for (let i = 0; i <= n; i++) { const x = Math.round(x0 + ((x1 - x0) * i) / n), y = Math.round(y0 + ((y1 - y0) * i) / n); g[y][x] = "T"; }
+  };
+  for (const path of paths) {
+    for (let i = 0; i < path.length - 1; i++) line(...path[i], ...path[i + 1]);
+    const [px, py] = path[path.length - 1];
+    stamp(g, ["hPP", "PcP", "PPP"], px - 1, py - 1);
+  }
+  return toRows(g);
+}
+// Left side: the chip's edge is the right column; three traces of different lengths
+const TRACES_LEFT = check("traces left", traces([
+  [[17, 5], [10, 5], [7, 2], [4, 2]],
+  [[17, 12], [2, 12]],
+  [[17, 19], [12, 19], [9, 22], [6, 22]],
+], 18, 25));
+const TRACES_RIGHT = check("traces right", TRACES_LEFT.map((r) => [...r].reverse().join("")));
+const HUD = { G: "#f0a500", h: "#ffe680" };
+const HUD_MARK = check("hud mark", ["hGGG", "G...", "G...", "G..."]);
+const NODE_GLYPH = check("node glyph", ["..h..", ".hPP.", "hPbPP", ".PPP.", "..P.."]);
+
 // ── Output ────────────────────────────────────────────────────────────────────────────────
 const sprite = (rows, palette) => ({ w: rows[0].length, h: rows.length, rows, palette });
 const SPRITES = {
@@ -589,6 +703,15 @@ const SPRITES = {
   cloudCornerBL: sprite(CLOUD_CORNER_BL, CLOUD),
   cloudCornerBR: sprite(CLOUD_CORNER_BR, CLOUD),
   cloudGem: sprite(GEM_MAP, CLOUD_GEM),
+  booksLeft: { w: BOOKS_LEFT.rows[0].length, h: BOOKS_LEFT.rows.length, rows: BOOKS_LEFT.rows, palette: BOOKS_LEFT.palette },
+  booksRight: { w: BOOKS_RIGHT.rows[0].length, h: BOOKS_RIGHT.rows.length, rows: BOOKS_RIGHT.rows, palette: BOOKS_RIGHT.palette },
+  bracket: sprite(BRACKET, WOOD),
+  cornerCap: sprite(CORNER_CAP, WOOD),
+  bookGlyph: sprite(BOOK_GLYPH, WOOD),
+  tracesLeft: sprite(TRACES_LEFT, CHIP),
+  tracesRight: sprite(TRACES_RIGHT, CHIP),
+  hudMark: sprite(HUD_MARK, HUD),
+  nodeGlyph: sprite(NODE_GLYPH, CHIP),
   cloudStar: sprite(STAR_MAP, CLOUD_GEM),
   cloudStarSmall: sprite(STAR_SMALL_MAP, CLOUD_GEM),
 };
