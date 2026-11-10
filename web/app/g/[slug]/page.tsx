@@ -44,6 +44,10 @@ export async function generateMetadata({ params }: PageProps<"/g/[slug]">): Prom
 // the first paint (measured 2026-10-23: a 33.5 KB guideline showed at ~335 ms and pushed the
 // footer down). Unlisted slugs are rendered once on their first request, then cached.
 export const ensureStatic = "navigation";
+// Reading params outside <Suspense> is the choice above, so the dev-only instant-navigation check
+// would flag it on every load; false records the choice (Next docs: instant, "Disabling instant").
+// It changes no rendering: the route is still prerendered whole.
+export const instant = false;
 
 export default async function GuidelinePage({ params }: PageProps<"/g/[slug]">) {
   const { slug } = await params;
