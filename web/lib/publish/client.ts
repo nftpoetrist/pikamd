@@ -2,12 +2,13 @@
 
 import { useCallback, useRef, useState } from "react";
 import { useConnection } from "wagmi";
-import { getChainId, switchChain, waitForTransactionReceipt, writeContract } from "wagmi/actions";
+import { getChainId, simulateContract, switchChain, waitForTransactionReceipt, writeContract } from "wagmi/actions";
 import { suggestedFees } from "@/lib/wallet/fees";
 import type { Draft } from "@/lib/publish/draft";
 import { REGISTRY_ABI } from "@/lib/registry-abi";
 import { sameWallet } from "@/lib/likes/rules";
 import { ApiError, api, isUserRejection } from "@/lib/wallet/api";
+import { revertMessage } from "@/lib/wallet/revert";
 import { wagmiConfig } from "@/lib/wallet/config";
 import { openWalletModal } from "@/lib/wallet/modal";
 import { useSessionWallet, useSignIn } from "@/lib/wallet/session";
@@ -40,6 +41,8 @@ class PublishError extends Error {}
 export function messageFor(error: unknown): string {
   if (isUserRejection(error)) return "You cancelled in your wallet. Nothing was written to Arc";
   if (error instanceof ApiError || error instanceof PublishError) return error.message;
+  const refused = revertMessage(error);
+  if (refused) return refused;
   const text = String((error as { shortMessage?: string; message?: string })?.shortMessage ?? (error as Error)?.message ?? "");
   if (/insufficient funds/i.test(text)) return `Your wallet needs a little Arc testnet USDC for the network fee. Get some at ${FAUCET}`;
   if (/chain|network/i.test(text)) return "Switch your wallet to the Arc Network and try again";
@@ -95,14 +98,18 @@ export function usePublish(draft: Draft, update: (patch: Partial<Draft>) => void
 
       setPhase(2);
       if (getChainId(wagmiConfig) !== prepared.chainId) await switchChain(wagmiConfig, { chainId: prepared.chainId });
-      const txHash = await writeContract(wagmiConfig, {
+      const call = {
         address: prepared.registry,
         abi: REGISTRY_ABI,
         functionName: "register",
         args: [prepared.cid, prepared.contentHash, BigInt(0), 0],
         chainId: prepared.chainId,
-        ...(await suggestedFees()),
-      });
+        account: address,
+      } as const;
+      // A free dry run first: a registration Arc would refuse is explained, not sent and paid for
+      await simulateContract(wagmiConfig, call);
+      if (!alive()) return;
+      const txHash = await writeContract(wagmiConfig, { ...call, ...(await suggestedFees()) });
       if (!alive()) return; // stepped back meanwhile: the file may have changed, don't tie this hash to it
       update({ publishTx: txHash });
 

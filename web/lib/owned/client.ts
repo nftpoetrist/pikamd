@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { useConnection } from "wagmi";
-import { getChainId, switchChain, waitForTransactionReceipt, writeContract } from "wagmi/actions";
+import { getChainId, simulateContract, switchChain, waitForTransactionReceipt, writeContract } from "wagmi/actions";
 import { suggestedFees } from "@/lib/wallet/fees";
 import { CHAIN, REGISTRY } from "@/lib/chain";
 import { useHydrated } from "@/lib/hydrated";
@@ -104,14 +104,17 @@ export function useVisibility() {
         } else {
           setPhase(1);
           if (getChainId(wagmiConfig) !== CHAIN.id) await switchChain(wagmiConfig, { chainId: CHAIN.id });
-          const txHash = await writeContract(wagmiConfig, {
+          const call = {
             address: REGISTRY.address,
             abi: REGISTRY_ABI,
             functionName: "setHidden",
             args: [BigInt(id), hidden],
             chainId: CHAIN.id,
-            ...(await suggestedFees()),
-          });
+            account: address,
+          } as const;
+          // A free dry run first: a change Arc would refuse (not the author, locked) isn't sent and paid for
+          await simulateContract(wagmiConfig, call);
+          const txHash = await writeContract(wagmiConfig, { ...call, ...(await suggestedFees()) });
           setPendingTx(txHash);
 
           setPhase(2);

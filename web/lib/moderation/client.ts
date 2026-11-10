@@ -2,7 +2,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
-import { getChainId, switchChain, waitForTransactionReceipt, writeContract } from "wagmi/actions";
+import { getChainId, simulateContract, switchChain, waitForTransactionReceipt, writeContract } from "wagmi/actions";
 import { suggestedFees } from "@/lib/wallet/fees";
 import { CHAIN, REGISTRY, REVIEWS } from "@/lib/chain";
 import { useSignedIn } from "@/lib/collection/client";
@@ -63,14 +63,16 @@ export function useModActions() {
     async (id: number, locked: boolean) => {
       if (!REGISTRY) throw new Error("Moderation isn't available on this network yet");
       if (getChainId(wagmiConfig) !== CHAIN.id) await switchChain(wagmiConfig, { chainId: CHAIN.id });
-      const hash = await writeContract(wagmiConfig, {
+      const call = {
         address: REGISTRY.address,
         abi: REGISTRY_ABI,
         functionName: "setModeratorLock",
         args: [BigInt(id), locked],
         chainId: CHAIN.id,
-        ...(await suggestedFees()),
-      });
+      } as const;
+      // A free dry run first (the connected wallet as sender): a lock Arc would refuse isn't sent
+      await simulateContract(wagmiConfig, call);
+      const hash = await writeContract(wagmiConfig, { ...call, ...(await suggestedFees()) });
       const receipt = await waitForTransactionReceipt(wagmiConfig, { hash, chainId: CHAIN.id, timeout: 60_000 });
       if (receipt.status !== "success") throw new Error("The transaction failed on Arc, so nothing changed");
       await api("/api/mod/lock", { method: "POST", body: { txHash: hash } });
@@ -87,10 +89,19 @@ export function useModActions() {
     async (id: number, version: number, approve: boolean) => {
       if (!REVIEWS) throw new Error("Reviews aren't available on this network yet");
       if (getChainId(wagmiConfig) !== CHAIN.id) await switchChain(wagmiConfig, { chainId: CHAIN.id });
-      const fees = await suggestedFees();
-      const hash = approve
-        ? await writeContract(wagmiConfig, { address: REVIEWS.address, abi: REVIEWS_ABI, functionName: "approve", args: [BigInt(id), version], chainId: CHAIN.id, ...fees })
-        : await writeContract(wagmiConfig, { address: REVIEWS.address, abi: REVIEWS_ABI, functionName: "revoke", args: [BigInt(id)], chainId: CHAIN.id, ...fees });
+      // The registry's errors too: approve reads the guideline from it
+      const abi = [...REVIEWS_ABI, ...REGISTRY_ABI.filter((item) => item.type === "error")] as const;
+      const base = { address: REVIEWS.address, abi, chainId: CHAIN.id } as const;
+      let hash: `0x${string}`;
+      if (approve) {
+        const call = { ...base, functionName: "approve", args: [BigInt(id), version] } as const;
+        await simulateContract(wagmiConfig, call); // a free dry run: a refused approval isn't sent
+        hash = await writeContract(wagmiConfig, { ...call, ...(await suggestedFees()) });
+      } else {
+        const call = { ...base, functionName: "revoke", args: [BigInt(id)] } as const;
+        await simulateContract(wagmiConfig, call);
+        hash = await writeContract(wagmiConfig, { ...call, ...(await suggestedFees()) });
+      }
       const receipt = await waitForTransactionReceipt(wagmiConfig, { hash, chainId: CHAIN.id, timeout: 60_000 });
       if (receipt.status !== "success") throw new Error("The transaction failed on Arc, so nothing changed");
       await api("/api/mod/review", { method: "POST", body: { txHash: hash } });
