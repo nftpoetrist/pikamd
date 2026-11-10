@@ -504,6 +504,56 @@ body {
     0 16px 32px rgba(0, 0, 0, 0.6);
 }
 
+/* ── Status pages: 404 and errors (components/StatusPanel.tsx) ── */
+.status-page {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 20px 96px;
+}
+
+.status-panel {
+  width: min(520px, 100%);
+  padding: 36px 32px 34px;
+  text-align: center;
+}
+
+.status-code {
+  font-family: var(--font-jersey);
+  font-size: 72px;
+  line-height: 0.9;
+  color: var(--y1);
+  text-shadow: 4px 4px 0 var(--g4);
+}
+
+.status-title {
+  margin-top: 10px;
+  font-family: var(--font-jersey);
+  font-size: 34px;
+  line-height: 1;
+  color: var(--t0);
+}
+
+.status-text {
+  margin-top: 12px;
+  font-family: var(--font-vt323);
+  font-size: 21px;
+  line-height: 1.2;
+  color: var(--t1);
+}
+
+.status-actions {
+  --px-b: 3px;
+  --px-h: 34px;
+  --px-base: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 26px;
+}
+
 /* ── Page content vertically centered in the first screen (home, explore) ── */
 .page-center {
   min-height: calc(100svh - var(--nav-space)); /* the layout's top padding under the fixed navbar */
