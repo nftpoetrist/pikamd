@@ -9,7 +9,7 @@ import { dehydrate, hydrate, type QueryClient } from "@tanstack/react-query";
 // get here: the full MCP key is never in the cache, only its masked form.
 
 const KEY = "pikamd:query-cache";
-const VERSION = 1;
+const VERSION = 2; // 2: likes split into public counts and the wallet's own (lib/likes/client.ts)
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // a sign-in lasts a week
 const PERSISTED = new Set(["session", "collection", "mcp-key", "profile", "owned", "likes", "mod"]);
 const SAVE_DELAY_MS = 500;

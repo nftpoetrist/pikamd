@@ -9,7 +9,7 @@ import MdPreview from "@/components/MdPreview";
 import AuthorAction from "@/components/AuthorAction";
 import ReviewedMark from "@/components/ReviewedMark";
 import type { Guideline, GuidelineCard, OwnedGuideline } from "@/lib/types";
-import { api } from "@/lib/wallet/api";
+import { api, publicRead } from "@/lib/wallet/api";
 
 type PreviewState = "closed" | "open" | "closing";
 
@@ -36,7 +36,7 @@ export default function MdCard({ guideline, focusable = true }: { guideline: Gui
   const [note, setNote] = useState<string | null>(null);
   const client = useQueryClient();
 
-  const fileQuery = { queryKey: ["guideline", slug], queryFn: () => api<Guideline>(`/api/guidelines/${encodeURIComponent(slug)}`), staleTime: 60_000 };
+  const fileQuery = { queryKey: ["guideline", slug], queryFn: () => api<Guideline>(publicRead(`/api/guidelines/${encodeURIComponent(slug)}`)), staleTime: 60_000 };
   const prefetch = () => {
     if (!hasContent(guideline)) void client.prefetchQuery(fileQuery);
   };

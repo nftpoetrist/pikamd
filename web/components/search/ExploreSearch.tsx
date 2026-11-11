@@ -10,7 +10,7 @@ import { useLikeSummary } from "@/lib/likes/client";
 import { KINDS, QUERY_MAX_LENGTH, hasFilter, toggleFilter } from "@/lib/search/query";
 import type { SearchResponse, SearchResultItem } from "@/lib/search/response";
 import type { Guideline } from "@/lib/types";
-import { api } from "@/lib/wallet/api";
+import { api, publicRead } from "@/lib/wallet/api";
 
 const DEBOUNCE_MS = 200;
 const RESULT_LIMIT = 8;
@@ -26,7 +26,7 @@ function useDebounced<T>(value: T, ms: number): T {
 }
 
 async function fetchSearch(q: string, signal: AbortSignal): Promise<SearchResponse> {
-  const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&limit=${RESULT_LIMIT}`, { signal, cache: "no-store" });
+  const res = await fetch(publicRead(`/api/search?q=${encodeURIComponent(q)}&limit=${RESULT_LIMIT}`), { signal, cache: "no-store" });
   if (!res.ok) throw new Error("search failed");
   return res.json();
 }
@@ -133,7 +133,7 @@ export default function ExploreSearch({ topTags }: { topTags: string[] }) {
     try {
       const guideline = await client.fetchQuery({
         queryKey: ["guideline", hit.slug],
-        queryFn: () => api<Guideline>(`/api/guidelines/${encodeURIComponent(hit.slug)}`),
+        queryFn: () => api<Guideline>(publicRead(`/api/guidelines/${encodeURIComponent(hit.slug)}`)),
         staleTime: 60_000,
       });
       setPreview({ guideline, line: hit.lines[0]?.line, origin: { current: rows.current.get(hit.slug) ?? null }, closing: false });

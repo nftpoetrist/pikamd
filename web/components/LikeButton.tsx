@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useConnection, useConnectionEffect } from "wagmi";
 import { PixelHeart } from "@/components/md-format";
+import { useHydrated } from "@/lib/hydrated";
 import { useLike, useLikeSummary } from "@/lib/likes/client";
 import { sameWallet } from "@/lib/likes/rules";
 import { ApiError, describeError } from "@/lib/wallet/api";
@@ -25,9 +26,13 @@ export default function LikeButton({ slug, title, stars, focusable = true }: { s
   // Pressed before a wallet was connected: like as soon as one connects from that picker
   const waitingForWallet = useRef(false);
 
-  const signedInHere = !!address && !!session.data && sameWallet(session.data, address);
+  // Until hydration is over the button is what the server rendered (not liked, the page's count):
+  // a returning visitor's stored answers (lib/query-persist.ts) and wallet can be back before a
+  // late part of the page hydrates, and React would throw that part away over the difference
+  const hydrated = useHydrated();
+  const signedInHere = hydrated && !!address && !!session.data && sameWallet(session.data, address);
   const liked = signedInHere && (summary.data?.mine.includes(slug) ?? false);
-  const count = summary.data?.counts[slug] ?? stars;
+  const count = (hydrated ? summary.data?.counts[slug] : undefined) ?? stars;
   const unavailable = summary.error instanceof ApiError && summary.error.status === 503;
 
   useEffect(() => {

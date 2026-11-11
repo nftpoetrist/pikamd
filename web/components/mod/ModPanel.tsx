@@ -8,7 +8,7 @@ import { shortAddress } from "@/components/md-format";
 import { REVIEWS } from "@/lib/chain";
 import { scanGuideline } from "@/lib/scan";
 import type { Guideline } from "@/lib/types";
-import { api } from "@/lib/wallet/api";
+import { api, publicRead } from "@/lib/wallet/api";
 import { useSignedIn } from "@/lib/collection/client";
 import { useIsModerator, useModActions, useModQueue, type QueueItem, type ReviewItem } from "@/lib/moderation/client";
 import { reasonLabel } from "@/lib/moderation/reasons";
@@ -139,7 +139,7 @@ function ReviewRow({ g }: { g: ReviewItem }) {
   const [note, setNote] = useState<string | null>(null);
   const file = useQuery({
     queryKey: ["guideline", g.slug],
-    queryFn: () => api<Guideline>(`/api/guidelines/${encodeURIComponent(g.slug)}`),
+    queryFn: () => api<Guideline>(publicRead(`/api/guidelines/${encodeURIComponent(g.slug)}`)),
     enabled: open,
     staleTime: 60_000,
     retry: false,

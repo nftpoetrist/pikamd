@@ -130,6 +130,7 @@ export default function PrivacyPage() {
                 rows={[
                   [<code key="n">pikamd_session</code>, "Cookie, 7 days", "Keeps you signed in after the sign-in signature. HttpOnly, SameSite=Strict"],
                   [<code key="n">pikamd:query-cache</code>, "Local storage, 7 days", "Your own recent data (session, collection, likes, profile) so pages open instantly"],
+                  [<code key="n">pikamd:fresh-until</code>, "Session storage, until the tab closes", "A timestamp set when you change something (publish, hide, like), so the next pages you open show it at once. It holds no personal data"],
                   [<span key="n">Wallet connection</span>, "Local storage", "Which wallet you connected last, so it reconnects. WalletConnect, if you use it, keeps its own session in your browser"],
                 ]}
               />

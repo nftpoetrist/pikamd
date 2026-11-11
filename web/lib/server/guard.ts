@@ -1,4 +1,5 @@
 import "server-only";
+import { PUBLIC_FRESH_SECONDS, PUBLIC_STALE_SECONDS } from "@/lib/public-cache";
 
 // Writes are accepted from this site's own pages only: browsers send an Origin header on
 // POST/PUT/DELETE, and another site open in the same browser can't fake it (CSRF guard,
@@ -49,6 +50,25 @@ export async function readJson(request: Request, maxBytes = 16 * 1024): Promise<
 
 /** Per-user answers must never be cached by the browser or a CDN. */
 export const NO_STORE = { "Cache-Control": "no-store" } as const;
+
+/**
+ * Public reads that are the same for every visitor (the library, a guideline, like counts, search
+ * results): the CDN keeps one copy for a few seconds, so a crowd costs one function call, not one
+ * per visitor (ARCHITECTURE §12.3). Vercel's CDN caches a GET answered 200 with s-maxage and no
+ * Set-Cookie, keyed by path and query; the browser itself never keeps it (max-age=0).
+ * - s-maxage: how long the copy counts as fresh.
+ * - stale-while-revalidate: for this long after that, the old copy is served at once while one
+ *   call refreshes it. A copy older than both is never served.
+ * A route using this must not read cookies or the Authorization header: its answer is shared.
+ */
+const PUBLIC_CACHE = { "Cache-Control": `public, max-age=0, s-maxage=${PUBLIC_FRESH_SECONDS}, stale-while-revalidate=${PUBLIC_STALE_SECONDS}` } as const;
+
+/**
+ * Cache headers for a public read. A browser that just changed something (published, hid, liked)
+ * asks with `?fresh=…` (lib/wallet/api.ts): a different URL, so the CDN has no copy of it, and
+ * the answer isn't stored either.
+ */
+export const publicCache = (request: Request) => (new URL(request.url).searchParams.has("fresh") ? NO_STORE : PUBLIC_CACHE);
 
 export const notConfigured = () =>
   Response.json({ error: "Wallet sign-in isn't live yet on this server" }, { status: 503, headers: NO_STORE });

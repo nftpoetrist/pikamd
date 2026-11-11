@@ -61,7 +61,14 @@ async function call(method, path, { cookie, body, origin = ORIGIN } = {}) {
   if (body !== undefined) headers["Content-Type"] = "application/json";
   const res = await fetch(new URL(path, BASE), { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
   const setCookie = res.headers.get("set-cookie");
-  return { status: res.status, json: await res.json().catch(() => null), setCookie };
+  const text = await res.text();
+  let json = null;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    // not JSON
+  }
+  return { status: res.status, json, text, setCookie, cacheControl: res.headers.get("cache-control") };
 }
 
 const nonce = async () => (await call("POST", "/api/auth/nonce")).json.nonce;
@@ -147,7 +154,7 @@ try {
   const like2 = await call("PUT", `/api/likes/${slug}`, { cookie: a.cookie });
   check(like2.status === 200 && like2.json?.created === false && like2.json?.count === before + 1, "alice's second like changes nothing");
 
-  const mineA = (await call("GET", "/api/likes", { cookie: a.cookie })).json?.mine ?? [];
+  const mineA = (await call("GET", "/api/me/likes", { cookie: a.cookie })).json?.mine ?? [];
   check(mineA.includes(slug), "alice's liked list has it");
 
   // Unlike: the count drops, the author keeps the PikaGold, liking again earns none
@@ -159,14 +166,30 @@ try {
   check(un1.status === 200 && un1.json?.removed === true && un1.json?.count === before, "alice takes her like back (-1)");
   const un2 = await call("DELETE", `/api/likes/${slug}`, { cookie: a.cookie });
   check(un2.status === 200 && un2.json?.removed === false && un2.json?.count === before, "a second unlike changes nothing");
-  check(!((await call("GET", "/api/likes", { cookie: a.cookie })).json?.mine ?? []).includes(slug), "alice's liked list no longer has it");
+  check(!((await call("GET", "/api/me/likes", { cookie: a.cookie })).json?.mine ?? []).includes(slug), "alice's liked list no longer has it");
   check((await goldNow()) === profileBefore.json?.pikagold + 1, "the author keeps the PikaGold after the unlike");
   const relike = await call("PUT", `/api/likes/${slug}`, { cookie: a.cookie });
   check(relike.status === 200 && relike.json?.created === false && relike.json?.restored === true && relike.json?.count === before + 1, "alice likes again (+1 like, restored)");
   check((await goldNow()) === profileBefore.json?.pikagold + 1, "liking again earns no second PikaGold");
   check((await call("DELETE", "/api/likes/does-not-exist", { cookie: a.cookie })).status === 404, "unlike of an unknown guideline refused");
-  const mineBob = (await call("GET", "/api/likes")).json?.mine ?? [];
-  check(mineBob.length === 0, "signed-out visitor has no liked list");
+  const mineAnon = await call("GET", "/api/me/likes");
+  check(mineAnon.status === 200 && Array.isArray(mineAnon.json?.mine) && mineAnon.json.mine.length === 0, "signed-out visitor has no liked list");
+
+  // The CDN keeps one copy of each public read (ARCHITECTURE §12.3), so a public answer must be the
+  // same with and without a session, carry no cookie, and a per-user answer must never be storable.
+  const SHARED = /^public, max-age=0, s-maxage=\d+, stale-while-revalidate=\d+$/;
+  for (const path of ["/api/likes", "/api/guidelines", `/api/guidelines/${slug}`, `/api/search?q=${slug}&limit=3`]) {
+    const [plain, signed, fresh] = await Promise.all([call("GET", path), call("GET", path, { cookie: a.cookie }), call("GET", `${path}${path.includes("?") ? "&" : "?"}fresh=1`)]);
+    check(plain.status === 200 && SHARED.test(plain.cacheControl ?? ""), `[cdn] ${path} may be kept by the CDN (${plain.cacheControl})`);
+    check(!plain.setCookie && !signed.setCookie, `[cdn] ${path} sets no cookie`);
+    check(plain.text === signed.text && !("mine" in (signed.json ?? {})), `[cdn] ${path} is the same with a session`);
+    check(fresh.status === 200 && fresh.cacheControl === "no-store" && fresh.text === plain.text, `[cdn] ${path}?fresh= is the same answer, never stored`);
+  }
+  check((await call("GET", "/api/guidelines/does-not-exist")).cacheControl === "no-store", "[cdn] an unknown guideline's 404 is never stored");
+  for (const path of ["/api/me/likes", "/api/auth/me", "/api/collection", "/api/me/guidelines", "/api/mcp-key", `/api/profile/${AUTHOR}`]) {
+    const res = await call("GET", path, { cookie: a.cookie });
+    check(res.cacheControl === "no-store", `[cdn] ${path} is never stored (${res.status})`);
+  }
 
   const b = await signIn(bob);
   const likeB = await call("PUT", `/api/likes/${slug}`, { cookie: b.cookie });
